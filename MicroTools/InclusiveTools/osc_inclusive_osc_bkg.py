@@ -1,4 +1,8 @@
 import numpy as np
+import sys
+import os
+toolsdir = os.path.realpath(__file__)[:-len('InclusiveTools/osc_inclusive_osc_bkg.py')]
+sys.path.append(toolsdir)
 import unfolder
 from multiprocessing import Pool, Value, Lock
 import itertools
