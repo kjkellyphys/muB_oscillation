@@ -17,12 +17,12 @@ from inclusive_osc_tools import DecayPmmAvg, Decay_muB_OscChi2, DecayMuBNuMuDis
 from MicroTools import *
 
 MiniBooNE_Signal = np.loadtxt(f"{mb_data_osctables}/miniboone_numunuefullosc_ntuple_reweighted.dat")
-MB_Ereco_Bins = [0.200, 0.250, 0.300, 0.350, 0.400, 0.450, 0.500, 0.600, 0.800, 1.000, 1.500, 2.000, 2.500, 3.000]
+MB_Ereco_Bins = [0.200, 0.250, 0.300, 0.350, 0.400, 0.450, 0.500, 0.600, 0.800, 1.000, 1.500, 2.000, 2.500, 3.000] # In GeV
 LMBT = 0.4685 # Baseline length in kilometers
-Ereco = MiniBooNE_Signal[:, 0]  # MeV
-Etrue = MiniBooNE_Signal[:, 1]  # MeV
-Length = MiniBooNE_Signal[:, 2] / 100  # meters
-Weight = MiniBooNE_Signal[:, 3]
+Ereco = MiniBooNE_Signal[:, 0]/1000  # GeV
+Etrue = MiniBooNE_Signal[:, 1]/1000  # GeV
+Length = MiniBooNE_Signal[:, 2]/100000  # Kilometers
+Weight = MiniBooNE_Signal[:, 3] # Reweighted by a factor of 1/24860 to match Pedro's signal rate
 
 lock = Lock()
 number = Value('i', 0)
@@ -81,7 +81,7 @@ def DecayReturnMicroBooNEChi2(theta):
     Pme_weighted = [(Um4Sq * (1 - np.exp(-1.267*gm4 ** 2 * Length[i] / (32 * np.pi * Etrue[i])))) * Weight[i] for i in
                     range(MiniBooNE_Signal.shape[0])]
     # bin centers(GeV) and bin weights of interaction energy for each production energy
-    decay_e_prod, decay_e_weights = np.transpose(np.concatenate([e_prod_to_e_int(Etrue[i]/1000, Pme_weighted[i]) for i in range(len(Etrue))]))
+    decay_e_prod, decay_e_weights = np.transpose(np.concatenate([e_prod_to_e_int(Etrue[i], Pme_weighted[i]) for i in range(len(Etrue))]))
     # dotting with the migration matrix to map to a distribution binning over reconstructed energy
     # Note: normalized to \sin^2(2\theta_{\mu e}) = 1
     MBSig0 = np.dot((np.histogram(decay_e_prod, bins=e_prod_e_int_bins, weights=decay_e_weights)[0]), migration_matrix)
@@ -117,5 +117,5 @@ if __name__ == '__main__':
     #Designed to run in parallel. Set the argument of "Pool" to 1 to disable this.
     pool = Pool()
     res = pool.map(DecayReturnMicroBooNEChi2, paramlist_decay)
-    np.save(f'{path_osc_data}/App_gm4_Um4sq_migrated', res)
+    np.save(f'{path_osc_data}/App_gm4_Um4sq_migrated_1', res)
 
