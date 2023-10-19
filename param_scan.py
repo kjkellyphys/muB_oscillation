@@ -191,17 +191,28 @@ def DecayReturnMicroBooNEChi2(theta):
         migration_matrix_unfolding_bins,
     )
 
+    # NOTE: not needed since we are fitting miniboone with nu_e and nu_mu samples simultaneously
+    # MBSig_for_unfolding_RW = []
+    # for k in range(len(MBSig_for_unfolding)):
+    #     RWFact = 1 / DecayPmmAvg(
+    #         MB_Ereco_unfold_bins[k], MB_Ereco_unfold_bins[k + 1], LMBT, gm4, Um4Sq
+    #     )
+    #     MBSig_for_unfolding_RW.append(MBSig_for_unfolding[k] * RWFact)
+
+    MBSig_for_unfolding_RW = MBSig_for_unfolding  # No undoing of numu disappearance
+
     # MicroBooNE fully inclusive signal by unfolding MiniBooNE Signal
-    uBFC = GBFC.miniToMicro(MBSig_for_unfolding)
+    uBFC = GBFC.miniToMicro(MBSig_for_unfolding_RW)
     uBFC = np.insert(uBFC, 0, [0.0])
     uBFC = np.append(uBFC, 0.0)
 
     # MicroBooNE partially inclusive signal by unfolding MiniBooNE Signal
-    uBPC = GBPC.miniToMicro(MBSig_for_unfolding)
+    uBPC = GBPC.miniToMicro(MBSig_for_unfolding_RW)
     uBPC = np.insert(uBPC, 0, [0.0])
     uBPC = np.append(uBPC, 0.0)
 
     uBtemp = np.concatenate([uBFC, uBPC, np.zeros(85)])
+
     # \nu_mu disappearance signal replacement
     NuMuReps = DecayMuBNuMuDis(gm4, Um4Sq)
 

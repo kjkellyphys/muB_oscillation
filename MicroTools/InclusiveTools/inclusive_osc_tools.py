@@ -64,7 +64,7 @@ MuB_BinEdges_NuMu = [0.0 + 0.05 * j for j in range(61)]
 def expAvg(Emin, Emax, L, gm4):
     if Emin == 0.0:
         Emin = 0.000001
-    x = -1.267 * gm4**2 * L / (32 * np.pi)
+    x = -4 * 1.267 * gm4**2 * L / (32 * np.pi)
     return (
         1
         / (Emax - Emin)
