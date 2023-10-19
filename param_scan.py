@@ -28,6 +28,8 @@ GBFC = unfolder.MBtomuB(
 MiniBooNE_Signal = micro.mb_mc_data_release
 MB_Ereco_unfold_bins = micro.bin_edges_reco
 MB_Ereco_official_bins = micro.bin_edges * 1e-3
+MB_Ereco_official_bins_numu = micro.bin_edges_numu * 1e-3
+
 LMBT = 0.4685  # Baseline length in kilometers
 Ereco = MiniBooNE_Signal[:, 0] / 1000  # GeV
 Etrue = MiniBooNE_Signal[:, 1] / 1000  # GeV
@@ -114,10 +116,25 @@ class Sterile:
 
     def Pdecay(self, E4, Length):
         """E4 -- GeV, Length -- Kilometers"""
-        # NOTE: Please check! There should be a factor of 4 with this unit conversion.
         return 1 - np.exp(-1.267 * (4 * self.GammaLab(E4) * Length))
 
-    def dPdecaydX(self, Eparent, Edaughters):
+    def Pdecay_binned_avg(self, E4_bin_edges, fixed_Length=LMBT):
+        """E4_bin_edges -- array in GeV, Length -- Kilometers"""
+        de = np.diff(E4_bin_edges)
+        el = E4_bin_edges[:-1]
+
+        # NOTE: We should check our fits are independent of this choice!!
+        el[el == 0] = 1e-3  # 1 MeV regulator
+        er = E4_bin_edges[1:]
+
+        # exponential argument
+        x = -1.267 * (4 * self.GammaLab(1) * fixed_Length)
+
+        # Average over bin assuming constant rate
+        # return self.Pdecay(el + de / 2, fixed_Length)
+        return 1 / de * ((er - x) * np.exp(x / er) - (el - x) * np.exp(x / el))
+
+    def dPdecaydX(self, Eparent, Edaughter):
         """The probability of daughter neutrino energy"""
 
         # NOTE -- this depends on the model -- not sure what is going on here?
@@ -126,24 +143,12 @@ class Sterile:
         #     / n_replications**2
         # )
 
-        # I'm using this instead -- it might be (1 - Edaughters / Eparent) instead, should check.
-        decay_w_base = Edaughters / Eparent
+        decay_w_base = Edaughter / Eparent
 
         return decay_w_base
 
 
 # --------------------------------------------------------------------------------
-
-
-def get_MBSig_Pmm_reweighted(gm4, Um4Sq, MBSig, MBbins):
-    MBSig_rw = []
-    # Reweight event rate in each bin
-    for k in range(len(MBSig)):
-        RWFact = 1 / DecayPmmAvg(MBbins[k], MBbins[k + 1], LMBT, gm4, Um4Sq)
-        MBSig_rw.append(MBSig[k] * RWFact)
-    return MBSig_rw
-
-
 def DecayReturnMicroBooNEChi2(theta):
     """DecayReturnMicroBooNEChi2 Returns the MicroBooNE chi2
 
@@ -159,12 +164,14 @@ def DecayReturnMicroBooNEChi2(theta):
     """
 
     Um4Sq, gm4 = theta
-    # Weighted decay appearance probability from eqn 2.8 in 1911.01447
+
+    # Our new physics class
     sterile = Sterile(gm4, 0, Um4Sq)
 
+    # Replicating events for multiple daughter neutrino energies
     Etrue_parent, Etrue_daughter = create_Etrue_and_Weight_int()
 
-    # replicating the length entry of MC
+    # replicating entries of the MC data release -- baseline L and weight
     Length_ext = np.stack([Length for _ in range(NREPLICATION)], axis=0).T.flatten()
     Weight_ext = np.stack(
         [Weight / NREPLICATION for _ in range(NREPLICATION)], axis=0
@@ -172,7 +179,6 @@ def DecayReturnMicroBooNEChi2(theta):
 
     # Flavor transition probabilities -- Assuming nu4 decays only into nue
     Pme = Um4Sq * sterile.Pdecay(Etrue_parent, Length_ext)
-    Pmm = 1 - Um4Sq * sterile.Pdecay(Etrue_parent, Length_ext)
 
     dPdX = sterile.dPdecaydX(Etrue_parent, Etrue_daughter)
     Weight_decay = Weight_ext * Pme * dPdX
@@ -183,7 +189,11 @@ def DecayReturnMicroBooNEChi2(theta):
         migration_matrix_official_bins,
     )
 
-    MB_chi2 = mini.fit.chi2_MiniBooNE_2020(MBSig_for_MBfit)
+    # Average disappearance in each bin of MB MC data release
+    P_avg = sterile.Pdecay_binned_avg(MB_Ereco_official_bins_numu, fixed_Length=LMBT)
+    P_mumu_avg = (1 - Um4Sq) ** 2 + Um4Sq * P_avg
+
+    MB_chi2 = mini.fit.chi2_MiniBooNE_2020(MBSig_for_MBfit, Pmumu=P_mumu_avg, Pee=1)
 
     # Calculate the MicroBooNE chi2 by unfolding
     MBSig_for_unfolding = np.dot(
@@ -194,7 +204,7 @@ def DecayReturnMicroBooNEChi2(theta):
     # NOTE: not needed since we are fitting miniboone with nu_e and nu_mu samples simultaneously
     # MBSig_for_unfolding_RW = []
     # for k in range(len(MBSig_for_unfolding)):
-    #     RWFact = 1 / DecayPmmAvg(
+    # RWFact = 1 / DecayPmmAvg(
     #         MB_Ereco_unfold_bins[k], MB_Ereco_unfold_bins[k + 1], LMBT, gm4, Um4Sq
     #     )
     #     MBSig_for_unfolding_RW.append(MBSig_for_unfolding[k] * RWFact)

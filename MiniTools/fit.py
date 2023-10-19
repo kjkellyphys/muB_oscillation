@@ -126,7 +126,7 @@ def chi2_MiniBooNE_2020(NP_MC, Pmumu=1, Pee=1, NPevents=None, mode="fhc"):
         )
     )
 
-    ## Apply disapperance to the muon or electron samples
+    # Apply average disapperance to the muon or electron samples
     numu_MC *= Pmumu
     nue_bkg *= Pee
 

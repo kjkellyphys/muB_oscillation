@@ -55,6 +55,8 @@ bin_edges_reco = [
 bin_centers_reco = bin_edges_reco[:-1] + np.diff(bin_edges_reco) / 2.0
 bin_width_reco = np.diff(bin_edges_reco)
 
+bin_edges_numu = np.array([0, 0.5, 0.7, 0.9, 1.1, 1.3, 1.50, 1.7, 1.9]) * 1e3  # MeV
+
 ##################################################################
 # unfolding
 path_unfolding_data = f"{local_dir}/muB_data/unfolding_data/"
