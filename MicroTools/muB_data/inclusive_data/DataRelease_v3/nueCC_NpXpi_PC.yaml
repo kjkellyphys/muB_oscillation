@@ -1,0 +1,192 @@
+dependent_variables:
+- header: {name: $\nu_e$CC $NpX\pi$ PC Data, units: counts per bin}
+  values:
+  - errors:
+    - asymerror: {minus: 0, plus: 1.1478}
+      label: stat
+    value: 0
+  - errors:
+    - asymerror: {minus: 0, plus: 1.1478}
+      label: stat
+    value: 0
+  - errors:
+    - asymerror: {minus: -2.48995, plus: 2.2106399999999997}
+      label: stat
+    value: 5
+  - errors:
+    - asymerror: {minus: -2, plus: 1.51917}
+      label: stat
+    value: 2
+  - errors:
+    - asymerror: {minus: -2.143368, plus: 1.7242199999999999}
+      label: stat
+    value: 3
+  - errors:
+    - asymerror: {minus: -2.85954, plus: 2.6105300000000007}
+      label: stat
+    value: 7
+  - errors:
+    - asymerror: {minus: -2.67925, plus: 2.4185800000000004}
+      label: stat
+    value: 6
+  - errors:
+    - asymerror: {minus: -3.6402199999999993, plus: 3.4154999999999998}
+      label: stat
+    value: 12
+  - errors:
+    - asymerror: {minus: -3.6402199999999993, plus: 3.4154999999999998}
+      label: stat
+    value: 12
+  - errors:
+    - asymerror: {minus: -3.0307000000000004, plus: 2.7896}
+      label: stat
+    value: 8
+  - errors:
+    - asymerror: {minus: -3.1935399999999996, plus: 2.9581999999999997}
+      label: stat
+    value: 9
+  - errors:
+    - asymerror: {minus: -2.143368, plus: 1.7242199999999999}
+      label: stat
+    value: 3
+  - errors:
+    - asymerror: {minus: -2.85954, plus: 2.6105300000000007}
+      label: stat
+    value: 7
+  - errors:
+    - asymerror: {minus: -2.143368, plus: 1.7242199999999999}
+      label: stat
+    value: 3
+  - errors:
+    - asymerror: {minus: -2.48995, plus: 2.2106399999999997}
+      label: stat
+    value: 5
+  - errors:
+    - asymerror: {minus: -2.67925, plus: 2.4185800000000004}
+      label: stat
+    value: 6
+  - errors:
+    - asymerror: {minus: -2.48995, plus: 2.2106399999999997}
+      label: stat
+    value: 5
+  - errors:
+    - asymerror: {minus: -2.143368, plus: 1.7242199999999999}
+      label: stat
+    value: 3
+  - errors:
+    - asymerror: {minus: -2, plus: 1.51917}
+      label: stat
+    value: 2
+  - errors:
+    - asymerror: {minus: -1, plus: 1.3597100000000002}
+      label: stat
+    value: 1
+  - errors:
+    - asymerror: {minus: -2, plus: 1.51917}
+      label: stat
+    value: 2
+  - errors:
+    - asymerror: {minus: -2.143368, plus: 1.7242199999999999}
+      label: stat
+    value: 3
+  - errors:
+    - asymerror: {minus: 0, plus: 1.1478}
+      label: stat
+    value: 0
+  - errors:
+    - asymerror: {minus: -2.143368, plus: 1.7242199999999999}
+      label: stat
+    value: 3
+  - errors:
+    - asymerror: {minus: -1, plus: 1.3597100000000002}
+      label: stat
+    value: 1
+  - errors:
+    - asymerror: {minus: -3.3488300000000004, plus: 3.1179000000000006}
+      label: stat
+    value: 10
+- header: {name: $\nu_e$CC $NpX\pi$ PC Unconstrained Prediction, units: counts per bin}
+  values:
+  - {value: 0.0}
+  - {value: 0.09}
+  - {value: 2.15}
+  - {value: 2.44}
+  - {value: 4.13}
+  - {value: 5.83}
+  - {value: 7.24}
+  - {value: 7.98}
+  - {value: 8.57}
+  - {value: 7.92}
+  - {value: 7.76}
+  - {value: 8.24}
+  - {value: 6.96}
+  - {value: 6.52}
+  - {value: 6.7}
+  - {value: 6.1}
+  - {value: 5.77}
+  - {value: 6.4}
+  - {value: 5.47}
+  - {value: 4.46}
+  - {value: 4.18}
+  - {value: 4.53}
+  - {value: 2.92}
+  - {value: 2.95}
+  - {value: 3.02}
+  - {value: 19.06}
+- header: {name: $\nu_e$CC $NpX\pi$ PC Unconstrained Prediction + LEE(x=1) Prediction, units: counts per bin}
+  values:
+  - {value: 0.0}
+  - {value: 0.17}
+  - {value: 2.64}
+  - {value: 3.22}
+  - {value: 4.92}
+  - {value: 6.4}
+  - {value: 7.56}
+  - {value: 8.14}
+  - {value: 8.64}
+  - {value: 7.94}
+  - {value: 7.77}
+  - {value: 8.24}
+  - {value: 6.97}
+  - {value: 6.52}
+  - {value: 6.7}
+  - {value: 6.1}
+  - {value: 5.77}
+  - {value: 6.4}
+  - {value: 5.47}
+  - {value: 4.46}
+  - {value: 4.18}
+  - {value: 4.53}
+  - {value: 2.92}
+  - {value: 2.95}
+  - {value: 3.02}
+  - {value: 19.06}
+independent_variables:
+- header: {name: Reconstructed Neutrino Energy, units: GeV}
+  values:
+  - {low: 0.00, high: 0.10}
+  - {low: 0.10, high: 0.20}
+  - {low: 0.20, high: 0.30}
+  - {low: 0.30, high: 0.40}
+  - {low: 0.40, high: 0.50}
+  - {low: 0.50, high: 0.60}
+  - {low: 0.60, high: 0.70}
+  - {low: 0.70, high: 0.80}
+  - {low: 0.80, high: 0.90}
+  - {low: 0.90, high: 1.00}
+  - {low: 1.00, high: 1.10}
+  - {low: 1.10, high: 1.20}
+  - {low: 1.20, high: 1.30}
+  - {low: 1.30, high: 1.40}
+  - {low: 1.40, high: 1.50}
+  - {low: 1.50, high: 1.60}
+  - {low: 1.60, high: 1.70}
+  - {low: 1.70, high: 1.80}
+  - {low: 1.80, high: 1.90}
+  - {low: 1.90, high: 2.00}
+  - {low: 2.00, high: 2.10}
+  - {low: 2.10, high: 2.20}
+  - {low: 2.20, high: 2.30}
+  - {low: 2.30, high: 2.40}
+  - {low: 2.40, high: 2.50}
+  - {low: 2.50, high: 2.60}

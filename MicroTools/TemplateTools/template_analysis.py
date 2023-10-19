@@ -1,36 +1,31 @@
-import os
-import sys
 import numpy as np
 import scipy
 
-from MicroTools import *
-from MicroTools import unfolder 
+import MicroTools as MT
+from MicroTools import unfolder
 from MicroTools.InclusiveTools import inclusive
 from MicroTools.TemplateTools import mcmc_signal
 from MicroTools.TemplateTools import miniboone_fit as mbfit
 
-'''
-Templates
-
-   This class handles the template analysis for a given MCMC run
-        
-        case: may be "signal" or "background", depending on whether the MCMC
-        was run with mcmc_signal or mcmc_background 
-        
-        nbins: how many bins to vary wrt nominal template (starting from lowest energy)
-        
-        name: string for labeling the current case of interest
-
-'''
 class Templates():
-    
-    # run MCMC
     def __init__(self, case="signal", nbins = 5, name=''):
-        
+        '''
+        Templates
+
+        This class handles the template analysis for a given MCMC run
+
+                case: may be "signal" or "background", depending on whether the MCMC
+                was run with mcmc_signal or mcmc_background 
+
+                nbins: how many bins to vary wrt nominal template (starting from lowest energy)
+
+                name: string for labeling the current case of interest
+
+    '''
         self.case = case
         self.name = name
         self.nbins = nbins
-        self.template_path = f'{PATH_MCMC_CHAINS}/miniboone_signal_chain_{self.nbins}_bins_example.dat'
+        self.template_path = f'{MT.PATH_MCMC_CHAINS}/miniboone_signal_chain_{self.nbins}_bins_example.dat'
 
         # properties of nominal template
         self.nominal_nevents = 360
@@ -44,33 +39,30 @@ class Templates():
         self.mb_sterile_best_fit[self.mb_sterile_best_fit<0]=0
 
 
-    ''' 
+    
+    def generate_templates(self):
+        ''' 
         Generates the templates with a MCMC run
         
         Currently only uses signal model-indepenent method.
         FIX ME to include background method.
-    '''
-    def generate_templates(self):
-
-        mcmc_signal.run_mcmc(nwalkers=50, 
-                            nsteps=3000, 
-                            threads=4, 
-                            burnin_steps=2000, 
-                            nbins=self.nbins, 
+        ''' 
+        mcmc_signal.run_mcmc(nwalkers=50,
+                            nsteps=3000,
+                            threads=4,
+                            burnin_steps=2000,
+                            nbins=self.nbins,
                             model='signal',
-                            appendix=name)
+                            appendix=self.name)
 
 
     # load the templates produced from MCMC
-    def load_templates(self, force_path='', shrink=False):
-        
+    def load_templates(self, force_path=''):
+
         if not force_path:
-            self.mcmc_chain = np.genfromtxt(self.template_path,unpack=True)
+            self.mcmc_chain = np.genfromtxt(self.template_path, unpack=True)
         else:
-            self.mcmc_chain = np.genfromtxt(force_path,unpack=True)
-        
-        if shrink:
-            self.mcmc_chain = self.mcmc_chain[np.random.randint(len(templates), size=min(discard,len(templates)))]
+            self.mcmc_chain = np.genfromtxt(force_path, unpack=True)
 
         # compute the ratio of events of new tempalte with nominal one
         self.signal_strength = np.sum(self.mcmc_chain, axis=1)/self.nominal_nevents
@@ -84,7 +76,7 @@ class Templates():
 
     def unfold(self, **args):
 
-        # unfolder all tempaltes 
+        # unfolder all tempaltes
         self.converter = unfolder.MBtomuB(**args)
 
         # unfold all tempaltes 
@@ -92,7 +84,7 @@ class Templates():
         for template in self.mcmc_chain:
             template[template<0] = 0.0
             self.micro_templates = np.append(self.micro_templates, np.append(0.0, self.converter.miniToMicro(template)))
-        
+
         self.micro_templates = np.reshape(self.micro_templates, (np.shape(self.mcmc_chain)[0], 25))
 
         self.micro_nominal = np.append(0.0, self.converter.miniToMicro(self.nominal_template))
@@ -105,7 +97,7 @@ class Templates():
 
 
     def compute_chi2s(self):
-        
+
         # MiniBooNE chi2s
         self.mb_x = np.empty(0)
         self.mb_chi2s = np.empty(0)
@@ -113,7 +105,7 @@ class Templates():
             self.mb_x = np.append(self.mb_x, np.sum(mb_template)/self.nominal_nevents)
             self.mb_chi2s = np.append(self.mb_chi2s, mbfit.CalculateChi2SignalExpectations(mb_template))
 
-        
+
         # MicroBooNE chi2s
         self.mub_x = np.empty(0)
         self.mub_chi2s = np.empty(0)
@@ -133,9 +125,3 @@ class Templates():
         self.mask_80 = (self.mb_pval < scipy.stats.chi2.isf(0.8, ndf))
         self.mask_10 = (self.mb_pval < scipy.stats.chi2.isf(0.1, ndf))
         self.mask_0p1 = (self.mb_pval < scipy.stats.chi2.isf(0.01, ndf))
-
-
-
-
-
-

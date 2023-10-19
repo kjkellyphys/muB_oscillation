@@ -1,19 +1,8 @@
+import numpy as np
 import matplotlib
 import matplotlib.pyplot as plt
 from matplotlib import rc, rcParams
-from matplotlib.pyplot import *
-from matplotlib.pyplot import cm
-import matplotlib.lines as mlines
-import matplotlib.patches as mpatches
-from matplotlib.patches import Ellipse
-
-from matplotlib.ticker import MaxNLocator, FixedLocator, LinearLocator
-from matplotlib.colors import LinearSegmentedColormap
 from matplotlib.font_manager import FontProperties
-from matplotlib.collections import PatchCollection
-from matplotlib.offsetbox import AnchoredText
-
-from MicroTools import *
 
 ###########################
 # Matheus 
@@ -24,7 +13,7 @@ std_figsize = (1.2*3.7,1.3*2.3617)
 std_axes_form  =[0.16,0.16,0.81,0.76]
 
 rcparams={'axes.labelsize':fsize,'xtick.labelsize':fsize,'ytick.labelsize':fsize,\
-                'figure.figsize':std_figsize, 
+                'figure.figsize':std_figsize,
                 'legend.frameon': False,
                 'legend.loc': 'best'  }
 plt.rcParams['text.latex.preamble'] = r'\usepackage{amsmath}\usepackage{amssymb}'
@@ -58,7 +47,7 @@ pinkcol='#fc9b9a'
 orcol='#ff7f00'
 
 
-def std_fig(ax_form=std_axes_form, 
+def std_fig(ax_form=std_axes_form,
             figsize=std_figsize,
             rasterized=False):
     fig = plt.figure(figsize=figsize)
@@ -68,7 +57,7 @@ def std_fig(ax_form=std_axes_form,
 
 def double_axes_fig(height = 0.5,
                     gap = 0.1,
-                    axis_base = [0.14,0.1,0.80,0.18], 
+                    axis_base = [0.14,0.1,0.80,0.18],
                     figsize=std_figsize,
                     split_y=False,
                     split_x=False,
@@ -79,15 +68,15 @@ def double_axes_fig(height = 0.5,
     if split_y and not split_x:
         axis_base = [0.14,0.1,0.80,0.4-gap/2]
         axis_appended = [0.14,0.5+gap/2,0.80,0.4-gap/2]
-    
+
     elif not split_y and split_x:
         axis_appended = [0.14,0.1,0.4-gap/2,0.8]
-        axis_base = [0.14+0.4+gap/2, 0.1, 0.4-gap/2, 0.8]        
+        axis_base = [0.14+0.4+gap/2, 0.1, 0.4-gap/2, 0.8]
 
     else:
         axis_base[-1] = height
-        axis_appended = axis_base+np.array([0, height+gap, 0, 1 - 2*height - gap - axis_base[1] - 0.05])
-        
+        axis_appended = axis_base + np.array([0, height+gap, 0, 1 - 2*height - gap - axis_base[1] - 0.07])
+
 
     ax1 = fig.add_axes(axis_appended, rasterized=rasterized)
     ax2 = fig.add_axes(axis_base, rasterized=rasterized)
@@ -96,19 +85,19 @@ def double_axes_fig(height = 0.5,
 
     return fig, [ax1, ax2]
 
-def data_plot(ax, X, Y, xerr, yerr, zorder=2, label='data'):
+def data_plot(ax, X, Y, xerr, yerr, zorder=2, label='data', **kwargs):
     return ax.errorbar(X, Y, yerr= yerr, xerr = xerr, \
-                    marker="o", markeredgewidth=0.5, capsize=1.0,markerfacecolor="black",\
-                    markeredgecolor="black",ms=2,  lw = 0.0, elinewidth=0.8,
-                    color='black', label=label, zorder=zorder)
+                    marker="o", markeredgewidth=0.75, capsize=1,markerfacecolor="black",\
+                    markeredgecolor="black",ms=2.5,  lw = 0.0, elinewidth=0.75,
+                    color='black', label=label, zorder=zorder, **kwargs)
 
 def step_plot(ax, x, y, lw=1, color='red', label='signal', where = 'post', dashes=(3,0), zorder=3):
     return ax.step( np.append(x, np.max(x)+x[-1]),
                     np.append(y, 0.0),
                     where=where,
-                    lw = lw, 
+                    lw = lw,
                     dashes=dashes,
-                    color = color, 
+                    color = color,
                     label = label, zorder=zorder)
 
 

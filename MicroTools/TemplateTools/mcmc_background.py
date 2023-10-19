@@ -2,16 +2,10 @@ import matplotlib
 matplotlib.use('Agg')
 import numpy as np
 import emcee
-import sys
 import tqdm
 import time
-import argparse
-import scipy.stats as stats
 
 from . import miniboone_neutrino_improved_fit as mbfit
-
-
-
 
 SumExcs = 0
 SumOD = 0
@@ -102,7 +96,7 @@ def run_mcmc_background(nwalkers=50, nsteps = 50000, threads=4, burnin_steps = 2
     samples = sampler.chain[:, 50:, :].reshape((-1, ndim))
 
     np.savetxt("./miniboone_background_chain_NoAbs.dat",sampler.flatchain)
-
+    
     import corner
     fig = corner.corner(samples)
     fig.savefig("./miniboone_background_triangle_new.png")

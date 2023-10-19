@@ -1,0 +1,164 @@
+dependent_variables:
+- header: {name: $\nu_\mu$CC $NpX\pi$ FC Data, units: counts per bin}
+  values:
+  - errors:
+    - asymerror: {minus: 0, plus: 1.1478}
+      label: stat
+    value: 0
+  - errors:
+    - asymerror: {minus: 0, plus: 1.1478}
+      label: stat
+    value: 0
+  - errors:
+    - asymerror: {minus: -9.288600000000002, plus: 9.0869}
+      label: stat
+    value: 84
+  - errors:
+    - asymerror: {minus: -30.397368307141328, plus: 30.397368307141328}
+      label: stat
+    value: 924
+  - errors:
+    - asymerror: {minus: -46.76537180435969, plus: 46.76537180435969}
+      label: stat
+    value: 2187
+  - errors:
+    - asymerror: {minus: -55.04543577809154, plus: 55.04543577809154}
+      label: stat
+    value: 3030
+  - errors:
+    - asymerror: {minus: -59.0592922409336, plus: 59.0592922409336}
+      label: stat
+    value: 3488
+  - errors:
+    - asymerror: {minus: -57.81868210189506, plus: 57.81868210189506}
+      label: stat
+    value: 3343
+  - errors:
+    - asymerror: {minus: -52.592775169218825, plus: 52.592775169218825}
+      label: stat
+    value: 2766
+  - errors:
+    - asymerror: {minus: -47.37087712930804, plus: 47.37087712930804}
+      label: stat
+    value: 2244
+  - errors:
+    - asymerror: {minus: -40.681691213615984, plus: 40.681691213615984}
+      label: stat
+    value: 1655
+  - errors:
+    - asymerror: {minus: -34.45286635390443, plus: 34.45286635390443}
+      label: stat
+    value: 1187
+  - errors:
+    - asymerror: {minus: -28.26658805020514, plus: 28.26658805020514}
+      label: stat
+    value: 799
+  - errors:
+    - asymerror: {minus: -22.20360331117452, plus: 22.20360331117452}
+      label: stat
+    value: 493
+  - errors:
+    - asymerror: {minus: -18.411952639521967, plus: 18.411952639521967}
+      label: stat
+    value: 339
+  - errors:
+    - asymerror: {minus: -14.594519519326424, plus: 14.594519519326424}
+      label: stat
+    value: 213
+  - errors:
+    - asymerror: {minus: -11.575836902790225, plus: 11.575836902790225}
+      label: stat
+    value: 134
+  - errors:
+    - asymerror: {minus: -9.503600000000006, plus: 9.302099999999996}
+      label: stat
+    value: 88
+  - errors:
+    - asymerror: {minus: -7.478499999999997, plus: 7.274999999999999}
+      label: stat
+    value: 54
+  - errors:
+    - asymerror: {minus: -5.3414, plus: 5.132199999999997}
+      label: stat
+    value: 27
+  - errors:
+    - asymerror: {minus: -5.047599999999999, plus: 4.837}
+      label: stat
+    value: 24
+  - errors:
+    - asymerror: {minus: -4.7353999999999985, plus: 4.5229}
+      label: stat
+    value: 21
+  - errors:
+    - asymerror: {minus: -4.5151, plus: 4.301100000000002}
+      label: stat
+    value: 19
+  - errors:
+    - asymerror: {minus: -3.0307000000000004, plus: 2.7896}
+      label: stat
+    value: 8
+  - errors:
+    - asymerror: {minus: -3.4974999999999996, plus: 3.2699999999999996}
+      label: stat
+    value: 11
+  - errors:
+    - asymerror: {minus: -6.220300000000002, plus: 6.014099999999999}
+      label: stat
+    value: 37
+- header: {name: $\nu_\mu$CC $NpX\pi$ FC Unconstrained Prediction, units: counts per bin}
+  values:
+  - {value: 0.0}
+  - {value: 1.95}
+  - {value: 110.43}
+  - {value: 935.33}
+  - {value: 2019.65}
+  - {value: 2785.29}
+  - {value: 3138.85}
+  - {value: 3064.62}
+  - {value: 2724.53}
+  - {value: 2187.22}
+  - {value: 1695.13}
+  - {value: 1333.26}
+  - {value: 936.92}
+  - {value: 622.59}
+  - {value: 466.37}
+  - {value: 341.21}
+  - {value: 207.74}
+  - {value: 128.05}
+  - {value: 115.64}
+  - {value: 70.4}
+  - {value: 44.3}
+  - {value: 28.58}
+  - {value: 21.06}
+  - {value: 17.77}
+  - {value: 12.41}
+  - {value: 66.92}
+independent_variables:
+- header: {name: Reconstructed Neutrino Energy, units: GeV}
+  values:
+  - {low: 0.00, high: 0.10}
+  - {low: 0.10, high: 0.20}
+  - {low: 0.20, high: 0.30}
+  - {low: 0.30, high: 0.40}
+  - {low: 0.40, high: 0.50}
+  - {low: 0.50, high: 0.60}
+  - {low: 0.60, high: 0.70}
+  - {low: 0.70, high: 0.80}
+  - {low: 0.80, high: 0.90}
+  - {low: 0.90, high: 1.00}
+  - {low: 1.00, high: 1.10}
+  - {low: 1.10, high: 1.20}
+  - {low: 1.20, high: 1.30}
+  - {low: 1.30, high: 1.40}
+  - {low: 1.40, high: 1.50}
+  - {low: 1.50, high: 1.60}
+  - {low: 1.60, high: 1.70}
+  - {low: 1.70, high: 1.80}
+  - {low: 1.80, high: 1.90}
+  - {low: 1.90, high: 2.00}
+  - {low: 2.00, high: 2.10}
+  - {low: 2.10, high: 2.20}
+  - {low: 2.20, high: 2.30}
+  - {low: 2.30, high: 2.40}
+  - {low: 2.40, high: 2.50}
+  - {low: 2.50, high: 2.60}

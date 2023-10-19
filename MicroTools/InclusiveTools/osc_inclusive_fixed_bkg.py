@@ -1,23 +1,25 @@
-'''
+"""
     This Python Script loads in a set of parameters {\Delta m_{41}^2, \sin^2(2\theta_{\mu e})} along with a set of MiniBooNE-excess-spectra for those parameters
     and then determines various MicroBooNE test statistics:
     a) Asimov Expectation when using the full Covariance Matrix
     b) Asimov Expectation using the Constrained Covariance Approach
     c) Data Result using the full Covariance Matrix
-'''
+"""
 
 import numpy as np
 
-from MicroTools import * 
+import MicroTools as micro
 from MicroTools import unfolder
 
 RHE = False
-GBPC = unfolder.MBtomuB(analysis='1eX_PC', remove_high_energy=RHE, unfold=True)
-GBFC = unfolder.MBtomuB(analysis='1eX', remove_high_energy=RHE, unfold=True)
+GBPC = unfolder.MBtomuB(analysis="1eX_PC", remove_high_energy=RHE, unfold=True)
+GBFC = unfolder.MBtomuB(analysis="1eX", remove_high_energy=RHE, unfold=True)
 from Inclusive_Analysis import muB_NoBkgOsc_Chi2
 
 
-MiniBooNE_Signal_PANM = np.loadtxt(f"{mb_data_osctables}/dm-sin-MB-events-table-less-points.dat")
+MiniBooNE_Signal_PANM = np.loadtxt(
+    f"{micro.__annotations__mb_data_osctables}/dm-sin-MB-events-table-less-points.dat"
+)
 Result = []
 Pairs = []
 for k0 in range(len(MiniBooNE_Signal_PANM)):
@@ -41,6 +43,14 @@ for k0 in range(len(MiniBooNE_Signal_PANM)):
 
     uBtemp = np.concatenate([uBFC, uBPC, np.zeros(85)])
 
-    Result.append([dm41, ssq2thmue, muB_NoBkgOsc_Chi2(uBtemp, constrained=False, Asimov=True), muB_NoBkgOsc_Chi2(uBtemp, constrained=True, Asimov=True), muB_NoBkgOsc_Chi2(uBtemp, constrained=False, Asimov=False)])
+    Result.append(
+        [
+            dm41,
+            ssq2thmue,
+            muB_NoBkgOsc_Chi2(uBtemp, constrained=False, Asimov=True),
+            muB_NoBkgOsc_Chi2(uBtemp, constrained=True, Asimov=True),
+            muB_NoBkgOsc_Chi2(uBtemp, constrained=False, Asimov=False),
+        ]
+    )
 
-np.savetxt(f'{path_osc_data}/Inclusive_NoBkgOsc_Chi2.dat', Result)
+np.savetxt(f"{micro.path_osc_data}/Inclusive_NoBkgOsc_Chi2.dat", Result)
