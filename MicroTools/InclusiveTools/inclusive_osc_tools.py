@@ -74,7 +74,6 @@ def expAvg(Emin, Emax, L, gm4):
         )
     )
 
-
 def DecayPmmAvg(Emin, Emax, L, gm4, Um4sq):
     return (1.0 - Um4sq) ** 2 + Um4sq**2 * expAvg(Emin, Emax, L, gm4)
 
@@ -109,6 +108,25 @@ def PmeAvg(Emin, Emax, L, dmsq, Ue4sq, Um4sq):
 
 def PmsAvg(Emin, Emax, L, dmsq, Ue4sq, Um4sq):
     return 4.0 * Um4sq * (1.0 - Ue4sq - Um4sq) * ssqAvg(Emin, Emax, L, dmsq)
+
+# Disappearance probability from Matheus' notes
+def expAvg3D(Ue4sq, Um4sq, Emin, Emax, L, gm4):
+    if Emin == 0.0:
+        Emin = 0.000001
+    x = -(1-Um4sq-Ue4sq)*(Um4sq+Ue4sq)*1.267*4*gm4**2*L/(16*np.pi)
+    return 1/(Emax-Emin)*((Emax*np.exp(x/Emax)-x*expi(x/Emax))-(Emin*np.exp(x/Emin)-x*expi(x/Emin)))
+
+def DecayPmmAvg3D(Emin, Emax, L, gm4, Ue4sq, Um4sq):
+    return 1 + (1 - Ue4sq - Um4sq)*Um4sq**2 / (Ue4sq+Um4sq) * (1-expAvg3D(Ue4sq, Um4sq, Emin, Emax, L, gm4))
+
+def expAvg4D(Ue4sq, Um4sq, Emin, Emax, L, g, m4):
+    if Emin == 0.0:
+        Emin = 0.000001
+    x = -(1-Um4sq-Ue4sq)*(Um4sq+Ue4sq)*1.267*4*(g*m4)**2*L/(16*np.pi)
+    return 1/(Emax-Emin)*((Emax*np.exp(x/Emax)-x*expi(x/Emax))-(Emin*np.exp(x/Emin)-x*expi(x/Emin)))
+
+def DecayPmmAvg4D(Emin, Emax, L, g, m4, Ue4sq, Um4sq):
+    return 1 + (1 - Ue4sq - Um4sq)*Um4sq**2 / (Ue4sq+Um4sq) * (1-expAvg4D(Ue4sq, Um4sq, Emin, Emax, L, g, m4))
 
 
 def CNPStat(ni, mi):
@@ -429,6 +447,165 @@ def Decay_muB_OscChi2(
 
     return TS
 
+def Decay_muB_OscChi2_3D(Ue4sq, Um4sq, gm4, temp, constrained=False, RemoveOverflow=False, sigReps=None, Asimov=False):
+    """Calculates the chi-squared from the full covariance matrix,
+       allowing for oscillated backgrounds (oscillating as a function of *reconstructed* neutrino energy)
+
+       "constrained" is an option of whether to apply the Covariance-Matrix-Constraint method on the nu_e CC fully-contained sample
+       Default for our analyses will be "False"
+
+       "RemoveOverflow" allows for discarding the last (overflow) bin of each sample when calculating the test statistic
+
+       "Asimov" allows for determining the Asimov sensitivity expectation instead of the data-derived constraint
+
+       "sigReps" allows for replacement of the different signal samples (nu_e CC FC/PC, nu_mu CC FC/PC) instead of re-weighting the reconstructed-energy distributions
+       This allows for including oscillations as a function of *true* neutrino energy.
+    """
+    CVStat = np.zeros(np.shape(FCov))
+    CVSyst = np.zeros(np.shape(FCov))
+
+    if sigReps is not None:
+        if len(sigReps) != 7:
+            print("Signal Replacement Vector Needs to have 7 Elements!")
+            return 0
+    else:
+        sigReps = [None for k in range(7)]
+
+    SSRW = []
+    for SI in range(len(Sets)):
+        if sigReps[SI] is None:
+            ST = SigTypes[SI]
+            BE = BEdges[SI]
+
+            if ST == 'nue':
+                RWVec = [1.0 for kk in range(len(BE) - 1)]
+            elif ST == 'numu':
+                RWVec = [DecayPmmAvg3D(BE[kk], BE[kk + 1], LMBT, gm4, Ue4sq, Um4sq) for kk in range(len(BE) - 1)]
+            elif ST == 'NCPi0' or ST == 'numuPi0':
+                RWVec = [1.0 for kk in range(len(BE) - 1)]
+
+            SSRW.append(SigSets[SI] * RWVec)
+        else:
+            SSRW.append(sigReps[SI])
+
+    SSRWF = np.concatenate(SSRW)
+    for ii in range(len(SigSetsF)):
+        CVStat[ii][ii] = CNPStat(ObsSetsF[ii], SSRWF[ii] + BkgSetsF[ii] + temp[ii])
+        for jj in range(len(SigSetsF)):
+            CVSyst[ii][jj] = FCov[ii][jj] * (SSRWF[ii] + BkgSetsF[ii] + temp[ii] + 1.0e-2) * (
+                        SSRWF[jj] + BkgSetsF[jj] + temp[jj] + 1.0e-2)
+    CV = CVSyst + CVStat
+    if constrained:
+        CVYY = CV[26:, 26:]
+        CVXY = CV[:26, 26:]
+        CVYX = CV[26:, :26]
+        CVXX = CV[:26, :26]
+
+        nY = ObsSetsF[26:]
+        muY = BkgSetsF[26:] + SSRWF[26:] + temp[26:]
+        muX = BkgSetsF[:26] + SSRWF[:26] + temp[:26]
+
+        muXC = muX + np.dot(np.dot(CVXY, inv(CVYY)), nY - muY)
+        CVXXc = CVXX - np.dot(np.dot(CVXY, inv(CVYY)), CVYX)
+
+        if Asimov:
+            nX = BkgSetsF[:26] + SigSetsF[:26]
+        else:
+            nX = ObsSetsF[:26]
+        TS = np.dot(np.dot(nX[:25] - muXC[:25], inv(CVXXc[:25, :25])), nX[:25] - muXC[:25])
+    else:
+        if Asimov:
+            nXY = BkgSetsF + SigSetsF
+        else:
+            nXY = ObsSetsF
+        muXY = BkgSetsF + SSRWF + temp
+        XV = nXY - muXY
+        if RemoveOverflow:
+            XV[25], XV[51], XV[77], XV[103], XV[114], XV[125], XV[136] = 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0
+
+        TS = np.dot(np.dot(XV, inv(CV)), XV)
+
+    return TS
+
+def Decay_muB_OscChi2_4D(Ue4sq, Um4sq, g, m4, temp, constrained=False, RemoveOverflow=False, sigReps=None, Asimov=False):
+    """Calculates the chi-squared from the full covariance matrix,
+       allowing for oscillated backgrounds (oscillating as a function of *reconstructed* neutrino energy)
+
+       "constrained" is an option of whether to apply the Covariance-Matrix-Constraint method on the nu_e CC fully-contained sample
+       Default for our analyses will be "False"
+
+       "RemoveOverflow" allows for discarding the last (overflow) bin of each sample when calculating the test statistic
+
+       "Asimov" allows for determining the Asimov sensitivity expectation instead of the data-derived constraint
+
+       "sigReps" allows for replacement of the different signal samples (nu_e CC FC/PC, nu_mu CC FC/PC) instead of re-weighting the reconstructed-energy distributions
+       This allows for including oscillations as a function of *true* neutrino energy.
+    """
+    CVStat = np.zeros(np.shape(FCov))
+    CVSyst = np.zeros(np.shape(FCov))
+
+    if sigReps is not None:
+        if len(sigReps) != 7:
+            print("Signal Replacement Vector Needs to have 7 Elements!")
+            return 0
+    else:
+        sigReps = [None for k in range(7)]
+
+    SSRW = []
+    for SI in range(len(Sets)):
+        if sigReps[SI] is None:
+            ST = SigTypes[SI]
+            BE = BEdges[SI]
+
+            if ST == 'nue':
+                RWVec = [1.0 for kk in range(len(BE) - 1)]
+            elif ST == 'numu':
+                RWVec = [DecayPmmAvg4D(BE[kk], BE[kk + 1], LMBT, g, m4, Ue4sq, Um4sq) for kk in range(len(BE) - 1)]
+            elif ST == 'NCPi0' or ST == 'numuPi0':
+                RWVec = [1.0 for kk in range(len(BE) - 1)]
+
+            SSRW.append(SigSets[SI] * RWVec)
+        else:
+            SSRW.append(sigReps[SI])
+
+    SSRWF = np.concatenate(SSRW)
+    for ii in range(len(SigSetsF)):
+        CVStat[ii][ii] = CNPStat(ObsSetsF[ii], SSRWF[ii] + BkgSetsF[ii] + temp[ii])
+        for jj in range(len(SigSetsF)):
+            CVSyst[ii][jj] = FCov[ii][jj] * (SSRWF[ii] + BkgSetsF[ii] + temp[ii] + 1.0e-2) * (
+                        SSRWF[jj] + BkgSetsF[jj] + temp[jj] + 1.0e-2)
+    CV = CVSyst + CVStat
+    if constrained:
+        CVYY = CV[26:, 26:]
+        CVXY = CV[:26, 26:]
+        CVYX = CV[26:, :26]
+        CVXX = CV[:26, :26]
+
+        nY = ObsSetsF[26:]
+        muY = BkgSetsF[26:] + SSRWF[26:] + temp[26:]
+        muX = BkgSetsF[:26] + SSRWF[:26] + temp[:26]
+
+        muXC = muX + np.dot(np.dot(CVXY, inv(CVYY)), nY - muY)
+        CVXXc = CVXX - np.dot(np.dot(CVXY, inv(CVYY)), CVYX)
+
+        if Asimov:
+            nX = BkgSetsF[:26] + SigSetsF[:26]
+        else:
+            nX = ObsSetsF[:26]
+        TS = np.dot(np.dot(nX[:25] - muXC[:25], inv(CVXXc[:25, :25])), nX[:25] - muXC[:25])
+    else:
+        if Asimov:
+            nXY = BkgSetsF + SigSetsF
+        else:
+            nXY = ObsSetsF
+        muXY = BkgSetsF + SSRWF + temp
+        XV = nXY - muXY
+        if RemoveOverflow:
+            XV[25], XV[51], XV[77], XV[103], XV[114], XV[125], XV[136] = 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0
+
+        TS = np.dot(np.dot(XV, inv(CV)), XV)
+
+    return TS
 
 def MuBNuEDis(dm41, Ue4Sq):
     """Function for reweighting MicroBooNE nu_e spectra in terms of true energy instead of reconstructed energy"""
@@ -485,6 +662,60 @@ def DecayMuBNuMuDis(gm4, Um4Sq):
     for k in range(len(NuMuCC_TrueEDist_FC)):
         RWFact = DecayPmmAvg(
             MuB_BinEdges_NuMu[k], MuB_BinEdges_NuMu[k + 1], LMBT, gm4, Um4Sq
+        )
+        PmmRW_FC.append(NuMuCC_TrueEDist_FC[k] * RWFact)
+        PmmRW_PC.append(NuMuCC_TrueEDist_PC[k] * RWFact)
+
+    RecoDist_FC_0 = np.dot(NuMuCC_MigMat_FC, PmmRW_FC)
+    RecoDist_PC_0 = np.dot(NuMuCC_MigMat_PC, PmmRW_PC)
+
+    RecoDist_FC = []
+    RecoDist_PC = []
+    for j in range(25):
+        RecoDist_FC.append(0.5 * (RecoDist_FC_0[2 * j] + RecoDist_FC_0[2 * j + 1]))
+        RecoDist_PC.append(0.5 * (RecoDist_PC_0[2 * j] + RecoDist_PC_0[2 * j + 1]))
+    RecoDist_FC.append(np.sum(RecoDist_FC_0[50:]))
+    RecoDist_PC.append(np.sum(RecoDist_PC_0[50:]))
+
+    FCEvts = [RecoDist_FC[kk] * NuMuCC_Eff_FC[kk] for kk in range(len(NuMuCC_Eff_FC))]
+    PCEvts = [RecoDist_PC[kk] * NuMuCC_Eff_PC[kk] for kk in range(len(NuMuCC_Eff_PC))]
+
+    return [FCEvts, PCEvts]
+
+def DecayMuBNuMuDis3D(gm4, Ue4Sq, Um4Sq):
+    """Function for reweighting MicroBooNE nu_mu spectra in terms of true energy instead of reconstructed energy"""
+    PmmRW_FC = []
+    PmmRW_PC = []
+    for k in range(len(NuMuCC_TrueEDist_FC)):
+        RWFact = DecayPmmAvg3D(
+            MuB_BinEdges_NuMu[k], MuB_BinEdges_NuMu[k + 1], LMBT, gm4, Ue4Sq, Um4Sq
+        )
+        PmmRW_FC.append(NuMuCC_TrueEDist_FC[k] * RWFact)
+        PmmRW_PC.append(NuMuCC_TrueEDist_PC[k] * RWFact)
+
+    RecoDist_FC_0 = np.dot(NuMuCC_MigMat_FC, PmmRW_FC)
+    RecoDist_PC_0 = np.dot(NuMuCC_MigMat_PC, PmmRW_PC)
+
+    RecoDist_FC = []
+    RecoDist_PC = []
+    for j in range(25):
+        RecoDist_FC.append(0.5 * (RecoDist_FC_0[2 * j] + RecoDist_FC_0[2 * j + 1]))
+        RecoDist_PC.append(0.5 * (RecoDist_PC_0[2 * j] + RecoDist_PC_0[2 * j + 1]))
+    RecoDist_FC.append(np.sum(RecoDist_FC_0[50:]))
+    RecoDist_PC.append(np.sum(RecoDist_PC_0[50:]))
+
+    FCEvts = [RecoDist_FC[kk] * NuMuCC_Eff_FC[kk] for kk in range(len(NuMuCC_Eff_FC))]
+    PCEvts = [RecoDist_PC[kk] * NuMuCC_Eff_PC[kk] for kk in range(len(NuMuCC_Eff_PC))]
+
+    return [FCEvts, PCEvts]
+
+def DecayMuBNuMuDis4D(g, m4, Ue4Sq, Um4Sq):
+    """Function for reweighting MicroBooNE nu_mu spectra in terms of true energy instead of reconstructed energy"""
+    PmmRW_FC = []
+    PmmRW_PC = []
+    for k in range(len(NuMuCC_TrueEDist_FC)):
+        RWFact = DecayPmmAvg4D(
+            MuB_BinEdges_NuMu[k], MuB_BinEdges_NuMu[k + 1], LMBT, g, m4, Ue4Sq, Um4Sq
         )
         PmmRW_FC.append(NuMuCC_TrueEDist_FC[k] * RWFact)
         PmmRW_PC.append(NuMuCC_TrueEDist_PC[k] * RWFact)
