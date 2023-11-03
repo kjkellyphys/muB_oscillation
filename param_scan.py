@@ -1,11 +1,19 @@
 import numpy as np
 import copy
-from scipy.special import sici,expi
+from scipy.special import sici, expi
 import MicroTools as micro
 from MicroTools import unfolder
 from MicroTools.InclusiveTools.inclusive_osc_tools import DecayPmmAvg
-from MicroTools.InclusiveTools.inclusive_osc_tools import Decay_muB_OscChi2, Decay_muB_OscChi2_3D, Decay_muB_OscChi2_4D
-from MicroTools.InclusiveTools.inclusive_osc_tools import DecayMuBNuMuDis, DecayMuBNuMuDis3D, DecayMuBNuMuDis4D
+from MicroTools.InclusiveTools.inclusive_osc_tools import (
+    Decay_muB_OscChi2,
+    Decay_muB_OscChi2_3D,
+    Decay_muB_OscChi2_4D,
+)
+from MicroTools.InclusiveTools.inclusive_osc_tools import (
+    DecayMuBNuMuDis,
+    DecayMuBNuMuDis3D,
+    DecayMuBNuMuDis4D,
+)
 
 import MiniTools as mini
 
@@ -25,8 +33,10 @@ GBFC = unfolder.MBtomuB(
 # )
 
 # Load the MiniBooNE MC from data release
-#MiniBooNE_Signal = micro.mb_mc_data_release
-MiniBooNE_Signal = np.loadtxt("/Users/taozhou/Documents/GitHub/muB_oscillation/MiniTools/include/miniboone_2020/miniboone_numunuefullosc_ntuple.txt")
+MiniBooNE_Signal = micro.mb_mc_data_release  # NOTE: updated to 2020
+# MiniBooNE_Signal = np.loadtxt(
+#     "/Users/taozhou/Documents/GitHub/muB_oscillation/MiniTools/include/miniboone_2020/miniboone_numunuefullosc_ntuple.txt"
+# )
 MB_Ereco_unfold_bins = micro.bin_edges_reco
 MB_Ereco_official_bins = micro.bin_edges * 1e-3
 MB_Ereco_official_bins_numu = micro.bin_edges_numu * 1e-3
@@ -38,7 +48,7 @@ e_prod_e_int_bins = np.linspace(0, 3, 51)  # GeV
 Length = MiniBooNE_Signal[:, 2] / 100000  # Kilometers
 # Reweighted by a factor of 1/24860 to match Pedro's signal rate
 Weight = MiniBooNE_Signal[:, 3] / len(MiniBooNE_Signal[:, 3])
-#Weight = MiniBooNE_Signal[:, 3] / 24860
+# Weight = MiniBooNE_Signal[:, 3] / 24860
 NREPLICATION = 10
 
 
@@ -90,10 +100,8 @@ def create_Etrue_and_Weight_int(n_replications=NREPLICATION):
 
 
 # --------------------------------------------------------------------------------
-
-
 class Sterile:
-    def __init__(self, gm4, Ue4Sq, Um4Sq):
+    def __init__(self, g, m4, Ue4Sq, Um4Sq, decouple_decay=False):
         """__init__ Sterile neutrino class
 
         This is the model class.
@@ -101,24 +109,46 @@ class Sterile:
 
         Parameters
         ----------
-        gm4 : float
+        g : float
             sterile-scalar coupling constant
+        m4: float
+            sterile mass
         Ue4Sq : float
             electron mixing squared
         Um4Sq : float
             muon mixing squared
         """
-        self.gm4 = gm4
+        self.g = g
+        self.m4 = m4
         self.Um4Sq = Um4Sq
         self.Ue4Sq = Ue4Sq
+        self.Us4Sq = 1 - self.Ue4Sq - self.Um4Sq  # Sterile mixing squared
+        self.decouple_decay = decouple_decay
 
     def GammaLab(self, E4):
         """Etrue -- GeV"""
-        return self.gm4**2 / (32 * np.pi * E4)
+        if self.decouple_decay:
+            return (self.g * self.m4) ** 2 / (16 * np.pi * E4)
+        else:
+            return (
+                self.Us4Sq
+                * (1 - self.Us4Sq)
+                * (self.g * self.m4) ** 2
+                / (16 * np.pi * E4)
+            )
 
     def Pdecay(self, E4, Length):
         """E4 -- GeV, Length -- Kilometers"""
         return 1 - np.exp(-1.267 * (4 * self.GammaLab(E4) * Length))
+
+    def Pme(self, E4, Length):
+        return (
+            self.Us4Sq
+            * self.Um4Sq
+            * self.Ue4Sq
+            / (1 - self.Us4Sq)
+            * self.Pdecay(E4, Length)
+        )
 
     def Pdecay_binned_avg(self, E4_bin_edges, fixed_Length=LMBT):
         """E4_bin_edges -- array in GeV, Length -- Kilometers"""
@@ -132,18 +162,17 @@ class Sterile:
         # exponential argument
         x = -1.267 * (4 * self.GammaLab(1) * fixed_Length)
 
-        # Average over bin assuming constant rate
-        # return self.Pdecay(el + de / 2, fixed_Length)
-        # return 1 / de * ((er - x) * np.exp(x / er) - (el - x) * np.exp(x / el))
-        return 1 / de * ((er * np.exp(x / er) - x * expi(x / er)) - (el * np.exp(x / el) - x * expi(x / el)))
+        return (
+            1
+            / de
+            * (
+                (er * np.exp(x / er) - x * expi(x / er))
+                - (el * np.exp(x / el) - x * expi(x / el))
+            )
+        )
+
     def dPdecaydX(self, Eparent, Edaughter):
         """The probability of daughter neutrino energy"""
-
-        # NOTE -- this depends on the model -- not sure what is going on here?
-        # decay_w_base = (
-        #     np.linspace(1, 1 + 2 * (n_replications - 1), n_replications)
-        #     / n_replications**2
-        # )
 
         decay_w_base = Edaughter / Eparent
 
@@ -151,7 +180,7 @@ class Sterile:
 
 
 # --------------------------------------------------------------------------------
-def DecayReturnMicroBooNEChi2(theta):
+def DecayReturnMicroBooNEChi2(theta, decouple_decay=True):
     """DecayReturnMicroBooNEChi2 Returns the MicroBooNE chi2
 
     Parameters
@@ -168,7 +197,8 @@ def DecayReturnMicroBooNEChi2(theta):
     Um4Sq, gm4 = theta
 
     # Our new physics class
-    sterile = Sterile(gm4, 0, Um4Sq)
+    # For deGouvea's model, we fix m4 = 1 eV, and identify g = gm4.
+    sterile = Sterile(gm4, 1, 0, Um4Sq, decouple_decay=decouple_decay)
 
     # Replicating events for multiple daughter neutrino energies
     Etrue_parent, Etrue_daughter = create_Etrue_and_Weight_int()
@@ -249,67 +279,8 @@ def DecayReturnMicroBooNEChi2(theta):
 
     return [Um4Sq, gm4, MB_chi2, MuB_chi2, MuB_chi2_Asimov]
 
-class Sterile3D:
-    def __init__(self, gm4, Ue4Sq, Um4Sq):
-        """__init__ Sterile neutrino class
 
-        This is the model class.
-        It should contain everything we need to compute for a fixed set of couplings.
-
-        Parameters
-        ----------
-        gm4 : float
-            sterile-scalar coupling constant
-        Ue4Sq : float
-            electron mixing squared
-        Um4Sq : float
-            muon mixing squared
-        """
-        self.gm4 = gm4
-        self.Um4Sq = Um4Sq
-        self.Ue4Sq = Ue4Sq
-
-    def GammaLab(self, E4):
-        """Etrue -- GeV"""
-        return self.gm4**2 / (16 * np.pi * E4)
-    def Pme_3D(self, E4, Length):
-        return ((1 - self.Um4Sq - self.Ue4Sq) * (self.Um4Sq * self.Ue4Sq) ** 2 / (self.Um4Sq + self.Ue4Sq) * (1 - np.exp(
-            -(1 - self.Um4Sq - self.Ue4Sq) * (self.Um4Sq + self.Ue4Sq) * 1.267 * 4 * self.gm4 ** 2 * Length / (16 * np.pi * E4))))
-    def Pdecay(self, E4, Length):
-        """E4 -- GeV, Length -- Kilometers"""
-        return 1 - np.exp(-1.267 * (4 * self.GammaLab(E4) * Length))
-
-    def Pdecay_binned_avg(self, E4_bin_edges, fixed_Length=LMBT):
-        """E4_bin_edges -- array in GeV, Length -- Kilometers"""
-        de = np.diff(E4_bin_edges)
-        el = E4_bin_edges[:-1]
-
-        # NOTE: We should check our fits are independent of this choice!!
-        el[el == 0] = 1e-3  # 1 MeV regulator
-        er = E4_bin_edges[1:]
-
-        # exponential argument
-        x = -(1 - self.Um4Sq - self.Ue4Sq) * (self.Um4Sq + self.Ue4Sq) * 1.267 * (4 * self.GammaLab(1) * fixed_Length)
-
-        # Average over bin assuming constant rate
-        # return self.Pdecay(el + de / 2, fixed_Length)
-        # return 1 / de * ((er - x) * np.exp(x / er) - (el - x) * np.exp(x / el))
-        return 1 / de * ((er * np.exp(x / er) - x * expi(x / er)) - (el * np.exp(x / el) - x * expi(x / el)))
-
-    def dPdecaydX(self, Eparent, Edaughter):
-        """The probability of daughter neutrino energy"""
-
-        # NOTE -- this depends on the model -- not sure what is going on here?
-        # decay_w_base = (
-        #     np.linspace(1, 1 + 2 * (n_replications - 1), n_replications)
-        #     / n_replications**2
-        # )
-
-        decay_w_base = Edaughter / Eparent
-
-        return decay_w_base
-
-def DecayReturnMicroBooNEChi2_3D(theta):
+def DecayReturnMicroBooNEChi2_3D(theta, decouple_decay=False):
     """DecayReturnMicroBooNEChi2 Returns the MicroBooNE chi2
 
     Parameters
@@ -326,7 +297,7 @@ def DecayReturnMicroBooNEChi2_3D(theta):
     gm4, Ue4Sq, Um4Sq = theta
 
     # Our new physics class
-    sterile = Sterile3D(gm4, Ue4Sq, Um4Sq)
+    sterile = Sterile(gm4, Ue4Sq, Um4Sq, decouple_decay=decouple_decay)
 
     # Replicating events for multiple daughter neutrino energies
     Etrue_parent, Etrue_daughter = create_Etrue_and_Weight_int()
@@ -351,7 +322,7 @@ def DecayReturnMicroBooNEChi2_3D(theta):
 
     # Average disappearance in each bin of MB MC data release
     P_avg = sterile.Pdecay_binned_avg(MB_Ereco_official_bins_numu, fixed_Length=LMBT)
-    P_mumu_avg = 1 + (1 - Ue4Sq - Um4Sq) * Um4Sq ** 2 / (Ue4Sq + Um4Sq) * (1 - P_avg)
+    P_mumu_avg = 1 + (1 - Ue4Sq - Um4Sq) * Um4Sq**2 / (Ue4Sq + Um4Sq) * (1 - P_avg)
 
     MB_chi2 = mini.fit.chi2_MiniBooNE_2020(MBSig_for_MBfit, Pmumu=P_mumu_avg, Pee=1)
 
@@ -409,66 +380,8 @@ def DecayReturnMicroBooNEChi2_3D(theta):
 
     return [gm4, Ue4Sq, Um4Sq, MB_chi2, MuB_chi2, MuB_chi2_Asimov]
 
-class Sterile4D:
-    def __init__(self, g, m4, Ue4Sq, Um4Sq):
-        """__init__ Sterile neutrino class
 
-        This is the model class.
-        It should contain everything we need to compute for a fixed set of couplings.
-
-        Parameters
-        ----------
-        g : float
-            sterile-scalar coupling constant
-        m4: float
-            sterile mass
-        Ue4Sq : float
-            electron mixing squared
-        Um4Sq : float
-            muon mixing squared
-        """
-        self.g = g
-        self.m4 = m4
-        self.Um4Sq = Um4Sq
-        self.Ue4Sq = Ue4Sq
-
-    def GammaLab(self, E4):
-        """Etrue -- GeV"""
-        return (self.g * self.m4) ** 2 / (16 * np.pi * E4)
-    def Pme_3D(self, E4, Length):
-        return ((1 - self.Um4Sq - self.Ue4Sq) * (self.Um4Sq * self.Ue4Sq) ** 2 / (self.Um4Sq + self.Ue4Sq) * (1 - np.exp(
-            -(1 - self.Um4Sq - self.Ue4Sq) * (self.Um4Sq + self.Ue4Sq) * 1.267 * 4 * (self.g * self.m4) ** 2 * Length / (16 * np.pi * E4))))
-    def Pdecay_binned_avg(self, E4_bin_edges, fixed_Length=LMBT):
-        """E4_bin_edges -- array in GeV, Length -- Kilometers"""
-        de = np.diff(E4_bin_edges)
-        el = E4_bin_edges[:-1]
-
-        # NOTE: We should check our fits are independent of this choice!!
-        el[el == 0] = 1e-3  # 1 MeV regulator
-        er = E4_bin_edges[1:]
-
-        # exponential argument
-        x = -(1 - self.Um4Sq - self.Ue4Sq) * (self.Um4Sq + self.Ue4Sq) * 1.267 * (4 * self.GammaLab(1) * fixed_Length)
-
-        # Average over bin assuming constant rate
-        # return self.Pdecay(el + de / 2, fixed_Length)
-        # return 1 / de * ((er - x) * np.exp(x / er) - (el - x) * np.exp(x / el))
-        return 1 / de * ((er * np.exp(x / er) - x * expi(x / er)) - (el * np.exp(x / el) - x * expi(x / el)))
-
-    def dPdecaydX(self, Eparent, Edaughter):
-        """The probability of daughter neutrino energy"""
-
-        # NOTE -- this depends on the model -- not sure what is going on here?
-        # decay_w_base = (
-        #     np.linspace(1, 1 + 2 * (n_replications - 1), n_replications)
-        #     / n_replications**2
-        # )
-
-        decay_w_base = Edaughter / Eparent
-
-        return decay_w_base
-
-def DecayReturnMicroBooNEChi2_4D(theta):
+def DecayReturnMicroBooNEChi2_4D(theta, decouple_decay=False):
     """DecayReturnMicroBooNEChi2 Returns the MicroBooNE chi2
 
     Parameters
@@ -485,7 +398,7 @@ def DecayReturnMicroBooNEChi2_4D(theta):
     g, m4, Ue4Sq, Um4Sq = theta
 
     # Our new physics class
-    sterile = Sterile4D(g, m4, Ue4Sq, Um4Sq)
+    sterile = Sterile(g, m4, Ue4Sq, Um4Sq, decouple_decay=decouple_decay)
 
     # Replicating events for multiple daughter neutrino energies
     Etrue_parent, Etrue_daughter = create_Etrue_and_Weight_int()
@@ -510,7 +423,10 @@ def DecayReturnMicroBooNEChi2_4D(theta):
 
     # Average disappearance in each bin of MB MC data release
     P_avg = sterile.Pdecay_binned_avg(MB_Ereco_official_bins_numu, fixed_Length=LMBT)
-    P_mumu_avg = 1 + (1 - Ue4Sq - Um4Sq) * Um4Sq ** 2 / (Ue4Sq + Um4Sq) * (1 - P_avg)
+    P_mumu_avg = 1 + (1 - Ue4Sq - Um4Sq) * Um4Sq**2 / (Ue4Sq + Um4Sq) * (1 - P_avg)
+    P_ee_avg = 1 + (1 - Ue4Sq - Um4Sq) * Ue4Sq**2 / (Ue4Sq + Um4Sq) * (
+        1 - P_avg
+    )  # NOTE: what to do with this?
 
     MB_chi2 = mini.fit.chi2_MiniBooNE_2020(MBSig_for_MBfit, Pmumu=P_mumu_avg, Pee=1)
 

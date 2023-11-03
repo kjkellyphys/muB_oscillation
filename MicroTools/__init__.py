@@ -11,17 +11,15 @@ path_plots = f"{local_dir}/../plots/"
 
 ##################################################################
 # MiniBooNE data
-path_mb_data = f"{local_dir}/MB_data/"
-path_mb_data_release = f"{path_mb_data}/data_release_2018/"
-mb_data_osctables = f"{path_mb_data}/MB_osc_tables/"
+path_mb_data = f"{local_dir}/../MiniTools/include/"
+path_mb_data_release = f"{path_mb_data}MB_data_release/fhcmode/"
+# mb_data_osctables = f"{path_mb_data}MB_osc_tables/" # NOTE: This file is not used?
 
 # reco neutrino energy, true neutrino energy, neutrino beampipe, and event weight
 mb_mc_data_release = np.genfromtxt(
-    path_mb_data_release + "/miniboone_numunuefullosc_ntuple.txt"
+    f"{path_mb_data_release}miniboone_numunuefullosc_ntuple.txt"
 )
-bin_edges = np.genfromtxt(
-    path_mb_data_release + "/miniboone_binboundaries_nue_lowe.txt"
-)
+bin_edges = np.genfromtxt(f"{path_mb_data_release}miniboone_binboundaries_nue_lowe.txt")
 bin_centers = bin_edges[:-1] + np.diff(bin_edges) / 2.0
 bin_width = np.diff(bin_edges)
 mb_nue_analysis_data = np.genfromtxt(
