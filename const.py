@@ -115,12 +115,14 @@ alphaQED = 1.0 / 137.03599908421  # Fine structure constant at q2 -> 0
 eQED = np.sqrt((4 * np.pi) * alphaQED)
 
 # get running alphaQED
+"""
 Q, inv_alphaQED = np.genfromtxt(
     resources.open_text("DarkNews.include.aux_data", "alpha_QED_running_posQ2.dat"),
     unpack=True,
 )
-runningAlphaQED = interpolate.interp1d(Q, 1.0 / inv_alphaQED)
 
+runningAlphaQED = interpolate.interp1d(Q, 1.0 / inv_alphaQED)
+"""
 ################################################
 # Weak sector
 Gf = 1.16637876e-5  # Fermi constant (GeV^-2)

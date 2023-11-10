@@ -156,7 +156,7 @@ class Sterile:
                 return (
                     self.Us4Sq
                     * (1 - self.Us4Sq)
-                    * (self.g * self.m4) ** 2
+                    * (self.g * self.m4 * 1e-9) ** 2
                     / (16 * np.pi * E4)
                 )
 
