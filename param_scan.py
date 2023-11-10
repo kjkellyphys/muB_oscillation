@@ -313,8 +313,13 @@ def DecayReturnMicroBooNEChi2(
     # P_avg = sterile.Pdecay_binned_avg(MB_Ereco_official_bins_numu, fixed_Length=LMBT)
     # P_mumu_avg = (1 - Um4Sq) ** 2 + Um4Sq**2 * P_avg
     bin_c = (MB_Ereco_official_bins_numu[:-1] + MB_Ereco_official_bins_numu[1:]) / 2
-    P_mumu_avg = sterile.Pmm(bin_c, bin_c, LMBT)
-    MB_chi2 = mini.fit.chi2_MiniBooNE_2020(MBSig_for_MBfit, Pmumu=P_mumu_avg, Pee=1)
+    
+    #NOTE: we need to use Edaughter here!
+    P_mumu_avg = sterile.Pmm(E4=bin_c, Edaughter=bin_c, LMBT)
+    P_ee_avg = sterile.Pee(E4=bin_c, Edaughter=bin_c, LMBT)
+    MB_chi2 = mini.fit.chi2_MiniBooNE_2020(
+        MBSig_for_MBfit, Pmumu=P_mumu_avg, Pee=P_ee_avg
+    )
 
     # Calculate the MicroBooNE chi2 by unfolding
     MBSig_for_unfolding = np.dot(
