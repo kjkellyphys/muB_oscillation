@@ -1,20 +1,13 @@
 import numpy as np
 import copy
 from scipy.special import sici, expi
+from scipy import integrate
 import MicroTools as micro
 from MicroTools import unfolder
 from MicroTools.InclusiveTools.inclusive_osc_tools import DecayPmmAvg
 from MicroTools.InclusiveTools.inclusive_osc_tools import (
-    Decay_muB_OscChi2,
-    Decay_muB_OscChi2_3D,
-    Decay_muB_OscChi2_4D,
+    Decay_muB_OscChi2, DecayMuBNuMuDis, DecayMuBNuEDis
 )
-from MicroTools.InclusiveTools.inclusive_osc_tools import (
-    DecayMuBNuMuDis,
-    DecayMuBNuMuDis3D,
-    DecayMuBNuMuDis4D,
-)
-
 import MiniTools as mini
 import const
 
@@ -188,6 +181,14 @@ class Sterile:
             + (1 - np.exp(-Length / self.Ldec(E4) / 2)) ** 2
         )
 
+    def FdecayAvg(self, Emin, Emax, Length):
+        """dPdecaydX --> 1"""
+        integrand = lambda E4: (1 - np.exp(-Length / self.Ldec(E4)))
+        return integrate.quad(integrand, Emin, Emax)[0] / (Emax-Emin)
+    def FoscAvg(self, Emin, Emax, Length):
+        integrand = lambda E4: self.Fosc(E4, Length)
+        return integrate.quad(integrand, Emin, Emax)[0] / (Emax - Emin)
+
     def Pme(self, E4, Edaughter, Length):
         """Flavor transition probability, E4 -- GeV, Edaughter -- GeV, Length -- km"""
         # Decay term
@@ -198,7 +199,6 @@ class Sterile:
 
         # Oscillation term
         posc = self.Um4Sq * self.Ue4Sq * self.Fosc(E4, Length)
-
         return pdecay + posc
 
     def Pmm(self, E4, Edaughter, Length):
@@ -211,7 +211,6 @@ class Sterile:
 
         # Oscillation term
         posc = self.Um4Sq * (1 - self.Um4Sq) * self.Fosc(E4, Length)
-
         return 1 + pdecay - posc
 
     def Pee(self, E4, Edaughter, Length):
@@ -224,7 +223,35 @@ class Sterile:
 
         # Oscillation term
         posc = self.Ue4Sq * (1 - self.Ue4Sq) * self.Fosc(E4, Length)
+        return 1 + pdecay - posc
 
+    def PmmAvg(self, Emin, Emax, Length):
+        """
+        Averaged Disappearance probability, E4 -- GeV, Length -- km
+        E4 and Edaughter are approximated to be equal, since the discrepancy is suppressed by mixing squared
+        """
+        # Decay term
+        pdecay = self.Ue4Sq * self.FdecayAvg(Emin, Emax, Length)
+        if not self.decouple_decay:
+            # overlap of daughter with nu_e state
+            pdecay *= self.Us4Sq * self.Ue4Sq / (1 - self.Us4Sq)
+
+        # Oscillation term
+        posc = self.Ue4Sq * (1 - self.Ue4Sq) * self.FoscAvg(Emin, Emax, Length)
+        return 1 + pdecay - posc
+    def PeeAvg(self, Emin, Emax, Length):
+        """
+        Averaged Disappearance probability, E4 -- GeV, Length -- km
+        E4 and Edaughter are approximated to be equal, since the discrepancy is suppressed by mixing squared
+        """
+        # Decay term
+        pdecay = self.Ue4Sq * self.FdecayAvg(Emin, Emax, Length)
+        if not self.decouple_decay:
+            # overlap of daughter with nu_e state
+            pdecay *= self.Us4Sq * self.Ue4Sq / (1 - self.Us4Sq)
+
+        # Oscillation term
+        posc = self.Ue4Sq * (1 - self.Ue4Sq) * self.FoscAvg(Emin, Emax, Length)
         return 1 + pdecay - posc
 
     def dPdecaydX(self, Eparent, Edaughter):
@@ -312,9 +339,12 @@ def DecayReturnMicroBooNEChi2(
     # Average disappearance in each bin of MB MC data release
     # P_avg = sterile.Pdecay_binned_avg(MB_Ereco_official_bins_numu, fixed_Length=LMBT)
     # P_mumu_avg = (1 - Um4Sq) ** 2 + Um4Sq**2 * P_avg
-    bin_c = (MB_Ereco_official_bins_numu[:-1] + MB_Ereco_official_bins_numu[1:]) / 2
-    P_mumu_avg = sterile.Pmm(bin_c, bin_c, LMBT)
-    MB_chi2 = mini.fit.chi2_MiniBooNE_2020(MBSig_for_MBfit, Pmumu=P_mumu_avg, Pee=1)
+    nue_bin_edges = MB_Ereco_official_bins
+    numu_bin_edges = MB_Ereco_official_bins_numu
+    #bin_c = (MB_Ereco_official_bins_numu[:-1] + MB_Ereco_official_bins_numu[1:]) / 2
+    P_ee_avg = [sterile.PeeAvg(nue_bin_edges[i], nue_bin_edges[i+1], LMBT) for i in range(len(nue_bin_edges)-1)]
+    P_mumu_avg = [sterile.PmmAvg(numu_bin_edges[i], numu_bin_edges[i+1], LMBT) for i in range(len(numu_bin_edges)-1)]
+    MB_chi2 = mini.fit.chi2_MiniBooNE_2020(MBSig_for_MBfit, Pmumu=P_mumu_avg, Pee=P_ee_avg)
 
     # Calculate the MicroBooNE chi2 by unfolding
     MBSig_for_unfolding = np.dot(
@@ -345,25 +375,23 @@ def DecayReturnMicroBooNEChi2(
     uBtemp = np.concatenate([uBFC, uBPC, np.zeros(85)])
 
     # \nu_mu disappearance signal replacement
-    NuMuReps = DecayMuBNuMuDis(g, Um4Sq)
-
+    NuMuReps = DecayMuBNuMuDis(theta, oscillations=oscillations, decay=decay, decouple_decay=decouple_decay)
+    NuEReps = DecayMuBNuEDis(theta, oscillations=oscillations, decay=decay, decouple_decay=decouple_decay)
     # MicroBooNE
     MuB_chi2 = Decay_muB_OscChi2(
-        Um4Sq,
-        g,
+        theta,
         uBtemp,
         constrained=False,
-        sigReps=[None, None, NuMuReps[0], NuMuReps[1], None, None, None],
-        RemoveOverflow=True,
+        sigReps=[NuEReps[0], NuEReps[1], NuMuReps[0], NuMuReps[1], None, None, None],
+        RemoveOverflow=True, oscillations=oscillations, decay=decay, decouple_decay=decouple_decay
     )
     MuB_chi2_Asimov = Decay_muB_OscChi2(
-        Um4Sq,
-        g,
+        theta,
         uBtemp,
         constrained=False,
-        sigReps=[None, None, NuMuReps[0], NuMuReps[1], None, None, None],
+        sigReps=[NuEReps[0], NuEReps[1], NuMuReps[0], NuMuReps[1], None, None, None],
         RemoveOverflow=True,
-        Asimov=True,
+        Asimov=True, oscillations=oscillations, decay=decay, decouple_decay=decouple_decay
     )
 
     return [g, m4, Ue4Sq, Um4Sq, MB_chi2, MuB_chi2, MuB_chi2_Asimov]
