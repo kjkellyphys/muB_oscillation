@@ -577,13 +577,16 @@ def Decay_muB_OscChi2(theta, temp, constrained=False, RemoveOverflow=False, sigR
             BE = BEdges[SI]
 
             if ST == 'nue':
-                RWVec = [sterile.PeeAvg(BE[kk], BE[kk + 1], LMBT) for kk in range(len(BE) - 1)]
+                RWVec = sterile.EnergyDegradation(SigSets[SI], BE, 'Pee')
+                #RWVec = [sterile.PeeAvg(BE[kk], BE[kk + 1], LMBT) for kk in range(len(BE) - 1)]
+                # RWVec = [1.0 for kk in range(len(BE) - 1)]
             elif ST == 'numu':
-                RWVec = [sterile.PmmAvg(BE[kk], BE[kk + 1], LMBT) for kk in range(len(BE) - 1)]
+                RWVec = sterile.EnergyDegradation(SigSets[SI], BE, 'Pmm')
+                #RWVec = [sterile.PmmAvg(BE[kk], BE[kk + 1], LMBT) for kk in range(len(BE) - 1)]
             elif ST == 'NCPi0' or ST == 'numuPi0':
-                RWVec = [1.0 for kk in range(len(BE) - 1)]
+                RWVec = [1.0 for kk in range(len(BE) - 1)] * SigSets[SI]
 
-            SSRW.append(SigSets[SI] * RWVec)
+            SSRW.append(RWVec)
         else:
             SSRW.append(sigReps[SI])
 
@@ -654,13 +657,15 @@ def DecayMuBNuEDis(theta, oscillations=True, decay=False, decouple_decay=False):
 
     # Load the Sterile class from param_scan
     sterile = param.Sterile(theta, oscillations=oscillations, decay=decay, decouple_decay=decouple_decay)
+    '''
     PeeRW = []
     for k in range(len(MCT)):
         RWFact = sterile.PeeAvg(
             MuB_True_BinEdges[k], MuB_True_BinEdges[k + 1], LMBT
         )
         PeeRW.append(MCT[k] * RWFact)
-
+    '''
+    PeeRW = sterile.EnergyDegradation(MCT, MuB_True_BinEdges, 'Pee')
     PCNuE = GBPC_NuE.miniToMicro(PeeRW)
     PCNuE = np.insert(PCNuE, 0, [0.0])
     PCNuE = np.append(PCNuE, 0.0)
@@ -762,6 +767,7 @@ def DecayMuBNuMuDis(theta, oscillations=True, decay=False, decouple_decay=False)
 
     # Load the Sterile class from param_scan
     sterile = param.Sterile(theta, oscillations=oscillations, decay=decay, decouple_decay=decouple_decay)
+    '''
     PmmRW_FC = []
     PmmRW_PC = []
     for k in range(len(NuMuCC_TrueEDist_FC)):
@@ -770,7 +776,10 @@ def DecayMuBNuMuDis(theta, oscillations=True, decay=False, decouple_decay=False)
         )
         PmmRW_FC.append(NuMuCC_TrueEDist_FC[k] * RWFact)
         PmmRW_PC.append(NuMuCC_TrueEDist_PC[k] * RWFact)
+    '''
 
+    PmmRW_FC = sterile.EnergyDegradation(NuMuCC_TrueEDist_FC, MuB_BinEdges_NuMu, 'Pmm')
+    PmmRW_PC = sterile.EnergyDegradation(NuMuCC_TrueEDist_PC, MuB_BinEdges_NuMu, 'Pmm')
     RecoDist_FC_0 = np.dot(NuMuCC_MigMat_FC, PmmRW_FC)
     RecoDist_PC_0 = np.dot(NuMuCC_MigMat_PC, PmmRW_PC)
 
