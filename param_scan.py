@@ -239,12 +239,12 @@ class Sterile:
     def Pmmosc(self, Emin, Emax, Length):
         # osc term in Pmm, does not involve energy degradation
         return 1 - self.Um4Sq * (1 - self.Um4Sq) * self.FoscAvg(Emin, Emax, Length)
-    def Peedecay(self, Emin, Emax, Eint, Length):
+    def Peedecay(self, Emin, Emax, Eint, Length, noffset=0):
         # decay term in Pee, Emin and Emax are E4 bin edges
         if Emax < 1:
-            n = 2
+            n = 2 + noffset
         else:
-            n = 1
+            n = 1 + noffset
         pdecay = self.Ue4Sq * self.FdecayAvg(Emin, Emax, Length) * (Eint / Emax) ** n
         if not self.decouple_decay:
             # overlap of daughter with nu_e state
