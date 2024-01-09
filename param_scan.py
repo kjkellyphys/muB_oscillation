@@ -225,13 +225,14 @@ class Sterile:
         posc = self.Ue4Sq * (1 - self.Ue4Sq) * self.Fosc(E4, Length)
         return 1 + pdecay - posc
 
-    def Pmmdecay(self, Emin, Emax, Eint, Length):
+    def Pmmdecay(self, Emin, Emax, Eintmin, Eintmax, Length, noffset=0):
         # decay term in Pmm, Emin and Emax are E4 bin edges
         if Emax < 1:
-            n = 2
+            n = 2 + noffset
         else:
-            n = 1
-        pdecay = self.Um4Sq * self.FdecayAvg(Emin, Emax, Length) * (Eint / Emax) ** n
+            n = 1 + noffset
+        pdecay = self.Um4Sq * self.FdecayAvg(Emin, Emax, Length) * ((Eintmax**2 - Eintmin**2)/(Emax*Emin)) * ((Eintmin+Eintmax)/(Emin+Emax)) ** n
+        #((Eintmax**2 - Eintmin**2)/(Emax*Emin)) factor is to account for the decay rate scaling with Eint/E4 -- gives the fraction of
         if not self.decouple_decay:
             # overlap of daughter with nu_e state
             pdecay *= self.Us4Sq * self.Um4Sq / (1 - self.Us4Sq)
@@ -239,13 +240,15 @@ class Sterile:
     def Pmmosc(self, Emin, Emax, Length):
         # osc term in Pmm, does not involve energy degradation
         return 1 - self.Um4Sq * (1 - self.Um4Sq) * self.FoscAvg(Emin, Emax, Length)
-    def Peedecay(self, Emin, Emax, Eint, Length, noffset=0):
+    def Peedecay(self, Emin, Emax, Eintmin, Eintmax, Length, noffset=0):
         # decay term in Pee, Emin and Emax are E4 bin edges
         if Emax < 1:
             n = 2 + noffset
         else:
             n = 1 + noffset
-        pdecay = self.Ue4Sq * self.FdecayAvg(Emin, Emax, Length) * (Eint / Emax) ** n
+        pdecay = self.Ue4Sq * self.FdecayAvg(Emin, Emax, Length) * ((Eintmax**2 - Eintmin**2)/(Emax*Emin)) * ((Eintmin+Eintmax)/(Emin+Emax)) ** n
+        #((Eintmax**2 - Eintmin**2)/(Emax*Emin)) factor is to account for the decay rate scaling with Eint/E4 -- gives the fraction of
+        #events in this bin
         if not self.decouple_decay:
             # overlap of daughter with nu_e state
             pdecay *= self.Us4Sq * self.Ue4Sq / (1 - self.Us4Sq)
