@@ -4,6 +4,7 @@ from scipy.special import sici, expi
 from MicroTools import unfolder
 import param_scan as param
 import MicroTools as micro
+import copy
 
 GBPC_NuE = unfolder.MBtomuB(
     analysis="1eX_PC", remove_high_energy=False, unfold=False, effNoUnfold=False
@@ -586,11 +587,12 @@ def DecayMuBNuEDis(theta, oscillations=True, decay=False, decouple_decay=False):
         PeeRW.append(MCT[k] * RWFact)
     '''
     PeeRW = sterile.EnergyDegradation(MCT, MuB_True_BinEdges, 'Pee')
+    PeeRW2 = copy.deepcopy(PeeRW)
     PCNuE = GBPC_NuE.miniToMicro(PeeRW)
     PCNuE = np.insert(PCNuE, 0, [0.0])
     PCNuE = np.append(PCNuE, 0.0)
 
-    FCNuE = GBFC_NuE.miniToMicro(PeeRW)
+    FCNuE = GBFC_NuE.miniToMicro(PeeRW2)
     FCNuE = np.insert(FCNuE, 0, [0.0])
     FCNuE = np.append(FCNuE, 0.0)
 
