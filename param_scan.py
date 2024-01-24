@@ -10,6 +10,7 @@ from MicroTools.InclusiveTools.inclusive_osc_tools import (
 )
 import MiniTools as mini
 import const
+import cmath
 
 RHE = False
 UFMB = False
@@ -189,6 +190,30 @@ class Sterile:
         integrand = lambda E4: self.Fosc(E4, Length)
         return integrate.quad(integrand, Emin, Emax)[0] / (Emax - Emin)
 
+    def FoscAna(self, Emin, Emax, Length):
+        """here we evaluate the integral analytically"""
+        if Emin == 0.0:
+            Emin = 0.000001
+        if Emax == 0.0:
+            Emax = 0.000001
+        a = Length * self.m4 ** 2 * 1e3 / (4 * 197.3269804)
+        b = (Length * self.Us4Sq * (1-self.Us4Sq) * (self.g * self.m4 * 1e-9)**2 / (32 * np.pi)) / (1e-5 * 197.3269804e-16)
+        z = 1 / (Emax - Emin) * (
+            (Emax + np.exp(-(2 * b) / Emax) * Emax - 2 * np.exp(-b / Emax) * Emax * np.cos((2 * a) / Emax)
+                + (2j * a - b) * expi((2j * a - b) / Emax) + 2 * b * expi(-(2 * b) / Emax) - (2j * a + b) * expi(-(2j * a + b) / Emax))
+            - ((Emin + np.exp(-(2 * b) / Emin) * Emin - 2 * np.exp(-b / Emin) * Emin * np.cos((2 * a) / Emin)
+                + (2j * a - b) * expi((2j * a - b) / Emin) + 2 * b * expi(-(2 * b) / Emin) - (2j * a + b) * expi(-(2j * a + b) / Emin)))
+        )
+        return z.real
+
+    def FdecayAna(self, Emin, Emax, Length):
+        """here we evaluate the integral analytically"""
+        cst = (Length * self.Us4Sq * (1-self.Us4Sq) * (self.g * self.m4 * 1e-9)**2 / (16 * np.pi)) / (1e-5 * 197.3269804e-16)
+        return 1 / (Emax - Emin) * (
+            (Emax - np.exp(-cst/Emax) * Emax - cst * expi(-cst/Emax))
+            - (Emin - np.exp(-cst/Emin) * Emin - cst * expi(-cst/Emin))
+        )
+
     def Pme(self, E4, Edaughter, Length):
         """Flavor transition probability, E4 -- GeV, Edaughter -- GeV, Length -- km"""
         # Decay term
@@ -235,15 +260,19 @@ class Sterile:
             n = 2 + noffset
         else:
             n = 1 + noffset
-        pdecay = self.Um4Sq * self.FdecayAvg(Emin, Emax, Length) * ((Eintmax**2 - Eintmin**2)/(Emax*Emin)) * ((Eintmin+Eintmax)/(Emin+Emax)) ** n
+        pdecay = self.Um4Sq * self.FdecayAna(Emin, Emax, Length) * ((Eintmax**2 - Eintmin**2)/(Emax*Emin)) * ((Eintmin+Eintmax)/(Emin+Emax)) ** n
         #((Eintmax**2 - Eintmin**2)/(Emax*Emin)) factor is to account for the decay rate scaling with Eint/E4 -- gives the fraction of
         if not self.decouple_decay:
             # overlap of daughter with nu_e state
             pdecay *= self.Us4Sq * self.Um4Sq / (1 - self.Us4Sq)
         return pdecay
     def Pmmosc(self, Emin, Emax, Length):
+        if Emin == 0.0:
+            Emin = 0.000001
+        if Emax == 0.0:
+            Emax = 0.000001
         # osc term in Pmm, does not involve energy degradation
-        return 1 - self.Um4Sq * (1 - self.Um4Sq) * self.FoscAvg(Emin, Emax, Length)
+        return 1 - self.Um4Sq * (1 - self.Um4Sq) * self.FoscAna(Emin, Emax, Length)
     def Peedecay(self, Emin, Emax, Eintmin, Eintmax, Length, noffset=0):
         if Emin == 0.0:
             Emin = 0.000001
@@ -254,7 +283,7 @@ class Sterile:
             n = 2 + noffset
         else:
             n = 1 + noffset
-        pdecay = self.Ue4Sq * self.FdecayAvg(Emin, Emax, Length) * ((Eintmax**2 - Eintmin**2)/(Emax*Emin)) * ((Eintmin+Eintmax)/(Emin+Emax)) ** n
+        pdecay = self.Ue4Sq * self.FdecayAna(Emin, Emax, Length) * ((Eintmax**2 - Eintmin**2)/(Emax*Emin)) * ((Eintmin+Eintmax)/(Emin+Emax)) ** n
         #pdecay = self.Ue4Sq * self.FdecayAvg(Emin, Emax, Length) * ((Eintmin + Eintmax) / (Emin + Emax)) ** n
         #((Eintmax**2 - Eintmin**2)/(Emax*Emin)) factor is to account for the decay rate scaling with Eint/E4 -- gives the fraction of
         #events in this bin
@@ -263,8 +292,12 @@ class Sterile:
             pdecay *= self.Us4Sq * self.Ue4Sq / (1 - self.Us4Sq)
         return pdecay
     def Peeosc(self, Emin, Emax, Length):
+        if Emin == 0.0:
+            Emin = 0.000001
+        if Emax == 0.0:
+            Emax = 0.000001
         # osc term in Pee, does not involve energy degradation
-        return 1 - self.Ue4Sq * (1 - self.Ue4Sq) * self.FoscAvg(Emin, Emax, Length)
+        return 1 - self.Ue4Sq * (1 - self.Ue4Sq) * self.FoscAna(Emin, Emax, Length)
 
     #Next we migrate it to Ereco, and do the average
 
@@ -280,7 +313,7 @@ class Sterile:
             pdecay *= self.Us4Sq * self.Um4Sq / (1 - self.Us4Sq)
 
         # Oscillation term
-        posc = self.Um4Sq * (1 - self.Um4Sq) * self.FoscAvg(Emin, Emax, Length)
+        posc = self.Um4Sq * (1 - self.Um4Sq) * self.FoscAna(Emin, Emax, Length)
         return 1 + pdecay - posc
     def PeeAvg(self, Emin, Emax, Length):
         """
@@ -294,7 +327,7 @@ class Sterile:
             pdecay *= self.Us4Sq * self.Ue4Sq / (1 - self.Us4Sq)
 
         # Oscillation term
-        posc = self.Ue4Sq * (1 - self.Ue4Sq) * self.FoscAvg(Emin, Emax, Length)
+        posc = self.Ue4Sq * (1 - self.Ue4Sq) * self.FoscAna(Emin, Emax, Length)
         return 1 + pdecay - posc
 
     def dPdecaydX(self, Eparent, Edaughter):
