@@ -61,9 +61,11 @@ class MBtomuB:
 
         # Efficiency, energy bins, energy resolution, and fudge efficiency
         if analysis == "CCQE":
-            self._relative_exposure = (
-                6.67 / 12.84
-            )  # 6.67e20 POT [MicroBooNE] vs 12.84e20 POT [MiniBooNE 2018]
+            self._relative_exposure = 6.67 / 18.75
+            # 6.67e20 POT [MicroBooNE CCQE]
+            # 6.46e20 POT [MiniBooNE 2012]
+            # 12.84e20 POT [MiniBooNE 2018]
+            # 18.75e20 POT [MiniBooNE 2020]
             # Efficiency as obtained by comparing Fig. 1 in arXiv:2110.13978 with their MC binned in true energy
             self._efficiency = np.array(
                 [
@@ -110,9 +112,11 @@ class MBtomuB:
             )
 
         elif analysis == "1eX":
-            self._relative_exposure = (
-                6.369 / 12.84
-            )  # 6.369 POT [MicroBooNE] vs vs 6.46e20 POT [MiniBooNE 2012]
+            self._relative_exposure = 6.369 / 18.75
+            # 6.369 POT [MicroBooNE]
+            # 6.46e20 POT [MiniBooNE 2012]
+            # 12.84e20 POT [MiniBooNE 2018]
+            # 18.75e20 POT [MiniBooNE 2020]
             # Efficiency as obtained by comparing Fig. 1 in arXiv:2110.13978 with their migration matrix binned in true energy
             self._efficiency = np.array(
                 [
@@ -165,9 +169,11 @@ class MBtomuB:
                 f"{micro.path_unfolding_data}Migration_1eX.dat"
             )
         elif analysis == "1eX_PC":
-            self._relative_exposure = (
-                6.369 / 12.84
-            )  # 6.369 POT [MicroBooNE] vs vs 6.46e20 POT [MiniBooNE 2012]
+            self._relative_exposure = 6.369 / 12.84
+            # 6.369 POT [MicroBooNE]
+            # 6.46e20 POT [MiniBooNE 2012]
+            # 12.84e20 POT [MiniBooNE 2018]
+            # 18.75e20 POT [MiniBooNE 2020]
             # Efficiency as obtained by comparing Fig. 1 in arXiv:2110.13978 with their migration matrix binned in true energy
             self._efficiency = np.array(
                 [

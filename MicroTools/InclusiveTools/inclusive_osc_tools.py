@@ -2,7 +2,7 @@ import numpy as np
 from scipy.linalg import inv
 from scipy.special import sici, expi
 from MicroTools import unfolder
-
+import param_scan as param
 import MicroTools as micro
 
 GBPC_NuE = unfolder.MBtomuB(
@@ -341,8 +341,7 @@ MuB_True_BinEdges = [
     3.000,
 ]
 
-
-def Decay_muB_OscChi2(
+'''def Decay_muB_OscChi2(
     Um4sq,
     gm4,
     temp,
@@ -526,8 +525,10 @@ def Decay_muB_OscChi2_3D(Ue4sq, Um4sq, gm4, temp, constrained=False, RemoveOverf
         TS = np.dot(np.dot(XV, inv(CV)), XV)
 
     return TS
+'''
 
-def Decay_muB_OscChi2_4D(Ue4sq, Um4sq, g, m4, temp, constrained=False, RemoveOverflow=False, sigReps=None, Asimov=False):
+
+def Decay_muB_OscChi2(theta, temp, constrained=False, RemoveOverflow=False, sigReps=None, Asimov=False, oscillations=True, decay=False, decouple_decay=False):
     """Calculates the chi-squared from the full covariance matrix,
        allowing for oscillated backgrounds (oscillating as a function of *reconstructed* neutrino energy)
 
@@ -540,10 +541,28 @@ def Decay_muB_OscChi2_4D(Ue4sq, Um4sq, g, m4, temp, constrained=False, RemoveOve
 
        "sigReps" allows for replacement of the different signal samples (nu_e CC FC/PC, nu_mu CC FC/PC) instead of re-weighting the reconstructed-energy distributions
        This allows for including oscillations as a function of *true* neutrino energy.
+
+       oscillations: bool, optional
+            whether to include oscillations in the flavor transition probability, by default True.
+            If False, then Losc goes to infinity.
+
+        decay: bool, optional
+            whether to include decay in the flavor transition probability, by default True.
+            If False, then Ldec goes to infinity.
+
+        decouple_decay : bool, optional
+            whether to decouple the decay rate like in deGouvea's model, by default False.
+            If True, then the decay rate is independent of the mixing angles and always into nu_e states.
+
     """
+    g = theta["g"]
+    m4 = theta["m4"]
+    Ue4Sq = theta["Ue4Sq"]
+    Um4Sq = theta["Um4Sq"]
     CVStat = np.zeros(np.shape(FCov))
     CVSyst = np.zeros(np.shape(FCov))
-
+    # Load the Sterile class from param_scan
+    sterile = param.Sterile(theta, oscillations=oscillations, decay=decay, decouple_decay=decouple_decay)
     if sigReps is not None:
         if len(sigReps) != 7:
             print("Signal Replacement Vector Needs to have 7 Elements!")
@@ -558,13 +577,16 @@ def Decay_muB_OscChi2_4D(Ue4sq, Um4sq, g, m4, temp, constrained=False, RemoveOve
             BE = BEdges[SI]
 
             if ST == 'nue':
-                RWVec = [1.0 for kk in range(len(BE) - 1)]
+                RWVec = sterile.EnergyDegradation(SigSets[SI], BE, 'Pee')
+                #RWVec = [sterile.PeeAvg(BE[kk], BE[kk + 1], LMBT) for kk in range(len(BE) - 1)]
+                # RWVec = [1.0 for kk in range(len(BE) - 1)]
             elif ST == 'numu':
-                RWVec = [DecayPmmAvg4D(BE[kk], BE[kk + 1], LMBT, g, m4, Ue4sq, Um4sq) for kk in range(len(BE) - 1)]
+                RWVec = sterile.EnergyDegradation(SigSets[SI], BE, 'Pmm')
+                #RWVec = [sterile.PmmAvg(BE[kk], BE[kk + 1], LMBT) for kk in range(len(BE) - 1)]
             elif ST == 'NCPi0' or ST == 'numuPi0':
-                RWVec = [1.0 for kk in range(len(BE) - 1)]
+                RWVec = [1.0 for kk in range(len(BE) - 1)] * SigSets[SI]
 
-            SSRW.append(SigSets[SI] * RWVec)
+            SSRW.append(RWVec)
         else:
             SSRW.append(sigReps[SI])
 
@@ -626,8 +648,35 @@ def MuBNuEDis(dm41, Ue4Sq):
 
     return [FCNuE, PCNuE]
 
+def DecayMuBNuEDis(theta, oscillations=True, decay=False, decouple_decay=False):
+    """Function for reweighting MicroBooNE nu_e spectra in terms of true energy instead of reconstructed energy"""
+    g = theta["g"]
+    m4 = theta["m4"]
+    Ue4Sq = theta["Ue4Sq"]
+    Um4Sq = theta["Um4Sq"]
 
-def MuBNuMuDis(dm41, Um4Sq):
+    # Load the Sterile class from param_scan
+    sterile = param.Sterile(theta, oscillations=oscillations, decay=decay, decouple_decay=decouple_decay)
+    '''
+    PeeRW = []
+    for k in range(len(MCT)):
+        RWFact = sterile.PeeAvg(
+            MuB_True_BinEdges[k], MuB_True_BinEdges[k + 1], LMBT
+        )
+        PeeRW.append(MCT[k] * RWFact)
+    '''
+    PeeRW = sterile.EnergyDegradation(MCT, MuB_True_BinEdges, 'Pee')
+    PCNuE = GBPC_NuE.miniToMicro(PeeRW)
+    PCNuE = np.insert(PCNuE, 0, [0.0])
+    PCNuE = np.append(PCNuE, 0.0)
+
+    FCNuE = GBFC_NuE.miniToMicro(PeeRW)
+    FCNuE = np.insert(FCNuE, 0, [0.0])
+    FCNuE = np.append(FCNuE, 0.0)
+
+    return [FCNuE, PCNuE]
+
+'''def MuBNuMuDis(dm41, Um4Sq):
     """Function for reweighting MicroBooNE nu_mu spectra in terms of true energy instead of reconstructed energy"""
     PmmRW_FC = []
     PmmRW_PC = []
@@ -708,18 +757,29 @@ def DecayMuBNuMuDis3D(gm4, Ue4Sq, Um4Sq):
     PCEvts = [RecoDist_PC[kk] * NuMuCC_Eff_PC[kk] for kk in range(len(NuMuCC_Eff_PC))]
 
     return [FCEvts, PCEvts]
-
-def DecayMuBNuMuDis4D(g, m4, Ue4Sq, Um4Sq):
+'''
+def DecayMuBNuMuDis(theta, oscillations=True, decay=False, decouple_decay=False):
     """Function for reweighting MicroBooNE nu_mu spectra in terms of true energy instead of reconstructed energy"""
+    g = theta["g"]
+    m4 = theta["m4"]
+    Ue4Sq = theta["Ue4Sq"]
+    Um4Sq = theta["Um4Sq"]
+
+    # Load the Sterile class from param_scan
+    sterile = param.Sterile(theta, oscillations=oscillations, decay=decay, decouple_decay=decouple_decay)
+    '''
     PmmRW_FC = []
     PmmRW_PC = []
     for k in range(len(NuMuCC_TrueEDist_FC)):
-        RWFact = DecayPmmAvg4D(
-            MuB_BinEdges_NuMu[k], MuB_BinEdges_NuMu[k + 1], LMBT, g, m4, Ue4Sq, Um4Sq
+        RWFact = sterile.PmmAvg(
+            MuB_BinEdges_NuMu[k], MuB_BinEdges_NuMu[k + 1], LMBT
         )
         PmmRW_FC.append(NuMuCC_TrueEDist_FC[k] * RWFact)
         PmmRW_PC.append(NuMuCC_TrueEDist_PC[k] * RWFact)
+    '''
 
+    PmmRW_FC = sterile.EnergyDegradation(NuMuCC_TrueEDist_FC, MuB_BinEdges_NuMu, 'Pmm')
+    PmmRW_PC = sterile.EnergyDegradation(NuMuCC_TrueEDist_PC, MuB_BinEdges_NuMu, 'Pmm')
     RecoDist_FC_0 = np.dot(NuMuCC_MigMat_FC, PmmRW_FC)
     RecoDist_PC_0 = np.dot(NuMuCC_MigMat_PC, PmmRW_PC)
 

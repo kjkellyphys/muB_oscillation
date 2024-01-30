@@ -63,7 +63,7 @@ def MassageCovarianceMatrix(big_covariance, n_signal, n_numu):
     return covariance
 
 
-def chi2_MiniBooNE_2020(NP_MC, Pmumu=1, Pee=1, NPevents=None, mode="fhc"):
+def chi2_MiniBooNE_2020(NP_MC, Rmumu, Ree, NPevents=None, mode="fhc"):
     """chi2_MiniBooNE_2020 Get MiniBOoNE chi2 from data release in 2020 for a given mode (FHC, RHC)
 
     Parameters
@@ -127,8 +127,10 @@ def chi2_MiniBooNE_2020(NP_MC, Pmumu=1, Pee=1, NPevents=None, mode="fhc"):
     )
 
     # Apply average disapperance to the muon or electron samples
-    numu_MC *= Pmumu
-    nue_bkg *= Pee
+    #numu_MC *= Pmumu # 8 bins
+    #nue_bkg *= Pee # 11 bins
+    numu_MC = Rmumu
+    nue_bkg = Ree
 
     NP_diag_matrix = np.diag(np.concatenate([NP_MC, nue_bkg * 0.0, numu_MC * 0.0]))
     tot_diag_matrix = np.diag(np.concatenate([NP_MC, nue_bkg, numu_MC]))
