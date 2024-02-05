@@ -17,10 +17,10 @@ import cmath
 RHE = False
 UFMB = False
 GBPC = unfolder.MBtomuB(
-    analysis="1eX_PC", remove_high_energy=RHE, unfold=UFMB, effNoUnfold=True
+    analysis="1eX_PC", remove_high_energy=RHE, unfold=UFMB, effNoUnfold=True, which_template="2020"
 )
 GBFC = unfolder.MBtomuB(
-    analysis="1eX", remove_high_energy=RHE, unfold=UFMB, effNoUnfold=True
+    analysis="1eX", remove_high_energy=RHE, unfold=UFMB, effNoUnfold=True, which_template="2020"
 )
 
 # NOTE: NOT SURE WHAT THIS IS? WHY REWEIGHTED?
@@ -560,7 +560,7 @@ def DecayReturnMicroBooNEChi2(
     # MB_chi2 = mini.fit.chi2_MiniBooNE_2020(MBSig_for_MBfit, Pmumu=P_mumu_avg, Pee=P_ee_avg)
     """
 
-    # MiniBooNE energy degradation
+    """# MiniBooNE energy degradation
     # Questionable, MC file is meant for Pme channel. Not sure if it can be used for numu and nue disappearance.
     Ree_true = sterile.EnergyDegradation(
         np.histogram(Etrue, bins=e_prod_e_int_bins, weights=Weight)[0],
@@ -578,7 +578,7 @@ def DecayReturnMicroBooNEChi2(
     Rmm_reco = np.dot(Rmm_true, migration_matrix_pmm)
     MB_chi2 = mini.fit.chi2_MiniBooNE_2020(
         MBSig_for_MBfit, Rmumu=Rmm_reco, Ree=Ree_reco
-    )
+    )"""
 
     # Calculate the MicroBooNE chi2 by unfolding
     MBSig_for_unfolding = np.dot(
@@ -643,7 +643,7 @@ def DecayReturnMicroBooNEChi2(
         energy_degradation=energy_degradation
     )
 
-    return [g, m4, Ue4Sq, Um4Sq, MB_chi2, MuB_chi2, MuB_chi2_Asimov]
+    return [g, m4, Ue4Sq, Um4Sq, MuB_chi2, MuB_chi2_Asimov]
 
 
 # def DecayReturnMicroBooNEChi2_3D(theta, decouple_decay=False):

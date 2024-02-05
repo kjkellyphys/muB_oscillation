@@ -7,7 +7,7 @@ from MicroTools import antinu_tools
 
 class MBtomuB:
     def __init__(
-        self, analysis="1eX", remove_high_energy=False, unfold=True, effNoUnfold=False
+        self, analysis="1eX", remove_high_energy=False, unfold=True, effNoUnfold=False, which_template="2020"
     ):
         """This class converts an excess in MiniBooNE 2018 to the corresponding signal in MicroBooNE
 
@@ -23,6 +23,7 @@ class MBtomuB:
                                 Does the input include MiniBooNE efficiencies? If True, the input to miniToMicro
                                 must be the number of events after MiniBooNE efficiencies. If False, the input
                                 must be the number of events before MiniBooNE efficiencies.
+        which_template     ---- MiniBooNE template to unfold, which corresponds to different POT. Default: 2020
         """
         if analysis not in ["1eX", "1eX_PC", "CCQE"]:
             raise NotImplementedError(
@@ -61,7 +62,12 @@ class MBtomuB:
 
         # Efficiency, energy bins, energy resolution, and fudge efficiency
         if analysis == "CCQE":
-            self._relative_exposure = 6.67 / 18.75
+            if which_template == "2012":
+                self._relative_exposure = 6.67 / 6.46
+            elif which_template == "2018":
+                self._relative_exposure = 6.67 / 12.84
+            elif which_template == "2020":
+                self._relative_exposure = 6.67 / 18.75
             # 6.67e20 POT [MicroBooNE CCQE]
             # 6.46e20 POT [MiniBooNE 2012]
             # 12.84e20 POT [MiniBooNE 2018]
@@ -112,7 +118,15 @@ class MBtomuB:
             )
 
         elif analysis == "1eX":
-            self._relative_exposure = 6.369 / 18.75
+            if which_template == "2012":
+                self._relative_exposure = 6.369 / 6.46
+            elif which_template == "2018":
+                self._relative_exposure = 6.369 / 12.84
+            elif which_template == "2020":
+                self._relative_exposure = 6.369 / 18.75
+            elif which_template == "MicroBooNE_Only":
+                self._relative_exposure = 1.0
+                #self._relative_targets = 1.0
             # 6.369 POT [MicroBooNE]
             # 6.46e20 POT [MiniBooNE 2012]
             # 12.84e20 POT [MiniBooNE 2018]
@@ -169,7 +183,15 @@ class MBtomuB:
                 f"{micro.path_unfolding_data}Migration_1eX.dat"
             )
         elif analysis == "1eX_PC":
-            self._relative_exposure = 6.369 / 12.84
+            if which_template == "2012":
+                self._relative_exposure = 6.369 / 6.46
+            elif which_template == "2018":
+                self._relative_exposure = 6.369 / 12.84
+            elif which_template == "2020":
+                self._relative_exposure = 6.369 / 18.75
+            elif which_template == "MicroBooNE_Only":
+                self._relative_exposure = 1.0
+                #self._relative_targets = 1.0
             # 6.369 POT [MicroBooNE]
             # 6.46e20 POT [MiniBooNE 2012]
             # 12.84e20 POT [MiniBooNE 2018]

@@ -7,10 +7,10 @@ import MicroTools as micro
 import copy
 
 GBPC_NuE = unfolder.MBtomuB(
-    analysis="1eX_PC", remove_high_energy=False, unfold=False, effNoUnfold=False
+    analysis="1eX_PC", remove_high_energy=False, unfold=False, effNoUnfold=False, which_template="MicroBooNE_Only"
 )
 GBFC_NuE = unfolder.MBtomuB(
-    analysis="1eX", remove_high_energy=False, unfold=False, effNoUnfold=False
+    analysis="1eX", remove_high_energy=False, unfold=False, effNoUnfold=False, which_template="MicroBooNE_Only"
 )
 
 Sets = [
