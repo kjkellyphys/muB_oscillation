@@ -24,11 +24,11 @@ def StackCovarianceMatrix(big_covariance, n_signal, n_numu):
             n_signal : 2 * n_signal, 2 * n_signal : (2 * n_signal + n_numu)
         ]
     )
-    covariance[
-        n_signal : (n_signal + n_numu), n_signal : (n_signal + n_numu)
-    ] = big_covariance[
-        2 * n_signal : 2 * n_signal + n_numu, 2 * n_signal : (2 * n_signal + n_numu)
-    ]
+    covariance[n_signal : (n_signal + n_numu), n_signal : (n_signal + n_numu)] = (
+        big_covariance[
+            2 * n_signal : 2 * n_signal + n_numu, 2 * n_signal : (2 * n_signal + n_numu)
+        ]
+    )
 
     # assert np.abs(np.sum(covariance) - np.sum(big_covariance)) < 1.0e-3
 
@@ -50,14 +50,14 @@ def MassageCovarianceMatrix(big_covariance, n_signal, n_numu):
     covariance[0:n_total, n_total : (2 * n_total)] = StackCovarianceMatrix(
         big_covariance[0:n_total_big, n_total_big : (2 * n_total_big)], n_signal, n_numu
     )
-    covariance[
-        n_total : (2 * n_total), n_total : (2 * n_total)
-    ] = StackCovarianceMatrix(
-        big_covariance[
-            n_total_big : (2 * n_total_big), n_total_big : (2 * n_total_big)
-        ],
-        n_signal,
-        n_numu,
+    covariance[n_total : (2 * n_total), n_total : (2 * n_total)] = (
+        StackCovarianceMatrix(
+            big_covariance[
+                n_total_big : (2 * n_total_big), n_total_big : (2 * n_total_big)
+            ],
+            n_signal,
+            n_numu,
+        )
     )
     # assert np.abs(np.sum(covariance) - np.sum(big_covariance)) < 1.0e-3
     return covariance
@@ -127,8 +127,8 @@ def chi2_MiniBooNE_2020(NP_MC, Rmumu, Ree, NPevents=None, mode="fhc"):
     )
 
     # Apply average disapperance to the muon or electron samples
-    #numu_MC *= Pmumu # 8 bins
-    #nue_bkg *= Pee # 11 bins
+    # numu_MC *= Pmumu # 8 bins
+    # nue_bkg *= Pee # 11 bins
     numu_MC = Rmumu
     nue_bkg = Ree
 
@@ -164,11 +164,11 @@ def chi2_MiniBooNE_2020(NP_MC, Rmumu, Ree, NPevents=None, mode="fhc"):
             n_signal : 2 * n_signal, 2 * n_signal : (2 * n_signal + n_numu)
         ]
     )
-    error_matrix[
-        n_signal : (n_signal + n_numu), n_signal : (n_signal + n_numu)
-    ] = rescaled_covariance[
-        2 * n_signal : 2 * n_signal + n_numu, 2 * n_signal : (2 * n_signal + n_numu)
-    ]
+    error_matrix[n_signal : (n_signal + n_numu), n_signal : (n_signal + n_numu)] = (
+        rescaled_covariance[
+            2 * n_signal : 2 * n_signal + n_numu, 2 * n_signal : (2 * n_signal + n_numu)
+        ]
+    )
 
     # assert(np.abs(np.sum(error_matrix) - np.sum(rescaled_covariance)) < 1.e-3)
     # if not (np.abs(np.sum(error_matrix) - np.sum(rescaled_covariance)) < 1.0e-3):
