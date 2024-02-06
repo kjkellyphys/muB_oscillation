@@ -544,6 +544,7 @@ def Decay_muB_OscChi2(
         sigReps = [None for k in range(7)]
 
     SSRW = []
+    RWVec = []
     for SI in range(len(Sets)):
         if sigReps[SI] is None:
             ST = SigTypes[SI]
@@ -554,17 +555,16 @@ def Decay_muB_OscChi2(
                 if disappearance:
                     RWVec = [sterile.PeeAvg(BE[kk], BE[kk + 1], LMBT) for kk in range(len(BE) - 1)]
                     if energy_degradation:
-                        RWVec = sterile.EnergyDegradation(SigSets[SI], BE, "Pee")
+                        RWVec = sterile.EnergyDegradation(SigSets[SI], BE, "Pee") / SigSets[SI]
             elif ST == "numu":
                 RWVec = [1.0 for kk in range(len(BE) - 1)]
                 if disappearance:
                     RWVec = [sterile.PmmAvg(BE[kk], BE[kk + 1], LMBT) for kk in range(len(BE) - 1)]
                     if energy_degradation:
-                        RWVec = sterile.EnergyDegradation(SigSets[SI], BE, "Pmm")
+                        RWVec = sterile.EnergyDegradation(SigSets[SI], BE, "Pmm") / SigSets[SI]
             elif ST == "NCPi0" or ST == "numuPi0":
-                RWVec = [1.0 for kk in range(len(BE) - 1)] * SigSets[SI]
-
-            SSRW.append(RWVec)
+                RWVec = [1.0 for kk in range(len(BE) - 1)]
+            SSRW.append(RWVec * SigSets[SI])
         else:
             SSRW.append(sigReps[SI])
 
