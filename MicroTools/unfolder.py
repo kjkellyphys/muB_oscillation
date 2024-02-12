@@ -7,7 +7,12 @@ from MicroTools import antinu_tools
 
 class MBtomuB:
     def __init__(
-        self, analysis="1eX", remove_high_energy=False, unfold=True, effNoUnfold=False, which_template="2020"
+        self,
+        analysis="1eX",
+        remove_high_energy=False,
+        unfold=True,
+        effNoUnfold=False,
+        which_template="2020",
     ):
         """This class converts an excess in MiniBooNE 2018 to the corresponding signal in MicroBooNE
 
@@ -126,7 +131,7 @@ class MBtomuB:
                 self._relative_exposure = 6.369 / 18.75
             elif which_template == "MicroBooNE_Only":
                 self._relative_exposure = 1.0
-                #self._relative_targets = 1.0
+                # self._relative_targets = 1.0
             # 6.369 POT [MicroBooNE]
             # 6.46e20 POT [MiniBooNE 2012]
             # 12.84e20 POT [MiniBooNE 2018]
@@ -191,7 +196,7 @@ class MBtomuB:
                 self._relative_exposure = 6.369 / 18.75
             elif which_template == "MicroBooNE_Only":
                 self._relative_exposure = 1.0
-                #self._relative_targets = 1.0
+                # self._relative_targets = 1.0
             # 6.369 POT [MicroBooNE]
             # 6.46e20 POT [MiniBooNE 2012]
             # 12.84e20 POT [MiniBooNE 2018]
@@ -264,7 +269,7 @@ class MBtomuB:
 
         if self._unfold:
             # Use D'Agostini's method to unfold the MiniBooNE excess to true neutrino energy
-            u = self._MB_MC * self._bin_widths_true
+            u = np.array(self._MB_MC * self._bin_widths_true)
             for i in range(3):
                 A_times_u = np.multiply(self._migration, u)
                 M = np.multiply(A_times_u.T, 1 / np.sum(A_times_u, axis=1)).T
@@ -273,7 +278,7 @@ class MBtomuB:
 
             u = np.where(u < 0, 0, u)  # If the excess is negative, set it to 0
         else:
-            u = mini_nue
+            u = np.array(mini_nue)
             if self._effnounfold:
                 u /= self.MB_eff
 
