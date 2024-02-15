@@ -12,8 +12,8 @@ path_plots = f"{local_dir}/../plots/"
 ##################################################################
 # MiniBooNE data
 path_mb_data = f"{local_dir}/../MiniTools/include/"
-path_mb_data_release = f"{path_mb_data}MB_data_release_2018/fhcmode/"
-# path_mb_data_release = f"{path_mb_data}MB_data_release_2020/fhcmode/"
+#path_mb_data_release = f"{path_mb_data}MB_data_release_2018/fhcmode/"
+path_mb_data_release = f"{path_mb_data}MB_data_release_2020/fhcmode/"
 # mb_data_osctables = f"{path_mb_data}MB_osc_tables/" # NOTE: This file is not used?
 
 # reco neutrino energy, true neutrino energy, neutrino beampipe, and event weight

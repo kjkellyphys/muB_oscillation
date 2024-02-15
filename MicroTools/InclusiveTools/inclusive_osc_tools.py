@@ -11,14 +11,14 @@ GBPC_NuE = unfolder.MBtomuB(
     remove_high_energy=False,
     unfold=False,
     effNoUnfold=False,
-    which_template="MicroBooNE_Only",
+    which_template="2018",
 )
 GBFC_NuE = unfolder.MBtomuB(
     analysis="1eX",
     remove_high_energy=False,
     unfold=False,
     effNoUnfold=False,
-    which_template="MicroBooNE_Only",
+    which_template="2018",
 )
 
 Sets = [
@@ -681,6 +681,7 @@ def DecayMuBNuEDis(
         theta, oscillations=oscillations, decay=decay, decouple_decay=decouple_decay
     )
     PeeRW = []
+    # MCT is MiniBooNE truth level distribution from 2018. That's why it needs to be rescaled when unfolding
     for k in range(len(MCT)):
         PeeRW.append(MCT[k])
     if disappearance:
@@ -691,12 +692,12 @@ def DecayMuBNuEDis(
             PeeRW.append(MCT[k] * RWFact)
         if energy_degradation:
             PeeRW = sterile.EnergyDegradation(MCT, MuB_True_BinEdges, "Pee")
-
+    PeeRW2 = copy.deepcopy(PeeRW)
     PCNuE = GBPC_NuE.miniToMicro(PeeRW)
     PCNuE = np.insert(PCNuE, 0, [0.0])
     PCNuE = np.append(PCNuE, 0.0)
 
-    FCNuE = GBFC_NuE.miniToMicro(PeeRW)
+    FCNuE = GBFC_NuE.miniToMicro(PeeRW2)
     FCNuE = np.insert(FCNuE, 0, [0.0])
     FCNuE = np.append(FCNuE, 0.0)
 
