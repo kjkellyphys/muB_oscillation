@@ -685,11 +685,10 @@ def DecayMuBNuEDis(
     for k in range(len(MCT)):
         PeeRW.append(MCT[k])
     if disappearance:
+        # reset PeeRW
+        PeeRW = []
         for k in range(len(MCT)):
-            RWFact = sterile.PeeAvg(
-                MuB_True_BinEdges[k], MuB_True_BinEdges[k + 1], LMBT
-            )
-            PeeRW.append(MCT[k] * RWFact)
+            PeeRW.append(MCT[k] * sterile.PeeAvg(MuB_True_BinEdges[k], MuB_True_BinEdges[k + 1], LMBT))
         if energy_degradation:
             PeeRW = sterile.EnergyDegradation(MCT, MuB_True_BinEdges, "Pee")
     PeeRW2 = copy.deepcopy(PeeRW)
@@ -728,12 +727,12 @@ def DecayMuBNuMuDis(
         PmmRW_FC.append(NuMuCC_TrueEDist_FC[k])
         PmmRW_PC.append(NuMuCC_TrueEDist_PC[k])
     if disappearance:
+        # reset PmmRW_FC and PmmRW_PC 
+        PmmRW_FC = []
+        PmmRW_PC = []
         for k in range(len(NuMuCC_TrueEDist_FC)):
-            RWFact = sterile.PmmAvg(
-                MuB_BinEdges_NuMu[k], MuB_BinEdges_NuMu[k + 1], LMBT
-            )
-            PmmRW_FC.append(NuMuCC_TrueEDist_FC[k] * RWFact)
-            PmmRW_PC.append(NuMuCC_TrueEDist_PC[k] * RWFact)
+            PmmRW_FC.append(NuMuCC_TrueEDist_FC[k] * sterile.PmmAvg(MuB_BinEdges_NuMu[k], MuB_BinEdges_NuMu[k + 1], LMBT))
+            PmmRW_PC.append(NuMuCC_TrueEDist_PC[k] * sterile.PmmAvg(MuB_BinEdges_NuMu[k], MuB_BinEdges_NuMu[k + 1], LMBT))
         if energy_degradation:
             PmmRW_FC = sterile.EnergyDegradation(
                 NuMuCC_TrueEDist_FC, MuB_BinEdges_NuMu, "Pmm"
