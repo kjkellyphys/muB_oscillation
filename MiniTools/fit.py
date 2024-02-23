@@ -1,5 +1,4 @@
 import numpy as np
-
 from importlib.resources import open_text
 
 
@@ -64,7 +63,7 @@ def MassageCovarianceMatrix(big_covariance, n_signal, n_numu):
 
 
 def chi2_MiniBooNE(
-    MC_nue_app, MC_nue_dis=None, MC_numu_dis=None, mode="fhc", year="2018"
+    MC_nue_app, MC_nue_dis=None, MC_numu_dis=None, mode="fhc", year="2020"
 ):
     """chi2_MiniBooNE Get MiniBOoNE chi2 from a given data release and running mode (FHC, RHC)
 

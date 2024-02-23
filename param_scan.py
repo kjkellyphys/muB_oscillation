@@ -13,11 +13,17 @@ from MicroTools.InclusiveTools.inclusive_osc_tools import (
 import MiniTools as mini
 import const
 import cmath
+from importlib.resources import open_text
 
 
 def reweight_MC_to_nue_flux(Enu, weights):
-    flux = np.genfromtxt("MiniTools/include/fluxes/MiniBooNE_FHC.dat")
-    enu = flux[:, 0] * 1e3  # MeV
+    flux = np.genfromtxt(
+        open_text(
+            f"MiniTools.include.fluxes",
+            f"MiniBooNE_FHC.dat",
+        )
+    )
+    enu = flux[:, 0]  # MeV
     F_nue = interpolate.interp1d(enu, flux[:, 1], bounds_error=False, fill_value=0)
     F_numu = interpolate.interp1d(enu, flux[:, 2], bounds_error=False, fill_value=0)
     return weights * F_nue(Enu) / F_numu(Enu)
@@ -54,6 +60,7 @@ MB_Ereco_unfold_bins = micro.bin_edges_reco
 MB_Ereco_official_bins = micro.bin_edges * 1e-3
 MB_Ereco_official_bins_numu = micro.bin_edges_numu * 1e-3
 
+
 LMBT = 0.4685  # Baseline length in kilometers
 Ereco = MiniBooNE_Signal[:, 0] / 1000  # GeV
 Etrue = MiniBooNE_Signal[:, 1] / 1000  # GeV
@@ -63,29 +70,19 @@ Length = MiniBooNE_Signal[:, 2] / 100000  # Kilometers
 Weight = MiniBooNE_Signal[:, 3] / len(MiniBooNE_Signal[:, 3])
 # Weight = MiniBooNE_Signal[:, 3] / 24860
 NREPLICATION = 1
-nue_bkg = [
-    527.164624,
-    315.423689,
-    349.644825,
-    186.211970,
-    261.441799,
-    195.534193,
-    203.008745,
-    165.664396,
-    118.581365,
-    143.989367,
-    201.450357,
-]
-numu_MC = [
-    56314.570151,
-    86652.169005,
-    77496.377767,
-    54280.574682,
-    33589.592857,
-    18141.591625,
-    8780.439580,
-    4090.676535,
-]
+
+MC_nue_bkg_tot = np.genfromtxt(
+    open_text(
+        f"MiniTools.include.MB_data_release_2020.fhcmode",
+        f"miniboone_nuebgr_lowe.txt",
+    )
+)
+MC_numu_bkg_tot = np.genfromtxt(
+    open_text(
+        f"MiniTools.include.MB_data_release_2020.fhcmode",
+        f"miniboone_numu.txt",
+    )
+)
 
 
 def create_reco_migration_matrix(MB_bins):
@@ -184,6 +181,10 @@ class Sterile:
         self.decouple_decay = decouple_decay
         self.oscillations = oscillations
         self.decay = decay
+
+        # Vectorizing some class function
+        self.PmmAvg_vec = np.vectorize(self.PmmAvg)
+        self.PeeAvg_vec = np.vectorize(self.PeeAvg)
 
     def GammaLab(self, E4):
         """Decay rate in GeV, Etrue -- GeV"""
@@ -552,84 +553,103 @@ def DecayReturnMicroBooNEChi2(
 
     # Flavor transition probabilities -- Assuming nu4 decays only into nue
     Pme = sterile.Pme(Etrue_parent, Etrue_parent, Length_ext)
-    Weight_decay = Weight_ext * Pme
+    Weight_nue_app = Weight_ext * Pme
 
     # Calculate the MiniBooNE chi2
     if not decay and oscillations:
         # NOTE: Using Ereco from MC for oscillation-only
         MC_nue_app = np.histogram(
-            Ereco_ext, weights=Weight_decay, bins=MB_Ereco_official_bins, density=False
+            Ereco_ext,
+            weights=Weight_nue_app,
+            bins=MB_Ereco_official_bins,
+            density=False,
         )[0]
     else:
         # Migrate nue signal from Etrue to Ereco with 11 bins
         MC_nue_app = np.dot(
-            np.histogram(Etrue_daughter, bins=e_prod_e_int_bins, weights=Weight_decay)[
-                0
-            ],
+            np.histogram(
+                Etrue_daughter, bins=e_prod_e_int_bins, weights=Weight_nue_app
+            )[0],
             migration_matrix_official_bins,
         )
 
     # Average disappearance in each bin of MB MC data release
     if disappearance:
-        Weight_nue_flux = reweight_MC_to_nue_flux(Etrue_parent, Weight_decay)
-        if not decay and oscillations:
-            MC_nue_dis = np.histogram(
+        Weight_nue_flux = reweight_MC_to_nue_flux(Etrue_parent, Weight_ext)
+        Weight_nue_dis = Weight_nue_flux * sterile.Pee(
+            Etrue_parent, Etrue_parent, Length_ext
+        )
+        if (not decay) and oscillations:
+            MC_nue_bkg_intrinsic = np.histogram(
                 Ereco_ext,
                 weights=Weight_nue_flux,
                 bins=MB_Ereco_official_bins,
                 density=False,
             )[0]
+            MC_nue_bkg_intrinsic_osc = np.histogram(
+                Ereco_ext,
+                weights=Weight_nue_dis,
+                bins=MB_Ereco_official_bins,
+                density=False,
+            )[0]
         else:
             # Migrate nue signal from Etrue to Ereco with 11 bins
-            MC_nue_dis = np.dot(
-                np.histogram(
+            MC_nue_bkg_intrinsic = np.dot(
+                np.MC_nue_bkg(
                     Etrue_daughter, bins=e_prod_e_int_bins, weights=Weight_nue_flux
                 )[0],
                 migration_matrix_official_bins,
             )
+            MC_nue_bkg_intrinsic_osc = np.dot(
+                np.histogram(
+                    Etrue_daughter, bins=e_prod_e_int_bins, weights=Weight_nue_dis
+                )[0],
+                migration_matrix_official_bins,
+            )
 
-        # NOTE: skipping numu dis for now
+        # Final MC prediction for nu_e sample (w/ oscillated intrinsics)
+        MC_nue_bkg_total_w_dis = (
+            MC_nue_bkg_tot - MC_nue_bkg_intrinsic + MC_nue_bkg_intrinsic_osc
+        )
+
+        # Final MC prediction for nu_mu sample (w/ oscillated numus) -- NOTE: Averaged
+        P_mumu_avg = sterile.PmmAvg_vec(
+            MB_Ereco_official_bins_numu[:-1], MB_Ereco_official_bins_numu[1:], LMBT
+        )
+        MC_numu_bkg_total_w_dis = MC_numu_bkg_tot * P_mumu_avg
+
+        # Calculate MiniBooNE chi2
         MB_chi2 = mini.fit.chi2_MiniBooNE(
-            MC_nue_app=MC_nue_app, MC_nue_dis=MC_nue_dis, MC_numu_dis=None
+            MC_nue_app=MC_nue_app,
+            MC_nue_dis=MC_nue_bkg_total_w_dis,
+            MC_numu_dis=MC_numu_bkg_total_w_dis,
+            year="2020",
         )
 
     else:
-        MB_chi2 = mini.fit.chi2_MiniBooNE(MC_nue_app)
+        MB_chi2 = mini.fit.chi2_MiniBooNE(MC_nue_app, year="2020")
 
-    """
-    # MiniBooNE disappearance channel
-    # bin_c = (MB_Ereco_official_bins_numu[:-1] + MB_Ereco_official_bins_numu[1:]) / 2
-    P_ee_avg = [
-        sterile.PeeAvg(nue_bin_edges[i], nue_bin_edges[i + 1], LMBT)
-        for i in range(len(nue_bin_edges) - 1)
-    ]
-    P_mumu_avg = [
-        sterile.PmmAvg(numu_bin_edges[i], numu_bin_edges[i + 1], LMBT)
-        for i in range(len(numu_bin_edges) - 1)
-    ]
-    # P_mumu_avg = sterile.Pmm(bin_c, bin_c, LMBT)
-    # MB_chi2 = mini.fit.chi2_MiniBooNE_2020(MBSig_for_MBfit, Pmumu=P_mumu_avg, Pee=P_ee_avg)
-    """
-
-    """# MiniBooNE energy degradation
-    # Questionable, MC file is meant for Pme channel. Not sure if it can be used for numu and nue disappearance.
-    Ree_true = sterile.EnergyDegradation(
-        np.histogram(Etrue, bins=e_prod_e_int_bins, weights=Weight)[0],
-        e_prod_e_int_bins,
-        "Pee",
-    )
-    Rmm_true = sterile.EnergyDegradation(
-        np.histogram(Etrue, bins=e_prod_e_int_bins, weights=Weight)[0],
-        e_prod_e_int_bins,
-        "Pmm",
-    )
-    migration_matrix_pee = create_reco_migration_matrix(nue_bin_edges)
-    migration_matrix_pmm = create_reco_migration_matrix(numu_bin_edges)
-    Ree_reco = np.dot(Ree_true, migration_matrix_pee)
-    Rmm_reco = np.dot(Rmm_true, migration_matrix_pmm)
-    MB_chi2 = mini.fit.chi2_MiniBooNE_2020(
-        MBSig_for_MBfit, Rmumu=Rmm_reco, Ree=Ree_reco
-    )"""
+    # NOTE: SKIPPING ENERGY DEGRATION FOR NOW
+    # if energy_degradation:
+    #     # MiniBooNE energy degradation
+    #     # Questionable, MC file is meant for Pme channel. Not sure if it can be used for numu and nue disappearance.
+    #     Ree_true = sterile.EnergyDegradation(
+    #         np.histogram(Etrue, bins=e_prod_e_int_bins, weights=Weight)[0],
+    #         e_prod_e_int_bins,
+    #         "Pee",
+    #     )
+    #     Rmm_true = sterile.EnergyDegradation(
+    #         np.histogram(Etrue, bins=e_prod_e_int_bins, weights=Weight)[0],
+    #         e_prod_e_int_bins,
+    #         "Pmm",
+    #     )
+    #     migration_matrix_pee = create_reco_migration_matrix(nue_bin_edges)
+    #     migration_matrix_pmm = create_reco_migration_matrix(numu_bin_edges)
+    #     Ree_reco = np.dot(Ree_true, migration_matrix_pee)
+    #     Rmm_reco = np.dot(Rmm_true, migration_matrix_pmm)
+    #     MB_chi2 = mini.fit.chi2_MiniBooNE_2020(
+    #         MBSig_for_MBfit, Rmumu=Rmm_reco, Ree=Ree_reco
+    #     )
 
     # Calculate the MicroBooNE chi2 by unfolding
     # MBSig_for_unfolding = np.dot(
@@ -637,7 +657,7 @@ def DecayReturnMicroBooNEChi2(
     #     migration_matrix_unfolding_bins,
     # )
     MBSig_for_unfolding = np.histogram(
-        Ereco_ext, weights=Weight_decay, bins=MB_Ereco_official_bins, density=False
+        Ereco_ext, weights=Weight_nue_app, bins=MB_Ereco_official_bins, density=False
     )[0]
     MBSig_for_unfolding2 = copy.deepcopy(MBSig_for_unfolding)
     # MicroBooNE fully inclusive signal by unfolding MiniBooNE Signal
