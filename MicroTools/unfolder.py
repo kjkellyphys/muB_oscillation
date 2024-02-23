@@ -42,7 +42,7 @@ class MBtomuB:
 
         ## Set up data needed for unfolding ##
         self._migration = np.loadtxt(
-            f"{micro.path_unfolding_data}MiniBooNE_Migration_matrix_paper_bins.dat"
+            f"{micro.path_unfolding_data}MiniBooNE_migration_matrix_paper_bins.dat"
         )  # MiniBooNE migration matrix
         self.MB_eff = np.sum(self._migration, axis=0)
         self._MB_MC = np.loadtxt(

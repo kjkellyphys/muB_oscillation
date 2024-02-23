@@ -236,7 +236,9 @@ class Sterile:
 
     def FoscAvg(self, Emin, Emax, Length):
         integrand = lambda E4: self.Fosc(E4, Length)
-        return integrate.quad(integrand, Emin, Emax)[0] / (Emax - Emin)
+        # return integrate.quad(integrand, Emin, Emax, )[0] / (Emax - Emin)
+        x = np.linspace(Emin+1e-6, Emax, 1000)
+        return np.sum(self.Fosc(x, Length)*(x[1]-x[0]))/(Emax - Emin)
 
     def FoscAna(self, Emin, Emax, Length):
         """here we evaluate the integral analytically"""

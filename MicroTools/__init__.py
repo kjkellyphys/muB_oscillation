@@ -62,10 +62,6 @@ path_unfolding_data = f"{local_dir}/muB_data/unfolding_data/"
 path_unfolding_antinu_data = f"{path_unfolding_data}/antinu_aux/"
 
 ##################################################################
-# MCMC
-PATH_MCMC_CHAINS = f"{local_dir}/TemplateTools/mcmc_results/"
-
-##################################################################
 # Inclusive analysis
 muB_inclusive_data_path = f"{local_dir}/muB_data/inclusive_data/"
 muB_inclusive_datarelease_path = f"{muB_inclusive_data_path}/DataRelease/"
