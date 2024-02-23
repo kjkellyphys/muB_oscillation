@@ -30,14 +30,14 @@ GBPC = unfolder.MBtomuB(
     remove_high_energy=RHE,
     unfold=UFMB,
     effNoUnfold=True,
-    which_template="2018",
+    which_template="2020",
 )
 GBFC = unfolder.MBtomuB(
     analysis="1eX",
     remove_high_energy=RHE,
     unfold=UFMB,
     effNoUnfold=True,
-    which_template="2018",
+    which_template="2020",
 )
 
 # NOTE: NOT SURE WHAT THIS IS? WHY REWEIGHTED?
@@ -482,7 +482,7 @@ class Sterile:
                         Etrue_bins[i],
                         Etrue_bins[i + 1],
                         LMBT,
-                        noffset=10000,
+                        noffset=0,
                     )
                 elif which_channel == "Pmm":
                     Pdecay = self.Pmmdecay(
@@ -491,7 +491,7 @@ class Sterile:
                         Etrue_bins[i],
                         Etrue_bins[i + 1],
                         LMBT,
-                        noffset=10000,
+                        noffset=0,
                     )
                 R_deg[k][i] = Pdecay * Etrue_dist[i]
         R_sum = np.sum(R_deg, axis=0)
@@ -639,14 +639,14 @@ def DecayReturnMicroBooNEChi2(
     MBSig_for_unfolding = np.histogram(
         Ereco_ext, weights=Weight_decay, bins=MB_Ereco_official_bins, density=False
     )[0]
-
+    MBSig_for_unfolding2 = copy.deepcopy(MBSig_for_unfolding)
     # MicroBooNE fully inclusive signal by unfolding MiniBooNE Signal
     uBFC = GBFC.miniToMicro(MBSig_for_unfolding)
     uBFC = np.insert(uBFC, 0, [0.0])
     uBFC = np.append(uBFC, 0.0)
 
     # MicroBooNE partially inclusive signal by unfolding MiniBooNE Signal
-    uBPC = GBPC.miniToMicro(MBSig_for_unfolding)
+    uBPC = GBPC.miniToMicro(MBSig_for_unfolding2)
     uBPC = np.insert(uBPC, 0, [0.0])
     uBPC = np.append(uBPC, 0.0)
 
