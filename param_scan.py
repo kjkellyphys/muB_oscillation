@@ -15,6 +15,9 @@ import const
 import cmath
 from importlib.resources import open_text
 
+def create_grid_of_params(g, m4, Ue4Sq, Um4Sq):
+    paramlist_decay = np.array(np.meshgrid(g, m4, Ue4Sq, Um4Sq)).T.reshape(-1, 4)
+    return [{"g": g, "m4": m4, "Ue4Sq": Ue4Sq, "Um4Sq": Um4Sq} for g, m4, Ue4Sq, Um4Sq in paramlist_decay]
 
 def reweight_MC_to_nue_flux(Enu, weights):
     flux = np.genfromtxt(
