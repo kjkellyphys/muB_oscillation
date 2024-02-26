@@ -1,12 +1,18 @@
 import numpy as np
+
 import matplotlib
 import matplotlib.pyplot as plt
 from matplotlib import rc, rcParams
 from matplotlib.font_manager import FontProperties
+import matplotlib.tri as tri
+from scipy.spatial.distance import pdist, squareform
+
+import scipy
+from scipy.interpolate import splprep, splev
 
 ###########################
 # Matheus
-fsize = 12
+fsize = 11
 fsize_annotate = 10
 
 std_figsize = (1.2 * 3.7, 1.3 * 2.3617)
@@ -170,3 +176,156 @@ def flushalign(ax):
         elif ic == len(ax.get_xticklabels()) - 1:
             l.set_ha("right")
         ic += 1
+        
+
+# Function to find the path that connects points in order of closest proximity
+def nearest_neighbor_path(points):
+    # Compute the pairwise distance between points
+    dist_matrix = squareform(pdist(points))
+
+    # Set diagonal to a large number to avoid self-loop
+    np.fill_diagonal(dist_matrix, np.inf)
+
+    # Start from the first point
+    current_point = 0
+    path = [current_point]
+
+    # Find the nearest neighbor of each point
+    while len(path) < len(points):
+        # Find the nearest point that is not already in the path
+        nearest = np.argmin(dist_matrix[current_point])
+        # Add the nearest point to the path
+        path.append(nearest)
+        # Update the current point
+        current_point = nearest
+        # Mark the visited point so it's not revisited
+        dist_matrix[:, current_point] = np.inf
+
+    # Return the ordered path indices and the corresponding points
+    ordered_points = points[path]
+    return ordered_points
+
+
+def get_ordered_closed_region(points, logx=False, logy=False):
+    x, y = points
+
+    # check for nans
+    if np.isnan(points).sum() > 0:
+        raise ValueError("NaN's were found in input data. Cannot order the contour.")
+
+    # check for repeated x-entries --
+    # this is an error because
+    x, mask_diff = np.unique(x, return_index=True)
+    y = y[mask_diff]
+
+    if logy:
+        if (y == 0).any():
+            raise ValueError("y values cannot contain any zeros in log mode.")
+        sy = np.sign(y)
+        ssy = (np.abs(y) < 1) * (-1) + (np.abs(y) > 1) * (1)
+        y = ssy * np.log10(y * sy)
+    if logx:
+        if (x == 0).any():
+            raise ValueError("x values cannot contain any zeros in log mode.")
+        sx = np.sign(x)
+        ssx = (x < 1) * (-1) + (x > 1) * (1)
+        x = ssx * np.log10(x * sx)
+
+    points = np.array([x, y]).T
+    # points_s     = (points - points.mean(0))
+    # angles       = np.angle((points_s[:,0] + 1j*points_s[:,1]))
+    # points_sort  = points_s[angles.argsort()]
+    # points_sort += points.mean(0)
+
+    # if np.isnan(points_sort).sum()>0:
+    #     raise ValueError("NaN's were found in sorted points. Cannot order the contour.")
+    # # print(points.mean(0))
+    # # return points_sort
+    # tck, u = splprep(points_sort.T, u=None, s=0.0, per=0, k=1)
+    # # u_new = np.linspace(u.min(), u.max(), len(points[:,0]))
+    # x_new, y_new = splev(u, tck, der=0)
+    # # x_new, y_new = splev(u_new, tck, der=0)
+    dist_matrix = squareform(pdist(points))
+
+    # Set diagonal to a large number to avoid self-loop
+    np.fill_diagonal(dist_matrix, np.inf)
+
+    # Start from the first point
+    current_point = 0
+    path = [current_point]
+
+    # Find the nearest neighbor of each point
+    while len(path) < len(points):
+        # Find the nearest point that is not already in the path
+        nearest = np.argmin(dist_matrix[current_point])
+        # Add the nearest point to the path
+        path.append(nearest)
+        # Update the current point
+        current_point = nearest
+        # Mark the visited point so it's not revisited
+        dist_matrix[:, current_point] = np.inf
+
+    # Return the ordered path indices and the corresponding points
+    x_new, y_new = points[path].T
+
+    if logx:
+        x_new = sx * 10 ** (ssx * x_new)
+    if logy:
+        y_new = sy * 10 ** (ssy * y_new)
+
+    return x_new, y_new
+
+def interp_grid(
+    x,
+    y,
+    z,
+    fine_gridx=False,
+    fine_gridy=False,
+    logx=False,
+    logy=False,
+    method="interpolate",
+    smear_stddev=False,
+):
+    # default
+    if not fine_gridx:
+        fine_gridx = 100
+    if not fine_gridy:
+        fine_gridy = 100
+
+    # log scale x
+    if logx:
+        xi = np.logspace(np.min(np.log10(x)), np.max(np.log10(x)), fine_gridx)
+    else:
+        xi = np.linspace(np.min(x), np.max(x), fine_gridx)
+
+    # log scale y
+    if logy:
+        yi = np.logspace(np.min(np.log10(y)), np.max(np.log10(y)), fine_gridy)
+
+    else:
+        yi = np.linspace(np.min(y), np.max(y), fine_gridy)
+
+    Xi, Yi = np.meshgrid(xi, yi)
+    # if logy:
+    #     Yi = 10**(-Yi)
+
+    # triangulation
+    if method == "triangulation":
+        triang = tri.Triangulation(x, y)
+        interpolator = tri.LinearTriInterpolator(triang, z)
+        Zi = interpolator(Xi, Yi)
+
+    elif method == "interpolate":
+        Zi = scipy.interpolate.griddata(
+            (x, y), z, (xi[None, :], yi[:, None]), method="linear", rescale=False
+        )
+    else:
+        print(f"Method {method} not implemented.")
+
+    # gaussian smear -- not recommended
+    if smear_stddev:
+        Zi = scipy.ndimage.filters.gaussian_filter(
+            Zi, smear_stddev, mode="nearest", order=0, cval=0
+        )
+
+    return Xi, Yi, Zi
