@@ -556,6 +556,12 @@ def DecayReturnMicroBooNEChi2(
         [Weight / NREPLICATION for _ in range(NREPLICATION)], axis=0
     ).T.flatten()
 
+    '''
+        re-normalizing the muon flux
+        the MC comes from the MiniBooNE prediction which 
+        is informed by their nu_mu CC data
+    '''
+    
     # Flavor transition probabilities -- Assuming nu4 decays only into nue
     Pme = sterile.Pme(Etrue_parent, Etrue_parent, Length_ext)
     Weight_nue_app = Weight_ext * Pme
