@@ -194,7 +194,7 @@ def chi2_MiniBooNE(
         return 1e10
 
 
-def chi2_MiniBooNE_2020_combined(NP_MC, NP_MC_BAR, NPevents=None, NPevents_BAR=None):
+def chi2_MiniBooNE_2020_combined(NP_MC, NP_MC_BAR, NPevents=None, NPevents_BAR=None, year="2020"):
     """chi2_MiniBooNE_2020 Get MiniBOoNE chi2 from data release in 2020 for a given mode (FHC, RHC)
 
     Parameters
