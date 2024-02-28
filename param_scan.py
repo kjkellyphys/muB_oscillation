@@ -185,6 +185,7 @@ class Sterile:
         # Vectorizing some class function
         self.PmmAvg_vec = np.vectorize(self.PmmAvg)
         self.PeeAvg_vec = np.vectorize(self.PeeAvg)
+        self.PmmAvg_vec_deGouvea = np.vectorize(self.PmmAvg_deGouvea)
 
     def GammaLab(self, E4):
         """Decay rate in GeV, Etrue -- GeV"""
@@ -339,6 +340,16 @@ class Sterile:
         # Oscillation term
         posc = self.Ue4Sq * (1 - self.Ue4Sq) * self.Fosc(E4, Length)
         return 1 + pdecay - posc
+    
+    # ----------------------------------------------------------------
+    # de Gouvea's model
+    # ----------------------------------------------------------------
+    def Pme_deGouvea(self, E4, Edaughter, Length):
+        return self.Um4Sq * (1 - np.exp(-Length / (2*self.Ldec(E4))) )* self.dPdecaydX(E4, Edaughter)
+    
+    def PmmAvg_deGouvea(self, Emin, Emax, Length):
+        integrand = lambda E4: (1 - self.Um4Sq)**2 + self.Um4Sq**2 * np.exp(-Length / (2*self.Ldec(E4)))
+        return integrate.quad(integrand, Emin, Emax)[0] / (Emax - Emin)
 
     # ----------------------------------------------------------------
     # DECAY AND OSC PROBABILITIES IN DISAPPEARANCE ENERGY DEGRADATION
@@ -512,7 +523,57 @@ class Sterile:
 
         return R_tot
 
+def MiniBooNEChi2_deGouvea(theta, oscillations=False, decay=True, decouple_decay=True):
+    """
+    Returns the MicroBooNE chi2 for deGouvea's model
+    """
 
+    g = theta["g"]
+    m4 = theta["m4"]
+    Ue4Sq = theta["Ue4Sq"]
+    Um4Sq = theta["Um4Sq"]
+
+    sterile = Sterile(theta, oscillations=oscillations, decay=decay, decouple_decay=decouple_decay)
+
+     # Replicating events for multiple daughter neutrino energies
+    Etrue_parent, Etrue_daughter = create_Etrue_and_Weight_int()
+
+    # replicating entries of the MC data release -- baseline L and weight
+    Length_ext = np.stack([Length for _ in range(NREPLICATION)], axis=0).T.flatten()
+    Weight_ext = np.stack(
+        [Weight / NREPLICATION for _ in range(NREPLICATION)], axis=0
+    ).T.flatten()
+
+    # Flavor transition probabilities -- Assuming nu4 decays only into nue
+    Pme = sterile.Pme_deGouvea(Etrue_parent, Etrue_daughter, Length_ext)
+
+    Weight_decay = Weight_ext * Pme
+
+    # Calculate the MiniBooNE chi2
+    MBSig_for_MBfit = np.dot(
+        np.histogram(Etrue_daughter, bins=e_prod_e_int_bins, weights=Weight_decay)[0],
+        migration_matrix_official_bins,
+    )
+
+    # Average disappearance in each bin of MB MC data release
+    #P_avg = sterile.Pdecay_binned_avg(MB_Ereco_official_bins_numu, fixed_Length=LMBT)
+    #P_mumu_avg = (1 - Um4Sq) ** 2 + Um4Sq**2 * P_avg
+
+    #MB_chi2 = mini.fit.chi2_MiniBooNE_2020(MBSig_for_MBfit, Pmumu=P_mumu_avg, Pee=1)
+    P_mumu_avg_deGouvea = sterile.PmmAvg_vec_deGouvea(
+            MB_Ereco_official_bins_numu[:-1], MB_Ereco_official_bins_numu[1:], LMBT
+    )
+    MC_numu_bkg_total_w_dis_deGouvea = MC_numu_bkg_tot * P_mumu_avg_deGouvea
+
+    # Calculate MiniBooNE chi2
+    MB_chi2 = mini.fit.chi2_MiniBooNE(
+        MC_nue_app=MBSig_for_MBfit,
+        MC_nue_dis=None,
+        MC_numu_dis=None,
+        year="2018",
+    )
+
+    return [g, m4, Ue4Sq, Um4Sq, MB_chi2]
 # --------------------------------------------------------------------------------
 def DecayReturnMicroBooNEChi2(
     theta,
@@ -629,7 +690,7 @@ def DecayReturnMicroBooNEChi2(
         )
 
     else:
-        MB_chi2 = mini.fit.chi2_MiniBooNE(MC_nue_app, year="2020")
+        MB_chi2 = mini.fit.chi2_MiniBooNE(MC_nue_app, year="2018")
 
     # NOTE: SKIPPING ENERGY DEGRATION FOR NOW
     # if energy_degradation:
