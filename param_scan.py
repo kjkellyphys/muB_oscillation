@@ -48,6 +48,7 @@ GBFC = unfolder.MBtomuB(
     effNoUnfold=True,
     which_template="2020",
 )
+NREPLICATION = 1
 
 # NOTE: NOT SURE WHAT THIS IS? WHY REWEIGHTED?
 # MiniBooNE_Signal = np.loadtxt(
@@ -64,7 +65,8 @@ MB_Ereco_official_bins = micro.bin_edges * 1e-3
 MB_Ereco_official_bins_numu = micro.bin_edges_numu * 1e-3
 
 
-LMBT = 0.4685  # Baseline length in kilometers
+L_micro = 0.4685  # MicroBooNE Baseline length in kilometers
+L_mini = 0.545  # MiniBooNE Baseline length in kilometers
 Ereco = MiniBooNE_Signal[:, 0] / 1000  # GeV
 Etrue = MiniBooNE_Signal[:, 1] / 1000  # GeV
 e_prod_e_int_bins = np.linspace(0, 3, 51)  # GeV
@@ -72,7 +74,8 @@ Length = MiniBooNE_Signal[:, 2] / 100000  # Kilometers
 # Reweighted by a factor of 1/24860 to match Pedro's signal rate
 Weight = MiniBooNE_Signal[:, 3] / len(MiniBooNE_Signal[:, 3])
 # Weight = MiniBooNE_Signal[:, 3] / 24860
-NREPLICATION = 1
+
+
 
 MC_nue_bkg_tot = np.genfromtxt(
     open_text(
@@ -86,6 +89,19 @@ MC_numu_bkg_tot = np.genfromtxt(
         f"miniboone_numu.txt",
     )
 )
+
+
+'''
+    Nu_mu disappearance 2009 analysis
+'''
+MC_sample_numu_dis = micro.mb_mc_data_release_numudis  # NOTE: 2009 numu disappearance 
+
+Enumu_reco = MC_sample_numu_dis[:, 1]  # GeV
+Enumu_true = MC_sample_numu_dis[:, 2]  # GeV
+Length_numu = MC_sample_numu_dis[:, 3]  # Kilometers
+RELATIVE_POTS_09_to_20_dis = 5.58 / 18.75
+FUDGE_FACTOR = 1/1.85 # NOTE: Best we can do now until resolve the mismatch of numu samples
+Weight_numu = MC_sample_numu_dis[:, 4] / np.sum(MC_sample_numu_dis[:, 4]) * 1.90454e5 / RELATIVE_POTS_09_to_20_dis * FUDGE_FACTOR
 
 
 def create_reco_migration_matrix(MB_bins):
@@ -135,6 +151,15 @@ def create_Etrue_and_Weight_int(n_replications=NREPLICATION):
         [create_e_daughter(e, n_replications=n_replications) for e in Etrue]
     )
     Etrue_extended = np.stack([Etrue for _ in range(n_replications)], axis=0).T
+
+    return Etrue_extended.flatten(), Etrue_daughter.flatten()
+
+def create_Etrue_and_Weight_int_numu(n_replications=NREPLICATION):
+    # For every Etrue, create a list of possible daughter neutrino energy
+    Etrue_daughter = np.array(
+        [create_e_daughter(e, n_replications=n_replications) for e in Enumu_true]
+    )
+    Etrue_extended = np.stack([Enumu_true for _ in range(n_replications)], axis=0).T
 
     return Etrue_extended.flatten(), Etrue_daughter.flatten()
 
@@ -459,7 +484,7 @@ class Sterile:
 
         return decay_w_base
 
-    def Pdecay_binned_avg(self, E4_bin_edges, fixed_Length=LMBT):
+    def Pdecay_binned_avg(self, E4_bin_edges, fixed_Length=L_micro):
         """E4_bin_edges -- array in GeV, Length -- Kilometers"""
 
         # NOTE: I guess we also have to update this to include oscillations etc.
@@ -498,7 +523,7 @@ class Sterile:
                         Etrue_bins[k + 1],
                         Etrue_bins[i],
                         Etrue_bins[i + 1],
-                        LMBT,
+                        L_micro,
                         noffset=0,
                     )
                 elif which_channel == "Pmm":
@@ -507,7 +532,7 @@ class Sterile:
                         Etrue_bins[k + 1],
                         Etrue_bins[i],
                         Etrue_bins[i + 1],
-                        LMBT,
+                        L_micro,
                         noffset=0,
                     )
                 R_deg[k][i] = Pdecay * Etrue_dist[i]
@@ -515,8 +540,8 @@ class Sterile:
 
         # oscillation piece
         for i in range(len(Etrue_dist)):
-            Peeosc = self.Peeosc(Etrue_bins[i], Etrue_bins[i + 1], LMBT)
-            Pmmosc = self.Pmmosc(Etrue_bins[i], Etrue_bins[i + 1], LMBT)
+            Peeosc = self.Peeosc(Etrue_bins[i], Etrue_bins[i + 1], L_micro)
+            Pmmosc = self.Pmmosc(Etrue_bins[i], Etrue_bins[i + 1], L_micro)
             if which_channel == "Pee":
                 R_osc.append(Peeosc * Etrue_dist[i])
             if which_channel == "Pmm":
@@ -559,12 +584,12 @@ def MiniBooNEChi2_deGouvea(theta, oscillations=False, decay=True, decouple_decay
     )
 
     # Average disappearance in each bin of MB MC data release
-    #P_avg = sterile.Pdecay_binned_avg(MB_Ereco_official_bins_numu, fixed_Length=LMBT)
+    #P_avg = sterile.Pdecay_binned_avg(MB_Ereco_official_bins_numu, fixed_Length=L_micro)
     #P_mumu_avg = (1 - Um4Sq) ** 2 + Um4Sq**2 * P_avg
 
     #MB_chi2 = mini.fit.chi2_MiniBooNE_2020(MBSig_for_MBfit, Pmumu=P_mumu_avg, Pee=1)
     P_mumu_avg_deGouvea = sterile.PmmAvg_vec_deGouvea(
-            MB_Ereco_official_bins_numu[:-1], MB_Ereco_official_bins_numu[1:], LMBT
+            MB_Ereco_official_bins_numu[:-1], MB_Ereco_official_bins_numu[1:], L_micro
     )
     MC_numu_bkg_total_w_dis_deGouvea = MC_numu_bkg_tot * P_mumu_avg_deGouvea
 
@@ -585,6 +610,7 @@ def DecayReturnMicroBooNEChi2(
     decouple_decay=False,
     disappearance=False,
     energy_degradation=False,
+    use_numudis_2009=False
 ):
     """DecayReturnMicroBooNEChi2 Returns the MicroBooNE chi2
 
@@ -624,7 +650,7 @@ def DecayReturnMicroBooNEChi2(
     '''
     
     # Flavor transition probabilities -- Assuming nu4 decays only into nue
-    Pme = sterile.Pme(Etrue_parent, Etrue_parent, Length_ext)
+    Pme = sterile.Pme(Etrue_parent, Etrue_daughter, Length_ext)
     Weight_nue_app = Weight_ext * Pme
 
     # Calculate the MiniBooNE chi2
@@ -649,7 +675,7 @@ def DecayReturnMicroBooNEChi2(
     if disappearance:
         Weight_nue_flux = reweight_MC_to_nue_flux(Etrue_parent, Weight_ext)
         Weight_nue_dis = Weight_nue_flux * sterile.Pee(
-            Etrue_parent, Etrue_parent, Length_ext
+            Etrue_parent, Etrue_daughter, Length_ext
         )
         if (not decay) and oscillations:
             MC_nue_bkg_intrinsic = np.histogram(
@@ -684,11 +710,34 @@ def DecayReturnMicroBooNEChi2(
             MC_nue_bkg_tot - MC_nue_bkg_intrinsic + MC_nue_bkg_intrinsic_osc
         )
 
-        # Final MC prediction for nu_mu sample (w/ oscillated numus) -- NOTE: Averaged
-        P_mumu_avg = sterile.PmmAvg_vec(
-            MB_Ereco_official_bins_numu[:-1], MB_Ereco_official_bins_numu[1:], LMBT
+        # NUMU DISAPPEARANCE
+        if use_numudis_2009:
+            # NOTE: NEEDS FUDGE FACTOR
+            # FIXME: I did not pay close attention to daughetr vs parent so far!
+            Enumu_true_parent, Enumu_true_daughter = create_Etrue_and_Weight_int_numu()
+            Enumu_reco_ext = np.stack([Enumu_reco for _ in range(NREPLICATION)], axis=0).T.flatten()
+            Length_numu_ext = np.stack([Length_numu for _ in range(NREPLICATION)], axis=0).T.flatten()
+            Weight_numu_ext = np.stack(
+                [Weight_numu / NREPLICATION for _ in range(NREPLICATION)], axis=0
+            ).T.flatten()
+
+
+            Weight_numu_dis = Weight_numu_ext * sterile.Pmm(
+            Enumu_true_parent, Enumu_true_daughter, Length_numu_ext
         )
-        MC_numu_bkg_total_w_dis = MC_numu_bkg_tot * P_mumu_avg
+            MC_numu_bkg_total_w_dis = np.histogram(
+                Enumu_reco_ext,
+                weights=Weight_numu_dis,
+                bins=MB_Ereco_official_bins_numu,
+                density=False,
+            )[0]
+        else: 
+            # NOTE: Averaged
+            # Final MC prediction for nu_mu sample (w/ oscillated numus)
+            P_mumu_avg = sterile.PmmAvg_vec(
+                MB_Ereco_official_bins_numu[:-1], MB_Ereco_official_bins_numu[1:], L_mini
+            )
+            MC_numu_bkg_total_w_dis = MC_numu_bkg_tot * P_mumu_avg
 
         # Calculate MiniBooNE chi2
         MB_chi2 = mini.fit.chi2_MiniBooNE(
@@ -834,7 +883,7 @@ def DecayReturnMicroBooNEChi2(
 #     )
 
 #     # Average disappearance in each bin of MB MC data release
-#     P_avg = sterile.Pdecay_binned_avg(MB_Ereco_official_bins_numu, fixed_Length=LMBT)
+#     P_avg = sterile.Pdecay_binned_avg(MB_Ereco_official_bins_numu, fixed_Length=L_micro)
 #     P_mumu_avg = 1 + (1 - Ue4Sq - Um4Sq) * Um4Sq**2 / (Ue4Sq + Um4Sq) * (1 - P_avg)
 
 #     MB_chi2 = mini.fit.chi2_MiniBooNE_2020(MBSig_for_MBfit, Pmumu=P_mumu_avg, Pee=1)
@@ -849,7 +898,7 @@ def DecayReturnMicroBooNEChi2(
 #     # MBSig_for_unfolding_RW = []
 #     # for k in range(len(MBSig_for_unfolding)):
 #     # RWFact = 1 / DecayPmmAvg(
-#     #         MB_Ereco_unfold_bins[k], MB_Ereco_unfold_bins[k + 1], LMBT, gm4, Um4Sq
+#     #         MB_Ereco_unfold_bins[k], MB_Ereco_unfold_bins[k + 1], L_micro, gm4, Um4Sq
 #     #     )
 #     #     MBSig_for_unfolding_RW.append(MBSig_for_unfolding[k] * RWFact)
 
@@ -935,7 +984,7 @@ def DecayReturnMicroBooNEChi2(
 #     )
 
 #     # Average disappearance in each bin of MB MC data release
-#     P_avg = sterile.Pdecay_binned_avg(MB_Ereco_official_bins_numu, fixed_Length=LMBT)
+#     P_avg = sterile.Pdecay_binned_avg(MB_Ereco_official_bins_numu, fixed_Length=L_micro)
 #     P_mumu_avg = 1 + (1 - Ue4Sq - Um4Sq) * Um4Sq**2 / (Ue4Sq + Um4Sq) * (1 - P_avg)
 #     P_ee_avg = 1 + (1 - Ue4Sq - Um4Sq) * Ue4Sq**2 / (Ue4Sq + Um4Sq) * (
 #         1 - P_avg
@@ -953,7 +1002,7 @@ def DecayReturnMicroBooNEChi2(
 #     # MBSig_for_unfolding_RW = []
 #     # for k in range(len(MBSig_for_unfolding)):
 #     # RWFact = 1 / DecayPmmAvg(
-#     #         MB_Ereco_unfold_bins[k], MB_Ereco_unfold_bins[k + 1], LMBT, gm4, Um4Sq
+#     #         MB_Ereco_unfold_bins[k], MB_Ereco_unfold_bins[k + 1], L_micro, gm4, Um4Sq
 #     #     )
 #     #     MBSig_for_unfolding_RW.append(MBSig_for_unfolding[k] * RWFact)
 
