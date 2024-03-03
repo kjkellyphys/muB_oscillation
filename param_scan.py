@@ -42,10 +42,9 @@ e_prod_e_int_bins = np.linspace(0, 3, 51)  # GeV
 L_micro = 0.4685  # MicroBooNE Baseline length in kilometers
 L_mini = 0.545  # MiniBooNE Baseline length in kilometers
 
-Ereco, Etrue, Length, Weight = mini.apps.get_MC_from_data_release(mode='fhc', year='2020')
+#NOTE: 2022 release has 2022 MC but still uses 2020 covariance matrices
+Ereco, Etrue, Length, Weight = mini.apps.get_MC_from_data_release(mode='fhc', year='2022')
 Enumu_reco, Enumu_true, Length_numu, Weight_numu = mini.apps.get_MC_from_data_release_numu(mode='fhc', year='2022')
-
-
 
 
 """
@@ -623,7 +622,8 @@ def DecayReturnMicroBooNEChi2(
     
     # Flavor transition probabilities
     Pme = sterile.Pme(Etrue_parent, Etrue_daughter, Length_ext)
-    Weight_nue_app = Weight_ext * Pme
+    Pmm = sterile.Pmm(Etrue_parent, Etrue_daughter, Length_ext)
+    Weight_nue_app = Weight_ext * Pme / Pmm
 
     # Calculate the MiniBooNE chi2
     if not decay and oscillations:
