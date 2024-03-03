@@ -1,4 +1,5 @@
 import numpy as np
+import pickle
 import copy
 from scipy import integrate
 from scipy.special import expi
@@ -117,8 +118,39 @@ def fast_histogram(data, bins, weights):
 
 def create_grid_of_params(g, m4, Ue4Sq, Um4Sq):
     paramlist_decay = np.array(np.meshgrid(g, m4, Ue4Sq, Um4Sq)).T.reshape(-1, 4)
-    return [{"g": g, "m4": m4, "Ue4Sq": Ue4Sq, "Um4Sq": Um4Sq} for g, m4, Ue4Sq, Um4Sq in paramlist_decay]
+    paramlist = []
+    for g, m4, ue4s, umu4s in paramlist_decay:
+        if (umu4s + ue4s <= 1.0) and (g**2/4/np.pi) < 1.0:
+            paramlist.append({"g": g, "m4": m4, "Ue4Sq": ue4s, "Um4Sq": umu4s})
+    return np.array(paramlist)
+    # return [{"g": g, "m4": m4, "Ue4Sq": Ue4Sq, "Um4Sq": Um4Sq} for g, m4, Ue4Sq, Um4Sq in paramlist_decay]
 
+    
+def create_grid_of_params_sin2theta(g, m4, sin2thetaSq, Um4Sq):
+    paramlist_decay = np.array(np.meshgrid(g, m4, sin2thetaSq, Um4Sq)).T.reshape(-1, 4)
+    paramlist = []
+    for g, m4, s2ts, umu4s in paramlist_decay:
+        ue4s = s2ts/4/umu4s
+        if (umu4s + ue4s <= 1.0) and ((g**2/4/np.pi) < 1.0):
+            paramlist.append({"g": g, "m4": m4, "Ue4Sq": ue4s, "Um4Sq": umu4s})
+    return np.array(paramlist)
+
+def profile_in_plane(x, y, chi2):
+    # Create a list of tuples for the unique pairs of Ue4SQR and Umu4SQR
+    unique_pairs = np.array(list(set(zip(x, y))))
+
+    # Find the minimum chi2 for each unique pair of Ue4SQR and Umu4SQR
+    profiled_chi2 = np.array([np.min(chi2[(x == pair[0]) & (y == pair[1])]) for pair in unique_pairs])
+
+    return unique_pairs[:,0], unique_pairs[:,1], profiled_chi2
+
+def write_pickle(filename, data):
+    with open(f"{filename}.pkl", "wb") as f:
+        pickle.dump(data, f)
+def pickle_read(filename):
+    with open(filename, "rb") as f:
+        out = pickle.load(f)
+    return out
 
 # --------------------------------------------------------------------------------
 class Sterile:
@@ -580,6 +612,7 @@ def DecayReturnMicroBooNEChi2(
     disappearance=False,
     energy_degradation=False,
     use_numu_MC=False,
+    undo_numu_normalization=False,
     n_replications=10,
 
 ):
@@ -622,8 +655,13 @@ def DecayReturnMicroBooNEChi2(
     
     # Flavor transition probabilities
     Pme = sterile.Pme(Etrue_parent, Etrue_daughter, Length_ext)
-    Pmm = sterile.Pmm(Etrue_parent, Etrue_daughter, Length_ext)
-    Weight_nue_app = Weight_ext * Pme / Pmm
+    
+    if undo_numu_normalization:
+        # flux is already normalized to data, so undo Pmumu from MC prediction
+        Pmm = sterile.Pmm(Etrue_parent, Etrue_daughter, Length_ext)
+        Weight_nue_app = Weight_ext * Pme / Pmm
+    else:
+        Weight_nue_app = Weight_ext * Pme
 
     # Calculate the MiniBooNE chi2
     if not decay and oscillations:
@@ -687,9 +725,14 @@ def DecayReturnMicroBooNEChi2(
             Weight_numu_ext = replicate(Weight_numu / n_replications, n=n_replications)
 
 
+            # if undo_numu_normalization:
+            #     # do not apply Pmumu in this case as the flux is already normalized
+            #     Weight_numu_dis = Weight_numu_ext
+            # else:
             Weight_numu_dis = Weight_numu_ext * sterile.Pmm(
-            Enumu_true_parent, Enumu_true_daughter, Length_numu_ext
-        )
+                    Enumu_true_parent, Enumu_true_daughter, Length_numu_ext
+                    )
+                
             MC_numu_bkg_total_w_dis = fast_histogram(
                 Enumu_reco_ext,
                 weights=Weight_numu_dis,
@@ -711,6 +754,10 @@ def DecayReturnMicroBooNEChi2(
         else: 
             # NOTE: Averaged
             # Final MC prediction for nu_mu sample (w/ oscillated numus)
+            # if undo_numu_normalization:
+                # do not apply Pmumu in this case as the flux is already normalized
+                # MC_numu_bkg_total_w_dis = mini.MC_numu_bkg_tot 
+            # else:
             P_mumu_avg = sterile.PmmAvg_vec(
                 MB_Ereco_official_bins_numu[:-1], MB_Ereco_official_bins_numu[1:], L_mini
             )
