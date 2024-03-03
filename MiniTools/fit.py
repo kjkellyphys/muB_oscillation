@@ -112,10 +112,6 @@ def chi2_MiniBooNE(
     #     )
     # )
 
-    # Apply average disapperance to the muon or electron samples
-    # numu_MC *= Pmumu  # 8 bins
-    # nue_bkg *= Pee  # 11 bins
-
     # NOTE: new method from Tao.
     if MC_nue_dis is not None:
         nue_bkg = MC_nue_dis
@@ -193,19 +189,26 @@ def chi2_MiniBooNE(
         return 1e10
 
 
-def chi2_MiniBooNE_2020_combined(NP_MC, NP_MC_BAR, NPevents=None, NPevents_BAR=None, year="2020"):
-    """chi2_MiniBooNE_2020 Get MiniBOoNE chi2 from data release in 2020 for a given mode (FHC, RHC)
+def chi2_MiniBooNE_combined(
+    MC_nue_app,  MC_nuebar_app, MC_nue_dis=None, MC_numu_dis=None, MC_nuebar_dis=None, MC_numubar_dis=None, year="2020"
+):
+    """chi2_MiniBooNE_combined Get MiniBooNE chi2 from a given data release from FHC + RHC
 
     Parameters
     ----------
-    NP_MC : np.array
-        Monte Carlo prediction for the FHC signal rate
-    NP_MC : np.array
-        Monte Carlo prediction for the RHC signal rate
-    NPevents : np.float, optional
-        Total number of signal events to renormalize the NP_MC prediction.
-    NPevents_BAR : np.float, optional
-        Total number of signal events to renormalize the NP_MC_BAR prediction.
+    MC_nue_app : np.array
+        Monte Carlo prediction for the numu -> nu_e appearance rate
+    MC_nue_dis : np.array, default None
+        Monte Carlo prediction for the nu_e disappearance rate
+    MC_numu_dis : np.array, default None
+        Monte Carlo prediction for the nu_mu disappearance rate
+
+    MC_nuebar_app : np.array
+        Monte Carlo prediction for the numubar -> nu_ebar appearance rate
+    MC_nuebar_dis : np.array, default None
+        Monte Carlo prediction for the nu_ebar disappearance rate
+    MC_numubar_dis : np.array, default None
+        Monte Carlo prediction for the nu_mubar disappearance rate
 
     Returns
     -------
@@ -213,69 +216,35 @@ def chi2_MiniBooNE_2020_combined(NP_MC, NP_MC_BAR, NPevents=None, NPevents_BAR=N
         the MiniBooNE chi2 value (non-zero)
     """
 
-    # shape of new physics prediction normalized to NPevents
-    if np.sum(NP_MC) != 0 and NPevents is not None:
-        NP_MC = (NP_MC / np.sum(NP_MC)) * NPevents
-    if np.sum(NP_MC_BAR) != 0 and NPevents_BAR is not None:
-        NP_MC_BAR = (NP_MC_BAR / np.sum(NP_MC_BAR)) * NPevents_BAR
-
-    mode = "combined"
-
     ##########################################
     # Load neutrino data
     bar = ""
     nue_data = np.genfromtxt(
         open_text(
-            f"MiniTools.include.MB_data_release_{year}.{mode}",
-            f"miniboone_nue{bar}data_lowe.txt",
+            f"MiniTools.include.MB_data_release_{year}.combined",
+            f"miniboone_nuedata_lowe.txt",
         )
     )
     numu_data = np.genfromtxt(
         open_text(
-            f"MiniTools.include.MB_data_release_{year}.{mode}",
-            f"miniboone_numu{bar}data.txt",
-        )
-    )
-
-    nue_bkg = np.genfromtxt(
-        open_text(
-            f"MiniTools.include.MB_data_release_{year}.{mode}",
-            f"miniboone_nue{bar}bgr_lowe.txt",
-        )
-    )
-    numu_MC = np.genfromtxt(
-        open_text(
-            f"MiniTools.include.MB_data_release_{year}.{mode}",
-            f"miniboone_numu{bar}.txt",
+            f"MiniTools.include.MB_data_release_{year}.combined",
+            f"miniboone_numudata.txt",
         )
     )
 
     ##########################################
     # Load antineutrino data
     bar = "bar"
-    nue_data_bar = np.genfromtxt(
+    nuebar_data = np.genfromtxt(
         open_text(
-            f"MiniTools.include.MB_data_release_{year}.{mode}",
-            f"miniboone_nue{bar}data_lowe.txt",
+            f"MiniTools.include.MB_data_release_{year}.combined",
+            f"miniboone_nuebardata_lowe.txt",
         )
     )
-    numu_data_bar = np.genfromtxt(
+    numubar_data = np.genfromtxt(
         open_text(
-            f"MiniTools.include.MB_data_release_{year}.{mode}",
-            f"miniboone_numu{bar}data.txt",
-        )
-    )
-
-    nue_bkg_bar = np.genfromtxt(
-        open_text(
-            f"MiniTools.include.MB_data_release_{year}.{mode}",
-            f"miniboone_nue{bar}bgr_lowe.txt",
-        )
-    )
-    numu_MC_bar = np.genfromtxt(
-        open_text(
-            f"MiniTools.include.MB_data_release_{year}.{mode}",
-            f"miniboone_numu{bar}.txt",
+            f"MiniTools.include.MB_data_release_{year}.combined",
+            f"miniboone_numubardata.txt",
         )
     )
 
@@ -283,25 +252,69 @@ def chi2_MiniBooNE_2020_combined(NP_MC, NP_MC_BAR, NPevents=None, NPevents_BAR=N
     # Load covariance matrix
     fract_covariance = np.genfromtxt(
         open_text(
-            f"MiniTools.include.MB_data_release_{year}.{mode}",
+            f"MiniTools.include.MB_data_release_{year}.combined",
             f"miniboone_full_fractcovmatrix_combined_lowe.txt",
         )
     )
 
+    
+    
+    # NOTE: new method from Tao.
+    if MC_nue_dis is not None:
+        nue_bkg = MC_nue_dis
+    else:
+        nue_bkg = np.genfromtxt(
+            open_text(
+                f"MiniTools.include.MB_data_release_{year}.combined",
+                f"miniboone_nuebgr_lowe.txt",
+            )
+        )
+
+    if MC_numu_dis is not None:
+        numu_MC = MC_numu_dis
+    else:
+        numu_MC = np.genfromtxt(
+            open_text(
+                f"MiniTools.include.MB_data_release_{year}.combined",
+                f"miniboone_numu.txt",
+            )
+        )
+        
+    if MC_nuebar_dis is not None:
+        nue_bkg = MC_nue_dis
+    else:
+        nue_bkg = np.genfromtxt(
+            open_text(
+                f"MiniTools.include.MB_data_release_{year}.combined",
+                f"miniboone_nuebarbgr_lowe.txt",
+            )
+        )
+
+    if MC_numubar_dis is not None:
+        numubar_MC = MC_numubar_dis
+    else:
+        numubar_MC = np.genfromtxt(
+            open_text(
+                f"MiniTools.include.MB_data_release_{year}.combined",
+                f"miniboone_numubar.txt",
+            )
+        )
+
+    
     NP_diag_matrix = np.diag(
         np.concatenate(
             [
-                NP_MC,
+                MC_nue_app,
                 nue_bkg * 0.0,
                 numu_MC * 0.0,
-                NP_MC_BAR,
+                MC_nuebar_app,
                 nue_bkg_bar * 0.0,
                 numu_MC_bar * 0.0,
             ]
         )
     )
     tot_diag_matrix = np.diag(
-        np.concatenate([NP_MC, nue_bkg, numu_MC, NP_MC_BAR, nue_bkg_bar, numu_MC_bar])
+        np.concatenate([MC_nue_app, nue_bkg, numu_MC, MC_nuebar_app, nue_bkg_bar, numu_MC_bar])
     )
 
     rescaled_covariance = np.dot(

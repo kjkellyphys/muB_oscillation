@@ -44,8 +44,11 @@ L_micro = 0.4685  # MicroBooNE Baseline length in kilometers
 L_mini = 0.545  # MiniBooNE Baseline length in kilometers
 
 #NOTE: 2022 release has 2022 MC but still uses 2020 covariance matrices
-Ereco, Etrue, Length, Weight = mini.apps.get_MC_from_data_release(mode='fhc', year='2022')
-Enumu_reco, Enumu_true, Length_numu, Weight_numu = mini.apps.get_MC_from_data_release_numu(mode='fhc', year='2022')
+Ereco_nue, Etrue_nue, Length_nue, Weight_nue = mini.apps.get_MC_from_data_release(mode='fhc', year='2022')
+Ereco_numu, Etrue_numu, Length_numu, Weight_numu = mini.apps.get_MC_from_data_release_numu(mode='fhc', year='2022')
+
+Ereco_nuebar, Etrue_nuebar, Length_nuebar, Weight_nuebar = mini.apps.get_MC_from_data_release(mode='rhc', year='2022')
+Ereco_numubar, Etrue_numubar, Length_numubar, Weight_numubar = mini.apps.get_MC_from_data_release_numu(mode='rhc', year='2022')
 
 
 """
@@ -154,7 +157,7 @@ def pickle_read(filename):
 
 # --------------------------------------------------------------------------------
 class Sterile:
-    def __init__(self, theta, oscillations=True, decay=True, decouple_decay=False):
+    def __init__(self, theta, oscillations=True, decay=True, decouple_decay=False, CP=1):
         """__init__ Sterile neutrino class
 
         This is the model class.
@@ -184,6 +187,12 @@ class Sterile:
         decouple_decay : bool, optional
             whether to decouple the decay rate like in deGouvea's model, by default False.
             If True, then the decay rate is independent of the mixing angles and always into nu_e states.
+
+        CP: int, optional
+            Whether to consider neutrino or antineutrino, by default +1
+            CP = +1 neutrinos
+            CP = -1 antineutrinos
+            NOTE: So far, makes no difference
 
         """
         self.g = 1
@@ -567,20 +576,30 @@ def MiniBooNEChi2_deGouvea(theta, oscillations=False, decay=True, decouple_decay
     sterile = Sterile(theta, oscillations=oscillations, decay=decay, decouple_decay=decouple_decay)
 
     # Replicating events for multiple daughter neutrino energies
-    Etrue_parent, Etrue_daughter = create_Etrue_and_Weight_int(etrue=Etrue, n_replications=n_replications)
+    Etrue_nue_parent, Etrue_nue_daughter = create_Etrue_and_Weight_int(etrue=Etrue_nue, n_replications=n_replications)
+    Etrue_nuebar_parent, Etrue_nuebar_daughter = create_Etrue_and_Weight_int(etrue=Etrue_nuebar, n_replications=n_replications)
 
     # replicating entries of the MC data release -- baseline L and weight
-    Length_ext = replicate(Length, n=n_replications)
-    Weight_ext = replicate(Weight / n_replications, n = n_replications)
+    Length_nue_ext = replicate(Length_nue, n=n_replications)
+    Weight_nue_ext = replicate(Weight_nue / n_replications, n = n_replications)
+
+    Length_nuebar_ext = replicate(Length_nuebar, n=n_replications)
+    Weight_nuebar_ext = replicate(Weight_nuebar / n_replications, n = n_replications)
 
     # Flavor transition probabilities -- Assuming nu4 decays only into nue
-    Pme = sterile.Pme_deGouvea(Etrue_parent, Etrue_daughter, Length_ext)
+    Pme = sterile.Pme_deGouvea(Etrue_nue_parent, Etrue_nue_daughter, Length_nue_ext)
+    Pmebar = antisterile.Pme_deGouvea(Etrue_nuebar_parent, Etrue_nuebar_daughter, Length_nuebar_ext)
 
-    Weight_decay = Weight_ext * Pme
+    Weight_nue_decay = Weight_nue_ext * Pme
+    Weight_nuebar_decay = Weight_nuebar_ext * Pme
 
     # Calculate the MiniBooNE chi2
     MBSig_for_MBfit = np.dot(
-        fast_histogram(Etrue_daughter, bins=e_prod_e_int_bins, weights=Weight_decay)[0],
+        fast_histogram(Etrue_nue_daughter, bins=e_prod_e_int_bins, weights=Weight_nue_decay)[0],
+        mini.apps.migration_matrix_official_bins_nue_11bins,
+    )
+    MBSig_for_MBfit_bar = np.dot(
+        fast_histogram(Etrue_nuebar_daughter, bins=e_prod_e_int_bins, weights=Weight_nuebar_decay)[0],
         mini.apps.migration_matrix_official_bins_nue_11bins,
     )
 
@@ -589,16 +608,29 @@ def MiniBooNEChi2_deGouvea(theta, oscillations=False, decay=True, decouple_decay
     #P_mumu_avg = (1 - Um4Sq) ** 2 + Um4Sq**2 * P_avg
 
     #MB_chi2 = mini.fit.chi2_MiniBooNE_2020(MBSig_for_MBfit, Pmumu=P_mumu_avg, Pee=1)
+
+    ################################################
+    #NOTE: Are you sure about L_micro here? Shouldnt it be L_mini?
+    ################################################
+    
     P_mumu_avg_deGouvea = sterile.PmmAvg_vec_deGouvea(
+            MB_Ereco_official_bins_numu[:-1], MB_Ereco_official_bins_numu[1:], L_micro
+    )
+    MC_numu_bkg_total_w_dis_deGouvea = mini.MC_numu_bkg_tot * P_mumu_avg_deGouvea
+    
+    P_mumu_avg_deGouvea_bar = antisterile.PmmAvg_vec_deGouvea(
             MB_Ereco_official_bins_numu[:-1], MB_Ereco_official_bins_numu[1:], L_micro
     )
     MC_numu_bkg_total_w_dis_deGouvea = mini.MC_numu_bkg_tot * P_mumu_avg_deGouvea
 
     # Calculate MiniBooNE chi2
-    MB_chi2 = mini.fit.chi2_MiniBooNE(
+    MB_chi2 = mini.fit.chi2_MiniBooNE_combined(
         MC_nue_app=MBSig_for_MBfit,
         MC_nue_dis=None,
         MC_numu_dis=None,
+        MC_nuebar_app=MBSig_for_MBfit_bar,
+        MC_nuebar_dis=None,
+        MC_numubar_dis=None,
         year="2018",
     )
 
@@ -614,6 +646,7 @@ def DecayReturnMicroBooNEChi2(
     use_numu_MC=False,
     undo_numu_normalization=False,
     n_replications=10,
+    include_antineutrinos=False
 
 ):
     """DecayReturnMicroBooNEChi2 Returns the MicroBooNE chi2
@@ -636,12 +669,17 @@ def DecayReturnMicroBooNEChi2(
 
     # Our new physics class -- for deGouvea's model, we fix m4 = 1 eV, and identify g = gm4.
     sterile = Sterile(
-        theta, oscillations=oscillations, decay=decay, decouple_decay=decouple_decay
+        theta, oscillations=oscillations, decay=decay, decouple_decay=decouple_decay, CP=+1,
+    )
+
+    antisterile = Sterile(
+        theta, oscillations=oscillations, decay=decay, decouple_decay=decouple_decay, CP=-1,
     )
 
     # Replicating events for multiple daughter neutrino energies
-    Etrue_parent, Etrue_daughter = create_Etrue_and_Weight_int(etrue=Etrue, n_replications=n_replications)
-    
+    Etrue_nue_parent, Etrue_nue_daughter = create_Etrue_and_Weight_int(etrue=Etrue_nue, n_replications=n_replications)
+    Etrue_nuebar_parent, Etrue_nuebar_daughter = create_Etrue_and_Weight_int(etrue=Etrue_nuebar, n_replications=n_replications)
+
     Ereco_ext = replicate(Ereco, n=n_replications) 
     Length_ext = replicate(Length, n=n_replications)
     Weight_ext = replicate(Weight / n_replications, n=n_replications)
@@ -764,10 +802,21 @@ def DecayReturnMicroBooNEChi2(
             MC_numu_bkg_total_w_dis = mini.MC_numu_bkg_tot * P_mumu_avg
 
         # Calculate MiniBooNE chi2
-        MB_chi2 = mini.fit.chi2_MiniBooNE(
+        # MB_chi2 = mini.fit.chi2_MiniBooNE(
+        #     MC_nue_app=MC_nue_app,
+        #     MC_nue_dis=MC_nue_bkg_total_w_dis,
+        #     MC_numu_dis=MC_numu_bkg_total_w_dis,
+        #     year="2020",
+        # )
+
+        # Calculate MiniBooNE chi2 -- nu + nubar
+        MB_chi2_combined = mini.fit.chi2_MiniBooNE_combined(
             MC_nue_app=MC_nue_app,
             MC_nue_dis=MC_nue_bkg_total_w_dis,
             MC_numu_dis=MC_numu_bkg_total_w_dis,
+            MC_nuebar_app=MC_nuebar_app,
+            MC_nuebar_dis=MC_nuebar_bkg_total_w_dis,
+            MC_numubar_dis=MC_numubar_bkg_total_w_dis,
             year="2020",
         )
 
