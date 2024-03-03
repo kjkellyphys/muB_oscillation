@@ -1,7 +1,6 @@
 import numpy as np
 from importlib.resources import open_text
 
-
 def StackCovarianceMatrix(big_covariance, n_signal, n_numu):
     covariance = np.zeros([n_signal + n_numu, n_signal + n_numu])
 

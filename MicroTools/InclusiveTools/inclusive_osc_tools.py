@@ -534,11 +534,6 @@ def Decay_muB_OscChi2(
         whether to include energy degradation in disappearance channel, by default True.
         If False, return to usual disappearance probability
     """
-    g = theta["g"]
-    m4 = theta["m4"]
-    Ue4Sq = theta["Ue4Sq"]
-    Um4Sq = theta["Um4Sq"]
-
     CVStat = np.zeros(np.shape(FCov))
     CVSyst = np.zeros(np.shape(FCov))
     # Load the Sterile class from param_scan
@@ -671,10 +666,6 @@ def DecayMuBNuEDis(
     energy_degradation=True,
 ):
     """Function for reweighting MicroBooNE nu_e spectra in terms of true energy instead of reconstructed energy"""
-    g = theta["g"]
-    m4 = theta["m4"]
-    Ue4Sq = theta["Ue4Sq"]
-    Um4Sq = theta["Um4Sq"]
 
     # Load the Sterile class from param_scan
     sterile = param.Sterile(
@@ -712,10 +703,6 @@ def DecayMuBNuMuDis(
     energy_degradation=True,
 ):
     """Function for reweighting MicroBooNE nu_mu spectra in terms of true energy instead of reconstructed energy"""
-    g = theta["g"]
-    m4 = theta["m4"]
-    Ue4Sq = theta["Ue4Sq"]
-    Um4Sq = theta["Um4Sq"]
 
     # Load the Sterile class from param_scan
     sterile = param.Sterile(
