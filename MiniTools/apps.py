@@ -1,5 +1,7 @@
 import numpy as np
-from scipy import integrate, interpolate
+import warnings
+import pickle
+from scipy import interpolate
 import copy
 from importlib.resources import open_text
 
@@ -35,20 +37,44 @@ def create_reco_migration_matrix(ereco_bins, etrue_bins, ereco_events, etrue_eve
         migration_matrix[j] = h0_unnorm[j] / row_sum
     return migration_matrix
 
-
+def write_pickle(filename, data):
+    with open(f"{filename}.pkl", "wb") as f:
+        pickle.dump(data, f)
+def pickle_read(filename):
+    with open(filename, "rb") as f:
+        out = pickle.load(f)
+    return out
 
 # Pre-computed migration matrices 
-migration_matrix_official_bins_numu = np.load('MiniTools/include/migration_matrices/migration_matrix_official_bins_numu.npy', allow_pickle=True)
-migration_matrix_official_bins_nue_11bins = np.load('MiniTools/include/migration_matrices/migration_matrix_official_bins_nue_11bins.npy', allow_pickle=True)
-migration_matrix_official_bins_nue_13bins = np.load('MiniTools/include/migration_matrices/migration_matrix_official_bins_nue_13bins.npy', allow_pickle=True)
+migration_matrix_official_bins_numu = pickle_read('MiniTools/include/migration_matrices/migration_matrix_official_bins_numu.pkl')
+migration_matrix_official_bins_nue_11bins = pickle_read('MiniTools/include/migration_matrices/migration_matrix_official_bins_nue_11bins.pkl')
+migration_matrix_official_bins_nue_13bins = pickle_read('MiniTools/include/migration_matrices/migration_matrix_official_bins_nue_13bins.pkl')
 
-def get_MC_from_data_release_2009_numudis():
-    # NOTE: 2009 numu disappearance 
-    MC_sample_numu_dis = micro.mb_mc_data_release_numudis  
-    Enumu_reco = MC_sample_numu_dis[:, 1]  # GeV
-    Enumu_true = MC_sample_numu_dis[:, 2]  # GeV
-    Length_numu = MC_sample_numu_dis[:, 3]  # Kilometers
-    RELATIVE_POTS_09_to_20_dis = 5.58 / 18.75
-    FUDGE_FACTOR = 1/1.85 # NOTE: Best we can do now until resolve the mismatch of numu samples
-    Weight_numu = MC_sample_numu_dis[:, 4] / np.sum(MC_sample_numu_dis[:, 4]) * 1.90454e5 / RELATIVE_POTS_09_to_20_dis * FUDGE_FACTOR
-    return Enumu_reco, Enumu_true, Length_numu, Weight_numu
+def get_MC_from_data_release(mode='fhc', year='2020'):
+    if year not in ['2009','2012', '2018','2020','2022']:
+        raise ValueError(f"Only the data releases of 2009, 2012, 2018, 2020 and 2022 have a MC sample. You requested {year}.")
+    MiniBooNE_Signal = np.loadtxt(f'MiniTools/include/MB_data_release_{year}/{mode}mode/miniboone_numunuefullosc_ntuple.txt')
+    Ereco = MiniBooNE_Signal[:, 0] / 1000  # GeV
+    Etrue = MiniBooNE_Signal[:, 1] / 1000  # GeV
+    Length = MiniBooNE_Signal[:, 2] / 100000  # Kilometers
+    Weight = MiniBooNE_Signal[:, 3] / len(MiniBooNE_Signal[:, 3])
+    return Ereco, Etrue, Length, Weight
+
+def get_MC_from_data_release_numu(mode='fhc', year='2022'):
+
+    if year == '2022':
+        Ereco, Etrue, Length, Weight = pickle_read(f'MiniTools/include/MB_data_release_{year}/{mode}mode/miniboone_numufullosc_ntuple.pkl')
+    elif year == '2009':
+        warnings.warn('Loading 2009 MC -- this relies on a fudge factor!')
+        MiniBooNE_Signal = np.loadtxt(f"MB_data_release_numudis_{year}/{mode}mode/miniboone_numu_ntuple.txt")
+        Ereco = MiniBooNE_Signal[:, 1]  # GeV
+        Etrue = MiniBooNE_Signal[:, 2]  # GeV
+        Length = MiniBooNE_Signal[:, 3]  # Kilometers
+        RELATIVE_POTS_09_to_20_dis = 5.58 / 18.75
+        FUDGE_FACTOR = 1/1.85 # NOTE: Best we can do now until resolve the mismatch of numu samples
+        TOT_RATE = {'fhc': 190_454, 'rhc':  27_053}
+        Weight = MiniBooNE_Signal[:, 4] / np.sum(MiniBooNE_Signal[:, 4]) * TOT_RATE[mode] / RELATIVE_POTS_09_to_20_dis * FUDGE_FACTOR
+    else:
+        raise ValueError(f"Only the data releases of 2009 and 2022 have a numu MC sample. You requested {year}.")
+
+    return Ereco, Etrue, Length, Weight

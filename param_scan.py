@@ -33,19 +33,19 @@ GBFC = unfolder.MBtomuB(
 )
 
 # Load the MiniBooNE MC from data release
-MiniBooNE_Signal = micro.mb_mc_data_release  # NOTE: updated to 2020
 MB_Ereco_unfold_bins = micro.bin_edges_reco
 MB_Ereco_official_bins = micro.bin_edges * 1e-3
 MB_Ereco_official_bins_numu = micro.bin_edges_numu * 1e-3
+e_prod_e_int_bins = np.linspace(0, 3, 51)  # GeV
 
 
 L_micro = 0.4685  # MicroBooNE Baseline length in kilometers
 L_mini = 0.545  # MiniBooNE Baseline length in kilometers
-Ereco = MiniBooNE_Signal[:, 0] / 1000  # GeV
-Etrue = MiniBooNE_Signal[:, 1] / 1000  # GeV
-e_prod_e_int_bins = np.linspace(0, 3, 51)  # GeV
-Length = MiniBooNE_Signal[:, 2] / 100000  # Kilometers
-Weight = MiniBooNE_Signal[:, 3] / len(MiniBooNE_Signal[:, 3])
+
+Ereco, Etrue, Length, Weight = mini.apps.get_MC_from_data_release(mode='fhc', year='2020')
+Enumu_reco, Enumu_true, Length_numu, Weight_numu = mini.apps.get_MC_from_data_release_numu(mode='fhc', year='2022')
+
+
 
 
 """
@@ -114,8 +114,7 @@ def compute_bin(x, bin_edges):
     return None
 
 def fast_histogram(data, bins, weights):
-    return numba_histogram(data, bins, weights) #NOTE: somewhat faster than numpy's 
-    # return np.histogram(data, bins=bins, weights=weights)
+    return numba_histogram(data, bins, weights)
 
 def create_grid_of_params(g, m4, Ue4Sq, Um4Sq):
     paramlist_decay = np.array(np.meshgrid(g, m4, Ue4Sq, Um4Sq)).T.reshape(-1, 4)
@@ -581,8 +580,8 @@ def DecayReturnMicroBooNEChi2(
     decouple_decay=False,
     disappearance=False,
     energy_degradation=False,
-    use_numudis_2009_MC=False,
-    n_replications = 10,
+    use_numu_MC=False,
+    n_replications=10,
 
 ):
     """DecayReturnMicroBooNEChi2 Returns the MicroBooNE chi2
@@ -681,12 +680,8 @@ def DecayReturnMicroBooNEChi2(
         )
 
         # NUMU DISAPPEARANCE
-        if use_numudis_2009_MC:
-            
-            # NOTE: NEEDS FUDGE FACTOR
-            Enumu_reco, Enumu_true, Length_numu, Weight_numu = mini.apps.get_MC_from_data_release_2009_numudis()
+        if use_numu_MC:
             Enumu_true_parent, Enumu_true_daughter = create_Etrue_and_Weight_int(etrue=Enumu_true, n_replications=n_replications)
-            
             Enumu_reco_ext = replicate(Enumu_reco, n=n_replications)
             Length_numu_ext = replicate(Length_numu, n=n_replications)
             Weight_numu_ext = replicate(Weight_numu / n_replications, n=n_replications)

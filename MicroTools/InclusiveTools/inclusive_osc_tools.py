@@ -487,7 +487,6 @@ MuB_True_BinEdges = [
     return TS
 '''
 
-
 def Decay_muB_OscChi2(
     theta,
     temp,
