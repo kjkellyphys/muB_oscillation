@@ -6,6 +6,8 @@ import param_scan as param
 import MicroTools as micro
 import copy
 
+print(param.Sterile({'g':1, 'Ue4Sq': 1e-2, 'Umu4Sq': 1e-2, 'm4': 1}))
+
 GBPC_NuE = unfolder.MBtomuB(
     analysis="1eX_PC",
     remove_high_energy=False,

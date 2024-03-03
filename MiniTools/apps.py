@@ -63,7 +63,8 @@ def get_MC_from_data_release(mode='fhc', year='2020'):
 def get_MC_from_data_release_numu(mode='fhc', year='2022'):
 
     if year == '2022':
-        Ereco, Etrue, Length, Weight = pickle_read(f'MiniTools/include/MB_data_release_{year}/{mode}mode/miniboone_numufullosc_ntuple.pkl')
+        arr = pickle_read(f'MiniTools/include/MB_data_release_{year}/{mode}mode/miniboone_numufullosc_ntuple.pkl')
+        Ereco, Etrue, Length, Weight = arr.T
     elif year == '2009':
         warnings.warn('Loading 2009 MC -- this relies on a fudge factor!')
         MiniBooNE_Signal = np.loadtxt(f"MB_data_release_numudis_{year}/{mode}mode/miniboone_numu_ntuple.txt")
