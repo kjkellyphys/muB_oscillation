@@ -35,6 +35,9 @@ MB_Ereco_official_bins = micro.bin_edges * 1e-3
 MB_Ereco_official_bins_numu = micro.bin_edges_numu * 1e-3
 e_prod_e_int_bins = np.linspace(0, 3, 51)  # GeV
 
+# NOTE: this in principle can be a different set of bins...
+e_prod_e_int_bins_numu = np.linspace(0, 3, 101)  # GeV
+
 # NOTE: 2022 release has 2022 MC but still uses 2020 covariance matrices
 Ereco_nue, Etrue_nue, Length_nue, Weight_nue = mini.apps.get_MC_from_data_release_nue(
     mode="fhc", year="2022"
