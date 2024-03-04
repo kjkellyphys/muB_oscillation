@@ -218,7 +218,7 @@ def MiniBooNEChi2_deGouvea(
     )
 
     Weight_nue_decay = Weight_nue_ext * Pme
-    Weight_nuebar_decay = Weight_nuebar_ext * Pme
+    Weight_nuebar_decay = Weight_nuebar_ext * Pmebar
 
     # Calculate the MiniBooNE chi2
     MBSig_for_MBfit = np.dot(
@@ -231,7 +231,7 @@ def MiniBooNEChi2_deGouvea(
         fast_histogram(
             Etrue_nuebar_daughter, bins=e_prod_e_int_bins, weights=Weight_nuebar_decay
         )[0],
-        mini.apps.migration_matrix_official_bins_nue_11bins,
+        mini.apps.migration_matrix_official_bins_nuebar_11bins,
     )
 
     # Average disappearance in each bin of MB MC data release
@@ -268,8 +268,7 @@ def MiniBooNEChi2_deGouvea(
     return [g, m4, Ue4Sq, Um4Sq, MB_chi2]
 
 
-# --------------------------------------------------------------------------------
-def DecayReturnMicroBooNEChi2(
+def get_nue_rates(
     theta,
     oscillations=True,
     decay=False,
@@ -281,23 +280,46 @@ def DecayReturnMicroBooNEChi2(
     n_replications=10,
     include_antineutrinos=False,
 ):
-    """DecayReturnMicroBooNEChi2 Returns the MicroBooNE chi2
+    """
+    Returns the neutrino event rates for the MicroBooNE analysis.
 
     Parameters
     ----------
-    theta : dic
-        Model Input parameters as a dictionary
-
+    theta: Dict[str, np.ndarray]
+        The dictionary containing the model parameters
+    oscillations: bool, optional
+        Whether to include oscillation-only analysis in the calculation.
+        Defaults to True.
+    decay: bool, optional
+        Whether to include neutrino decay in the calculation. Defaults to False.
+    decouple_decay: bool, optional
+        Whether to decouple neutrino decay channels in the calculation.
+        Defaults to False.
+    disappearance: bool, optional
+        Whether to include neutrino disappearance in the calculation.
+        Defaults to False.
+    energy_degradation: bool, optional
+        Whether to include energy degradation in the calculation.
+        Defaults to False.
+    use_numu_MC: bool, optional
+        Whether to use the NUMU MC data in the calculation. Defaults to False.
+    undo_numu_normalization: bool, optional
+        Whether to undo the normalization applied to the NUMU flux in the
+        MC data. Defaults to False.
+    n_replications: int, optional
+        The number of replications to use when replicating the MC data.
+        Defaults to 10.
+    include_antineutrinos: bool, optional
+        Whether to include antineutrino events in the analysis.
+        Defaults to False.
     Returns
-    -------
-    list
-        [gm4, Um4Sq, Ue4Sq, MiniBoone chi2, MicroBooNE chi2, MicroBooNE chi2 Asimov]
-    """
+      -------
+      Dict[str, np.ndarray]
+          A dictionary containing the binned neutrino event rates.
 
-    g = theta["g"]
-    m4 = theta["m4"]
-    Ue4Sq = theta["Ue4Sq"]
-    Um4Sq = theta["Um4Sq"]
+    """
+    # Will contains all the binned rates
+    dic = {}
 
     # Our new physics class -- for deGouvea's model, we fix m4 = 1 eV, and identify g = gm4.
     sterile = Sterile(
@@ -333,14 +355,7 @@ def DecayReturnMicroBooNEChi2(
     Length_nuebar_ext = replicate(Length_nuebar, n=n_replications)
     Weight_nuebar_ext = replicate(Weight_nuebar / n_replications, n=n_replications)
 
-    """
-        re-normalizing the muon flux
-        the MC comes from the MiniBooNE prediction which
-        is informed by their nu_mu CC data
-    """
-
     # Flavor transition probabilities
-    # Flavor transition probabilities -- Assuming nu4 decays only into nue
     Pme = sterile.Pme(Etrue_nue_parent, Etrue_nue_daughter, Length_nue_ext)
     Pmebar = antisterile.Pme(
         Etrue_nuebar_parent, Etrue_nuebar_daughter, Length_nuebar_ext
@@ -351,6 +366,7 @@ def DecayReturnMicroBooNEChi2(
 
     if undo_numu_normalization:
         # flux is already normalized to data, so undo Pmumu from MC prediction
+        # NOTE: evaluated at nu_e energies since that is what the flux is based on
         Pmm = sterile.Pmm(Etrue_nue_parent, Etrue_nue_daughter, Length_nue_ext)
         Pmmbar = antisterile.Pmm(
             Etrue_nuebar_parent, Etrue_nuebar_daughter, Length_nuebar_ext
@@ -362,12 +378,12 @@ def DecayReturnMicroBooNEChi2(
     # Calculate the MiniBooNE chi2
     if not decay and oscillations:
         # NOTE: Using Ereco from MC for oscillation-only
-        MC_nue_app = fast_histogram(
+        dic["MC_nue_app"] = fast_histogram(
             Ereco_nue_ext,
             weights=Weight_nue_app,
             bins=MB_Ereco_official_bins,
         )[0]
-        MC_nuebar_app = fast_histogram(
+        dic["MC_nuebar_app"] = fast_histogram(
             Ereco_nuebar_ext,
             weights=Weight_nuebar_app,
             bins=MB_Ereco_official_bins,
@@ -375,7 +391,7 @@ def DecayReturnMicroBooNEChi2(
 
     else:
         # Migrate nue signal from Etrue to Ereco with 11 bins
-        MC_nue_app = np.dot(
+        dic["MC_nue_app"] = np.dot(
             fast_histogram(
                 Etrue_nue_daughter, bins=e_prod_e_int_bins, weights=Weight_nue_app
             )[0],
@@ -383,24 +399,29 @@ def DecayReturnMicroBooNEChi2(
         )
 
         # NOTE: Need to update to nubar migration matrix!!!!
-        MC_nuebar_app = np.dot(
+        dic["MC_nuebar_app"] = np.dot(
             fast_histogram(
                 Etrue_nuebar_daughter, bins=e_prod_e_int_bins, weights=Weight_nuebar_app
             )[0],
-            mini.apps.migration_matrix_official_bins_nue_11bins,
+            mini.apps.migration_matrix_official_bins_nuebar_11bins,
         )
+
+    # For MicroBooNE unfolding -- different binning
+    dic["MC_nue_app_for_unfolding"] = fast_histogram(
+        Ereco_nue_ext, weights=Weight_nue_app, bins=MB_Ereco_official_bins
+    )[0]
 
     # Average disappearance in each bin of MB MC data release
     if disappearance:
         Weight_nue_flux = mini.apps.reweight_MC_to_nue_flux(
-            Etrue_nue_parent, Weight_nue_ext
+            Etrue_nue_parent, Weight_nue_ext, mode="fhc"
         )
         Weight_nue_dis = Weight_nue_flux * sterile.Pee(
             Etrue_nue_parent, Etrue_nue_daughter, Length_nue_ext
         )
 
         Weight_nuebar_flux = mini.apps.reweight_MC_to_nue_flux(
-            Etrue_nuebar_parent, Weight_nuebar_ext
+            Etrue_nuebar_parent, Weight_nuebar_ext, mode="rhc"
         )
         Weight_nuebar_dis = Weight_nuebar_flux * antisterile.Pee(
             Etrue_nuebar_parent, Etrue_nuebar_daughter, Length_nuebar_ext
@@ -433,13 +454,13 @@ def DecayReturnMicroBooNEChi2(
                 np.MC_nue_bkg(
                     Etrue_nue_daughter, bins=e_prod_e_int_bins, weights=Weight_nue_flux
                 )[0],
-                mini.apps.migration_matrix_official_bins,
+                mini.apps.migration_matrix_official_bins_nue_11bins,
             )
             MC_nue_bkg_intrinsic_osc = np.dot(
                 fast_histogram(
                     Etrue_nue_daughter, bins=e_prod_e_int_bins, weights=Weight_nue_dis
                 )[0],
-                mini.apps.migration_matrix_official_bins,
+                mini.apps.migration_matrix_official_bins_nue_11bins,
             )
 
             MC_nuebar_bkg_intrinsic = np.dot(
@@ -448,7 +469,7 @@ def DecayReturnMicroBooNEChi2(
                     bins=e_prod_e_int_bins,
                     weights=Weight_nuebar_flux,
                 )[0],
-                mini.apps.migration_matrix_official_bins,
+                mini.apps.migration_matrix_official_bins_nuebar_11bins,
             )
             MC_nuebar_bkg_intrinsic_osc = np.dot(
                 fast_histogram(
@@ -456,14 +477,14 @@ def DecayReturnMicroBooNEChi2(
                     bins=e_prod_e_int_bins,
                     weights=Weight_nuebar_dis,
                 )[0],
-                mini.apps.migration_matrix_official_bins,
+                mini.apps.migration_matrix_official_bins_nuebar_11bins,
             )
 
         # Final MC prediction for nu_e sample (w/ oscillated intrinsics)
-        MC_nue_bkg_total_w_dis = (
+        dic["MC_nue_bkg_total_w_dis"] = (
             mini.MC_nue_bkg_tot - MC_nue_bkg_intrinsic + MC_nue_bkg_intrinsic_osc
         )
-        MC_nuebar_bkg_total_w_dis = (
+        dic["MC_nuebar_bkg_total_w_dis"] = (
             mini.MC_nuebar_bkg_tot
             - MC_nuebar_bkg_intrinsic
             + MC_nuebar_bkg_intrinsic_osc
@@ -499,12 +520,12 @@ def DecayReturnMicroBooNEChi2(
                 Etrue_numubar_parent, Etrue_numubar_daughter, Length_numubar_ext
             )
 
-            MC_numu_bkg_total_w_dis = fast_histogram(
+            dic["MC_numu_bkg_total_w_dis"] = fast_histogram(
                 Ereco_numu_ext,
                 weights=Weight_numu_dis,
                 bins=MB_Ereco_official_bins_numu,
             )[0]
-            MC_numubar_bkg_total_w_dis = fast_histogram(
+            dic["MC_numubar_bkg_total_w_dis"] = fast_histogram(
                 Ereco_numubar_ext,
                 weights=Weight_numubar_dis,
                 bins=MB_Ereco_official_bins_numu,
@@ -530,41 +551,72 @@ def DecayReturnMicroBooNEChi2(
                 MB_Ereco_official_bins_numu[1:],
                 micro.L_mini,
             )
-            MC_numu_bkg_total_w_dis = mini.MC_numu_bkg_tot * P_mumu_avg
+            dic["MC_numu_bkg_total_w_dis"] = mini.MC_numu_bkg_tot * P_mumu_avg
 
             P_mumu_avg_bar = antisterile.PmmAvg_vec(
                 MB_Ereco_official_bins_numu[:-1],
                 MB_Ereco_official_bins_numu[1:],
                 micro.L_mini,
             )
-            MC_numubar_bkg_total_w_dis = mini.MC_numubar_bkg_tot * P_mumu_avg_bar
+            dic["MC_numubar_bkg_total_w_dis"] = mini.MC_numubar_bkg_tot * P_mumu_avg_bar
 
+    return dic
+
+
+# --------------------------------------------------------------------------------
+def DecayReturnMicroBooNEChi2(
+    theta,
+    oscillations=True,
+    decay=False,
+    decouple_decay=False,
+    disappearance=False,
+    energy_degradation=False,
+    use_numu_MC=False,
+    undo_numu_normalization=False,
+    n_replications=10,
+    include_antineutrinos=False,
+):
+
+    rates_dic = get_nue_rates(
+        theta,
+        oscillations=oscillations,
+        decay=decay,
+        decouple_decay=decouple_decay,
+        disappearance=disappearance,
+        energy_degradation=energy_degradation,
+        use_numu_MC=use_numu_MC,
+        undo_numu_normalization=undo_numu_normalization,
+        n_replications=n_replications,
+        include_antineutrinos=include_antineutrinos,
+    )
+
+    if disappearance:
         if include_antineutrinos:
             # Calculate MiniBooNE chi2 -- nu + nubar
             MB_chi2 = mini.fit.chi2_MiniBooNE_combined(
-                MC_nue_app=MC_nue_app,
-                MC_nue_dis=MC_nue_bkg_total_w_dis,
-                MC_numu_dis=MC_numu_bkg_total_w_dis,
-                MC_nuebar_app=MC_nuebar_app,
-                MC_nuebar_dis=MC_nuebar_bkg_total_w_dis,
-                MC_numubar_dis=MC_numubar_bkg_total_w_dis,
+                MC_nue_app=rates_dic["MC_nue_app"],
+                MC_nuebar_app=rates_dic["MC_nuebar_app"],
+                MC_nue_dis=rates_dic["MC_nue_bkg_total_w_dis"],
+                MC_numu_dis=rates_dic["MC_numu_bkg_total_w_dis"],
+                MC_nuebar_dis=rates_dic["MC_nuebar_bkg_total_w_dis"],
+                MC_numubar_dis=rates_dic["MC_numubar_bkg_total_w_dis"],
                 year="2020",
             )
         else:
             MB_chi2 = mini.fit.chi2_MiniBooNE(
-                MC_nue_app=MC_nue_app,
-                MC_nue_dis=MC_nue_bkg_total_w_dis,
-                MC_numu_dis=MC_numu_bkg_total_w_dis,
+                MC_nue_app=rates_dic["MC_nue_app"],
+                MC_nue_dis=rates_dic["MC_nue_bkg_total_w_dis"],
+                MC_numu_dis=rates_dic["MC_numu_bkg_total_w_dis"],
                 year="2020",
             )
 
     else:
         if include_antineutrinos:
             MB_chi2 = mini.fit.chi2_MiniBooNE_combined(
-                MC_nue_app, MC_nuebar_app, year="2020"
+                rates_dic["MC_nue_app"], rates_dic["MC_nuebar_app"], year="2020"
             )
         else:
-            MB_chi2 = mini.fit.chi2_MiniBooNE(MC_nue_app, year="2020")
+            MB_chi2 = mini.fit.chi2_MiniBooNE(rates_dic["MC_nue_app"], year="2020")
 
     # NOTE: SKIPPING ENERGY DEGRATION FOR NOW
     # if energy_degradation:
@@ -598,18 +650,15 @@ def DecayReturnMicroBooNEChi2(
     # Now onto MicroBooNE  -- here only neutrinos are used (CP = +1)
     ############################################################################################################
 
-    MBSig_for_unfolding = fast_histogram(
-        Ereco_nue_ext, weights=Weight_nue_app, bins=MB_Ereco_official_bins
-    )[0]
-    MBSig_for_unfolding2 = copy.deepcopy(MBSig_for_unfolding)
-
     # MicroBooNE fully inclusive signal by unfolding MiniBooNE Signal
-    uBFC = GBFC.miniToMicro(MBSig_for_unfolding)
+    uBFC = GBFC.miniToMicro(rates_dic["MC_nue_app_for_unfolding"])
     uBFC = np.insert(uBFC, 0, [0.0])
     uBFC = np.append(uBFC, 0.0)
 
+    # NOTE: copying is probably not needed, but who knows...
+    MC_nue_app_for_unfolding2 = copy.deepcopy(rates_dic["MC_nue_app_for_unfolding"])
     # MicroBooNE partially inclusive signal by unfolding MiniBooNE Signal
-    uBPC = GBPC.miniToMicro(MBSig_for_unfolding2)
+    uBPC = GBPC.miniToMicro(MC_nue_app_for_unfolding2)
     uBPC = np.insert(uBPC, 0, [0.0])
     uBPC = np.append(uBPC, 0.0)
 
@@ -661,4 +710,12 @@ def DecayReturnMicroBooNEChi2(
         energy_degradation=energy_degradation,
     )
 
-    return [g, m4, Ue4Sq, Um4Sq, MB_chi2, MuB_chi2, MuB_chi2_Asimov]
+    return [
+        theta["g"],
+        theta["m4"],
+        theta["Ue4Sq"],
+        theta["Um4Sq"],
+        MB_chi2,
+        MuB_chi2,
+        MuB_chi2_Asimov,
+    ]

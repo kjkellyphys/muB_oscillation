@@ -6,16 +6,22 @@ import copy
 from importlib.resources import open_text
 
 
-def reweight_MC_to_nue_flux(Enu, weights):
+def reweight_MC_to_nue_flux(Enu, weights, mode="fhc"):
     flux = np.genfromtxt(
         open_text(
             f"MiniTools.include.fluxes",
-            f"MiniBooNE_FHC.dat",
+            f"MiniBooNE_{mode.upper()}.dat",
         )
     )
+    ibar = 0 if mode == "fhc" else 3  # shift flux columns
     enu = flux[:, 0]  # MeV
-    F_nue = interpolate.interp1d(enu, flux[:, 1], bounds_error=False, fill_value=0)
-    F_numu = interpolate.interp1d(enu, flux[:, 2], bounds_error=False, fill_value=0)
+    F_nue = interpolate.interp1d(
+        enu, flux[:, 1 + ibar], bounds_error=False, fill_value=0
+    )
+    F_numu = interpolate.interp1d(
+        enu, flux[:, 2 + ibar], bounds_error=False, fill_value=0
+    )
+
     return weights * F_nue(Enu) / F_numu(Enu)
 
 
@@ -59,6 +65,16 @@ migration_matrix_official_bins_nue_11bins = pickle_read(
 )
 migration_matrix_official_bins_nue_13bins = pickle_read(
     "MiniTools/include/migration_matrices/migration_matrix_official_bins_nue_13bins.pkl"
+)
+
+migration_matrix_official_bins_numubar = pickle_read(
+    "MiniTools/include/migration_matrices/migration_matrix_official_bins_numubar.pkl"
+)
+migration_matrix_official_bins_nuebar_11bins = pickle_read(
+    "MiniTools/include/migration_matrices/migration_matrix_official_bins_nuebar_11bins.pkl"
+)
+migration_matrix_official_bins_nuebar_13bins = pickle_read(
+    "MiniTools/include/migration_matrices/migration_matrix_official_bins_nuebar_13bins.pkl"
 )
 
 

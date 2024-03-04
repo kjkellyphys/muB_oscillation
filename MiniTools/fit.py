@@ -225,7 +225,6 @@ def chi2_MiniBooNE_combined(
 
     ##########################################
     # Load neutrino data
-    bar = ""
     nue_data = np.genfromtxt(
         open_text(
             f"MiniTools.include.MB_data_release_{year}.combined",
@@ -241,7 +240,6 @@ def chi2_MiniBooNE_combined(
 
     ##########################################
     # Load antineutrino data
-    bar = "bar"
     nuebar_data = np.genfromtxt(
         open_text(
             f"MiniTools.include.MB_data_release_{year}.combined",
@@ -264,7 +262,6 @@ def chi2_MiniBooNE_combined(
         )
     )
 
-    # NOTE: new method from Tao.
     if MC_nue_dis is not None:
         nue_bkg = MC_nue_dis
     else:

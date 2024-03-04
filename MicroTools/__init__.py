@@ -42,22 +42,24 @@ fractional_covariance_matrix = np.genfromtxt(
     path_mb_data_release + "/miniboone_full_fractcovmatrix_nu_lowe.txt"
 )
 
-bin_edges_reco = [
-    0.200,
-    0.250,
-    0.300,
-    0.350,
-    0.400,
-    0.450,
-    0.500,
-    0.600,
-    0.800,
-    1.000,
-    1.500,
-    2.000,
-    2.500,
-    3.000,
-]
+bin_edges_reco = np.array(
+    [
+        0.200,
+        0.250,
+        0.300,
+        0.350,
+        0.400,
+        0.450,
+        0.500,
+        0.600,
+        0.800,
+        1.000,
+        1.500,
+        2.000,
+        2.500,
+        3.000,
+    ]
+)
 bin_centers_reco = bin_edges_reco[:-1] + np.diff(bin_edges_reco) / 2.0
 bin_width_reco = np.diff(bin_edges_reco)
 
