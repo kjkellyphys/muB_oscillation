@@ -1,6 +1,13 @@
 import numpy as np
 from pathlib import Path
 
+# For more convenient imports
+from . import antinu_tools
+from . import const
+from . import plot_tools
+from . import sterile_tools
+from . import unfolder
+
 local_dir = Path(__file__).parent
 
 MeVToGeV = 1.0e-3
@@ -12,7 +19,7 @@ path_plots = f"{local_dir}/../plots/"
 ##################################################################
 # MiniBooNE data
 path_mb_data = f"{local_dir}/../MiniTools/include/"
-#path_mb_data_release = f"{path_mb_data}MB_data_release_2018/fhcmode/"
+# path_mb_data_release = f"{path_mb_data}MB_data_release_2018/fhcmode/"
 path_mb_data_release = f"{path_mb_data}MB_data_release_2020/fhcmode/"
 
 # reco neutrino energy, true neutrino energy, neutrino beampipe, and event weight
@@ -72,3 +79,6 @@ path_osc_data = f"{local_dir}/osc_data/"
 path_osc_app = f"{path_osc_data}/numu_to_nue/"
 path_osc_numudis = f"{path_osc_data}/numu_dis/"
 path_osc_nuedis = f"{path_osc_data}/nue_dis/"
+
+L_micro = 0.4685  # MicroBooNE Baseline length in kilometers
+L_mini = 0.545  # MiniBooNE Baseline length in kilometers

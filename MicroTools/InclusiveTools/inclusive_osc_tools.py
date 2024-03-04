@@ -1,21 +1,20 @@
 import numpy as np
 from scipy.linalg import inv
 from scipy.special import sici, expi
-from MicroTools import unfolder
-import param_scan as param
+
 import MicroTools as micro
+from MicroTools.sterile_tools import Sterile
+
 import copy
 
-print(param.Sterile({'g':1, 'Ue4Sq': 1e-2, 'Umu4Sq': 1e-2, 'm4': 1}))
-
-GBPC_NuE = unfolder.MBtomuB(
+GBPC_NuE = micro.unfolder.MBtomuB(
     analysis="1eX_PC",
     remove_high_energy=False,
     unfold=False,
     effNoUnfold=False,
     which_template="2018",
 )
-GBFC_NuE = unfolder.MBtomuB(
+GBFC_NuE = micro.unfolder.MBtomuB(
     analysis="1eX",
     remove_high_energy=False,
     unfold=False,
@@ -489,6 +488,7 @@ MuB_True_BinEdges = [
     return TS
 '''
 
+
 def Decay_muB_OscChi2(
     theta,
     temp,
@@ -538,7 +538,7 @@ def Decay_muB_OscChi2(
     CVStat = np.zeros(np.shape(FCov))
     CVSyst = np.zeros(np.shape(FCov))
     # Load the Sterile class from param_scan
-    sterile = param.Sterile(
+    sterile = Sterile(
         theta, oscillations=oscillations, decay=decay, decouple_decay=decouple_decay
     )
     if sigReps is not None:
@@ -669,7 +669,7 @@ def DecayMuBNuEDis(
     """Function for reweighting MicroBooNE nu_e spectra in terms of true energy instead of reconstructed energy"""
 
     # Load the Sterile class from param_scan
-    sterile = param.Sterile(
+    sterile = Sterile(
         theta, oscillations=oscillations, decay=decay, decouple_decay=decouple_decay
     )
     PeeRW = []
@@ -680,7 +680,10 @@ def DecayMuBNuEDis(
         # reset PeeRW
         PeeRW = []
         for k in range(len(MCT)):
-            PeeRW.append(MCT[k] * sterile.PeeAvg(MuB_True_BinEdges[k], MuB_True_BinEdges[k + 1], LMBT))
+            PeeRW.append(
+                MCT[k]
+                * sterile.PeeAvg(MuB_True_BinEdges[k], MuB_True_BinEdges[k + 1], LMBT)
+            )
         if energy_degradation:
             PeeRW = sterile.EnergyDegradation(MCT, MuB_True_BinEdges, "Pee")
     PeeRW2 = copy.deepcopy(PeeRW)
@@ -706,7 +709,7 @@ def DecayMuBNuMuDis(
     """Function for reweighting MicroBooNE nu_mu spectra in terms of true energy instead of reconstructed energy"""
 
     # Load the Sterile class from param_scan
-    sterile = param.Sterile(
+    sterile = Sterile(
         theta, oscillations=oscillations, decay=decay, decouple_decay=decouple_decay
     )
     PmmRW_FC = []
@@ -715,12 +718,18 @@ def DecayMuBNuMuDis(
         PmmRW_FC.append(NuMuCC_TrueEDist_FC[k])
         PmmRW_PC.append(NuMuCC_TrueEDist_PC[k])
     if disappearance:
-        # reset PmmRW_FC and PmmRW_PC 
+        # reset PmmRW_FC and PmmRW_PC
         PmmRW_FC = []
         PmmRW_PC = []
         for k in range(len(NuMuCC_TrueEDist_FC)):
-            PmmRW_FC.append(NuMuCC_TrueEDist_FC[k] * sterile.PmmAvg(MuB_BinEdges_NuMu[k], MuB_BinEdges_NuMu[k + 1], LMBT))
-            PmmRW_PC.append(NuMuCC_TrueEDist_PC[k] * sterile.PmmAvg(MuB_BinEdges_NuMu[k], MuB_BinEdges_NuMu[k + 1], LMBT))
+            PmmRW_FC.append(
+                NuMuCC_TrueEDist_FC[k]
+                * sterile.PmmAvg(MuB_BinEdges_NuMu[k], MuB_BinEdges_NuMu[k + 1], LMBT)
+            )
+            PmmRW_PC.append(
+                NuMuCC_TrueEDist_PC[k]
+                * sterile.PmmAvg(MuB_BinEdges_NuMu[k], MuB_BinEdges_NuMu[k + 1], LMBT)
+            )
         if energy_degradation:
             PmmRW_FC = sterile.EnergyDegradation(
                 NuMuCC_TrueEDist_FC, MuB_BinEdges_NuMu, "Pmm"

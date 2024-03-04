@@ -1,6 +1,7 @@
 import numpy as np
 from importlib.resources import open_text
 
+
 def StackCovarianceMatrix(big_covariance, n_signal, n_numu):
     covariance = np.zeros([n_signal + n_numu, n_signal + n_numu])
 
@@ -190,7 +191,13 @@ def chi2_MiniBooNE(
 
 
 def chi2_MiniBooNE_combined(
-    MC_nue_app,  MC_nuebar_app, MC_nue_dis=None, MC_numu_dis=None, MC_nuebar_dis=None, MC_numubar_dis=None, year="2020"
+    MC_nue_app,
+    MC_nuebar_app,
+    MC_nue_dis=None,
+    MC_numu_dis=None,
+    MC_nuebar_dis=None,
+    MC_numubar_dis=None,
+    year="2020",
 ):
     """chi2_MiniBooNE_combined Get MiniBooNE chi2 from a given data release from FHC + RHC
 
@@ -257,8 +264,6 @@ def chi2_MiniBooNE_combined(
         )
     )
 
-    
-    
     # NOTE: new method from Tao.
     if MC_nue_dis is not None:
         nue_bkg = MC_nue_dis
@@ -279,11 +284,11 @@ def chi2_MiniBooNE_combined(
                 f"miniboone_numu.txt",
             )
         )
-        
+
     if MC_nuebar_dis is not None:
-        nue_bkg = MC_nue_dis
+        nuebar_bkg = MC_nuebar_dis
     else:
-        nue_bkg = np.genfromtxt(
+        nuebar_bkg = np.genfromtxt(
             open_text(
                 f"MiniTools.include.MB_data_release_{year}.combined",
                 f"miniboone_nuebarbgr_lowe.txt",
@@ -300,7 +305,6 @@ def chi2_MiniBooNE_combined(
             )
         )
 
-    
     NP_diag_matrix = np.diag(
         np.concatenate(
             [
@@ -308,13 +312,15 @@ def chi2_MiniBooNE_combined(
                 nue_bkg * 0.0,
                 numu_MC * 0.0,
                 MC_nuebar_app,
-                nue_bkg_bar * 0.0,
-                numu_MC_bar * 0.0,
+                nuebar_bkg * 0.0,
+                numubar_MC * 0.0,
             ]
         )
     )
     tot_diag_matrix = np.diag(
-        np.concatenate([MC_nue_app, nue_bkg, numu_MC, MC_nuebar_app, nue_bkg_bar, numu_MC_bar])
+        np.concatenate(
+            [MC_nue_app, nue_bkg, numu_MC, MC_nuebar_app, nuebar_bkg, numubar_MC]
+        )
     )
 
     rescaled_covariance = np.dot(
@@ -323,17 +329,18 @@ def chi2_MiniBooNE_combined(
     rescaled_covariance += NP_diag_matrix  # this adds the statistical error on data
 
     # collapse background part of the covariance
-    n_signal = len(NP_MC)
+    n_signal = len(MC_nue_app)
     n_numu = len(numu_MC)
+
     error_matrix = MassageCovarianceMatrix(rescaled_covariance, n_signal, n_numu)
 
     # compute residuals
     residuals = np.concatenate(
         [
-            nue_data - (NP_MC + nue_bkg),
+            nue_data - (MC_nue_app + nue_bkg),
             (numu_data - numu_MC),
-            nue_data_bar - (NP_MC_BAR + nue_bkg_bar),
-            (numu_data_bar - numu_MC_bar),
+            nuebar_data - (MC_nuebar_app + nuebar_bkg),
+            (numubar_data - numubar_MC),
         ]
     )
 

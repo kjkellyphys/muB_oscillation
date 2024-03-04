@@ -15,3 +15,17 @@ MC_numu_bkg_tot = np.genfromtxt(
         f"miniboone_numu.txt",
     )
 )
+
+
+MC_nuebar_bkg_tot = np.genfromtxt(
+    open_text(
+        f"MiniTools.include.MB_data_release_2020.rhcmode",
+        f"miniboone_nuebarbgr_lowe.txt",
+    )
+)
+MC_numubar_bkg_tot = np.genfromtxt(
+    open_text(
+        f"MiniTools.include.MB_data_release_2020.rhcmode",
+        f"miniboone_numubar.txt",
+    )
+)
