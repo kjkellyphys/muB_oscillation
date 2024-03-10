@@ -567,6 +567,8 @@ def Decay_muB_OscChi2(
                             sterile.EnergyDegradation(SigSets[SI], BE, "Pee")
                             / SigSets[SI]
                         )
+                    if not decay and oscillations:
+                        RWVec = [sterile.Peeosc(BE[kk], BE[kk+1], LMBT) for kk in range(len(BE) - 1)]
             elif ST == "numu":
                 RWVec = [1.0 for kk in range(len(BE) - 1)]
                 if disappearance:
@@ -579,6 +581,8 @@ def Decay_muB_OscChi2(
                             sterile.EnergyDegradation(SigSets[SI], BE, "Pmm")
                             / SigSets[SI]
                         )
+                    if not decay and oscillations:
+                        RWVec = [sterile.Pmmosc(BE[kk], BE[kk+1], LMBT) for kk in range(len(BE) - 1)]
             elif ST == "NCPi0" or ST == "numuPi0":
                 RWVec = [1.0 for kk in range(len(BE) - 1)]
             SSRW.append(RWVec * SigSets[SI])
@@ -686,6 +690,9 @@ def DecayMuBNuEDis(
             )
         if energy_degradation:
             PeeRW = sterile.EnergyDegradation(MCT, MuB_True_BinEdges, "Pee")
+        if not decay and oscillations:
+            for k in range(len(MCT)):
+                PeeRW[k] = MCT[k] * sterile.Peeosc(MuB_True_BinEdges[k], MuB_True_BinEdges[k+1], LMBT)
     PeeRW2 = copy.deepcopy(PeeRW)
     PCNuE = GBPC_NuE.miniToMicro(PeeRW)
     PCNuE = np.insert(PCNuE, 0, [0.0])
@@ -737,6 +744,10 @@ def DecayMuBNuMuDis(
             PmmRW_PC = sterile.EnergyDegradation(
                 NuMuCC_TrueEDist_PC, MuB_BinEdges_NuMu, "Pmm"
             )
+        if not decay and oscillations:
+            for k in range(len(NuMuCC_TrueEDist_FC)):
+                PmmRW_FC[k] = NuMuCC_TrueEDist_FC[k] * sterile.Pmmosc(MuB_BinEdges_NuMu[k], MuB_BinEdges_NuMu[k+1], LMBT)
+                PmmRW_PC[k] = NuMuCC_TrueEDist_PC[k] * sterile.Pmmosc(MuB_BinEdges_NuMu[k], MuB_BinEdges_NuMu[k+1], LMBT)
     RecoDist_FC_0 = np.dot(NuMuCC_MigMat_FC, PmmRW_FC)
     RecoDist_PC_0 = np.dot(NuMuCC_MigMat_PC, PmmRW_PC)
 

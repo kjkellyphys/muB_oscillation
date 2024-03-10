@@ -3,7 +3,7 @@ import numba
 from scipy import integrate
 from scipy.special import expi
 from . import const
-
+import MicroTools as micro
 
 # --------------------------------------------------------------------------------
 class Sterile:
@@ -218,7 +218,7 @@ class Sterile:
         # Decay term
         pdecay = self.Um4Sq * self.Fdecay(E4, Edaughter, Length)
         if not self.decouple_decay:
-            # overlap of daughter with nu_e state
+            # overlap of daughter with nu_mu state
             pdecay *= self.Us4Sq * self.Um4Sq / (1 - self.Us4Sq)
 
         # Oscillation term
@@ -401,7 +401,7 @@ class Sterile:
                         Etrue_bins[k + 1],
                         Etrue_bins[i],
                         Etrue_bins[i + 1],
-                        L_micro,
+                        micro.L_micro,
                         noffset=0,
                     )
                 elif which_channel == "Pmm":
@@ -410,7 +410,7 @@ class Sterile:
                         Etrue_bins[k + 1],
                         Etrue_bins[i],
                         Etrue_bins[i + 1],
-                        L_micro,
+                        micro.L_micro,
                         noffset=0,
                     )
                 R_deg[k][i] = Pdecay * Etrue_dist[i]
