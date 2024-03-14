@@ -28,7 +28,7 @@ def reweight_MC_to_nue_flux(Enu, weights, mode="fhc"):
 def create_reco_migration_matrix(
     ereco_bins, etrue_bins, ereco_events, etrue_events, weights
 ):
-    # Set up a migration matrix that maps Etrue to Ereco with shape of (50,13)
+    # Set up a migration matrix that maps Etrue to Ereco
     h0_unnorm = np.histogram2d(
         etrue_events, ereco_events, bins=[etrue_bins, ereco_bins], weights=weights
     )[0]

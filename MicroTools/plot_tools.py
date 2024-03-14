@@ -114,7 +114,7 @@ def data_plot(ax, X, Y, xerr, yerr, zorder=2, label="data", **kwargs):
         color="black",
         label=label,
         zorder=zorder,
-        **kwargs
+        **kwargs,
     )
 
 
@@ -176,7 +176,7 @@ def flushalign(ax):
         elif ic == len(ax.get_xticklabels()) - 1:
             l.set_ha("right")
         ic += 1
-        
+
 
 # Function to find the path that connects points in order of closest proximity
 def nearest_neighbor_path(points):
@@ -274,6 +274,7 @@ def get_ordered_closed_region(points, logx=False, logy=False):
         y_new = sy * 10 ** (ssy * y_new)
 
     return x_new, y_new
+
 
 def interp_grid(
     x,

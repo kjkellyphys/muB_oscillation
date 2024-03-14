@@ -14,7 +14,7 @@ class MBtomuB:
         effNoUnfold=False,
         which_template="2020",
     ):
-        """This class converts an excess in MiniBooNE 2018 to the corresponding signal in MicroBooNE
+        """This class converts an excess in MiniBooNE to the corresponding signal in MicroBooNE
 
         Parameters:
         analysis           ---- MicroBooNE analysis. Possible values are '1eX' [inclusive, fully containted],
