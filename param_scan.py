@@ -462,7 +462,7 @@ def get_nue_rates(
             MC_nue_bkg_intrinsic_osc = np.dot(
                 sterile.EnergyDegradation(
                 fast_histogram(
-                    Etrue_nue_daughter, bins=e_prod_e_int_bins, weights=Weight_nue_dis
+                    Etrue_nue_parent, bins=e_prod_e_int_bins, weights=Weight_nue_flux
                 )[0],e_prod_e_int_bins,"Pee"),
                 mini.apps.migration_matrix_official_bins_nue_11bins,
             )
@@ -476,11 +476,11 @@ def get_nue_rates(
                 mini.apps.migration_matrix_official_bins_nuebar_11bins,
             )
             MC_nuebar_bkg_intrinsic_osc = np.dot(
-                sterile.EnergyDegradation(
+                antisterile.EnergyDegradation(
                 fast_histogram(
-                    Etrue_nuebar_daughter,
+                    Etrue_nuebar_parent,
                     bins=e_prod_e_int_bins,
-                    weights=Weight_nuebar_dis,
+                    weights=Weight_nuebar_flux,
                 )[0],e_prod_e_int_bins,"Pee"),
                 mini.apps.migration_matrix_official_bins_nuebar_11bins,
             )
@@ -573,7 +573,7 @@ def get_nue_rates(
                 dic["MC_numu_bkg_total_w_dis"] = np.dot(
                     sterile.EnergyDegradation(
                     fast_histogram(
-                        Etrue_numu_daughter,
+                        Etrue_numu_parent,
                         bins=e_prod_e_int_bins_numu,
                         weights=Weight_numu_dis,
                     )[0],e_prod_e_int_bins_numu,"Pmm"),
@@ -582,7 +582,7 @@ def get_nue_rates(
                 dic["MC_numubar_bkg_total_w_dis"] = np.dot(
                     antisterile.EnergyDegradation(
                     fast_histogram(
-                        Etrue_numubar_daughter,
+                        Etrue_numubar_parent,
                         bins=e_prod_e_int_bins_numu,
                         weights=Weight_numubar_dis,
                     )[0],e_prod_e_int_bins_numu,"Pmm"),
