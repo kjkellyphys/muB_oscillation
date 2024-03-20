@@ -401,7 +401,6 @@ def get_nue_rates(
             mini.apps.migration_matrix_official_bins_nue_11bins,
         )
 
-        # NOTE: Need to update to nubar migration matrix!!!!
         dic["MC_nuebar_app"] = np.dot(
             fast_histogram(
                 Etrue_nuebar_daughter, bins=e_prod_e_int_bins, weights=Weight_nuebar_app
@@ -430,6 +429,9 @@ def get_nue_rates(
             Etrue_nuebar_parent, Etrue_nuebar_daughter, Length_nuebar_ext
         )
         if (not decay) and oscillations:
+            """
+            If only oscillations, then we can simply histogram the MC events
+            """
             MC_nue_bkg_intrinsic = fast_histogram(
                 Ereco_nue_ext,
                 weights=Weight_nue_flux,
@@ -452,6 +454,9 @@ def get_nue_rates(
                 bins=MB_Ereco_official_bins,
             )[0]
         elif energy_degradation:
+            """
+            If decay is involved, then we take energy degradation into account
+            """
             # Apply energy degradation to nue intrinsic background, then migrate nue signal from Etrue to Ereco with 11 bins
             MC_nue_bkg_intrinsic = np.dot(
                 fast_histogram(
@@ -461,9 +466,14 @@ def get_nue_rates(
             )
             MC_nue_bkg_intrinsic_osc = np.dot(
                 sterile.EnergyDegradation(
-                fast_histogram(
-                    Etrue_nue_parent, bins=e_prod_e_int_bins, weights=Weight_nue_flux
-                )[0],e_prod_e_int_bins,"Pee"),
+                    fast_histogram(
+                        Etrue_nue_parent,
+                        bins=e_prod_e_int_bins,
+                        weights=Weight_nue_flux,
+                    )[0],
+                    e_prod_e_int_bins,
+                    "Pee",
+                ),
                 mini.apps.migration_matrix_official_bins_nue_11bins,
             )
 
@@ -477,31 +487,37 @@ def get_nue_rates(
             )
             MC_nuebar_bkg_intrinsic_osc = np.dot(
                 antisterile.EnergyDegradation(
-                fast_histogram(
-                    Etrue_nuebar_parent,
-                    bins=e_prod_e_int_bins,
-                    weights=Weight_nuebar_flux,
-                )[0],e_prod_e_int_bins,"Pee"),
+                    fast_histogram(
+                        Etrue_nuebar_parent,
+                        bins=e_prod_e_int_bins,
+                        weights=Weight_nuebar_flux,
+                    )[0],
+                    e_prod_e_int_bins,
+                    "Pee",
+                ),
                 mini.apps.migration_matrix_official_bins_nuebar_11bins,
             )
         else:
+            """
+            This then is a last resort method that uses migration matrices, but does no energy degradation
+            """
             # Migrate nue signal from Etrue to Ereco with 11 bins
             MC_nue_bkg_intrinsic = np.dot(
                 fast_histogram(
-                    Etrue_nue_daughter, bins=e_prod_e_int_bins, weights=Weight_nue_flux
+                    Etrue_nue_parent, bins=e_prod_e_int_bins, weights=Weight_nue_flux
                 )[0],
                 mini.apps.migration_matrix_official_bins_nue_11bins,
             )
             MC_nue_bkg_intrinsic_osc = np.dot(
                 fast_histogram(
-                    Etrue_nue_daughter, bins=e_prod_e_int_bins, weights=Weight_nue_dis
+                    Etrue_nue_parent, bins=e_prod_e_int_bins, weights=Weight_nue_dis
                 )[0],
                 mini.apps.migration_matrix_official_bins_nue_11bins,
             )
 
             MC_nuebar_bkg_intrinsic = np.dot(
                 fast_histogram(
-                    Etrue_nuebar_daughter,
+                    Etrue_nuebar_parent,
                     bins=e_prod_e_int_bins,
                     weights=Weight_nuebar_flux,
                 )[0],
@@ -509,7 +525,7 @@ def get_nue_rates(
             )
             MC_nuebar_bkg_intrinsic_osc = np.dot(
                 fast_histogram(
-                    Etrue_nuebar_daughter,
+                    Etrue_nuebar_parent,
                     bins=e_prod_e_int_bins,
                     weights=Weight_nuebar_dis,
                 )[0],
@@ -572,23 +588,29 @@ def get_nue_rates(
                 # now apply energy degradation to Etrue, then migrate to Ereco
                 dic["MC_numu_bkg_total_w_dis"] = np.dot(
                     sterile.EnergyDegradation(
-                    fast_histogram(
-                        Etrue_numu_parent,
-                        bins=e_prod_e_int_bins_numu,
-                        weights=Weight_numu_dis,
-                    )[0],e_prod_e_int_bins_numu,"Pmm"),
+                        fast_histogram(
+                            Etrue_numu_parent,
+                            bins=e_prod_e_int_bins_numu,
+                            weights=Weight_numu_ext,
+                        )[0],
+                        e_prod_e_int_bins_numu,
+                        "Pmm",
+                    ),
                     mini.apps.migration_matrix_official_bins_numu,
                 )
                 dic["MC_numubar_bkg_total_w_dis"] = np.dot(
                     antisterile.EnergyDegradation(
-                    fast_histogram(
-                        Etrue_numubar_parent,
-                        bins=e_prod_e_int_bins_numu,
-                        weights=Weight_numubar_dis,
-                    )[0],e_prod_e_int_bins_numu,"Pmm"),
+                        fast_histogram(
+                            Etrue_numubar_parent,
+                            bins=e_prod_e_int_bins_numu,
+                            weights=Weight_numu_ext,
+                        )[0],
+                        e_prod_e_int_bins_numu,
+                        "Pmm",
+                    ),
                     mini.apps.migration_matrix_official_bins_numubar,
                 )
-            
+
             # # Migrate nue signal from Etrue to Ereco with 11 bins
             # MC_numu_bkg_total_w_dis = np.dot(
             # fast_histogram(

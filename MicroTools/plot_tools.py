@@ -108,7 +108,7 @@ def data_plot(ax, X, Y, xerr, yerr, zorder=2, label="data", **kwargs):
         capsize=1,
         markerfacecolor="black",
         markeredgecolor="black",
-        ms=2.5,
+        ms=1.75,
         lw=0.0,
         elinewidth=0.75,
         color="black",
