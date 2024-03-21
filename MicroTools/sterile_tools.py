@@ -206,7 +206,21 @@ class Sterile:
         # Oscillation term
         posc = self.Um4Sq * self.Ue4Sq * self.Fosc(E4, Length)
         return pdecay + posc
-
+    
+    def Pmedecay(self, E4, Edaughter, Length):
+        """Flavor transition probability, E4 -- GeV, Edaughter -- GeV, Length -- km"""
+        # Decay term
+        pdecay = self.Um4Sq * self.Fdecay(E4, Edaughter, Length)
+        if not self.decouple_decay:
+            # overlap of daughter with nu_e state
+            pdecay *= self.Us4Sq * self.Ue4Sq / (1 - self.Us4Sq)
+        return pdecay
+    
+    def Pmeosc(self, E4, Length):
+        # Oscillation term
+        posc = self.Um4Sq * self.Ue4Sq * self.Fosc(E4, Length)
+        return posc
+    
     def Pme_old(self, E4, Length):
         """The original appearance probability"""
         return (
