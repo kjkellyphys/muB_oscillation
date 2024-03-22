@@ -133,7 +133,7 @@ def create_grid_of_params(g, m4, Ue4Sq, Um4Sq):
     paramlist_decay = np.array(np.meshgrid(g, m4, Ue4Sq, Um4Sq)).T.reshape(-1, 4)
     paramlist = []
     for g, m4, ue4s, umu4s in paramlist_decay:
-        if (umu4s + ue4s <= 1.0) and (g**2 / 4 / np.pi) < 1.0:
+        if (umu4s + ue4s < 1.0) and (g**2 / 4 / np.pi) < 1.0:
             paramlist.append({"g": g, "m4": m4, "Ue4Sq": ue4s, "Um4Sq": umu4s})
     return np.array(paramlist)
     # return [{"g": g, "m4": m4, "Ue4Sq": Ue4Sq, "Um4Sq": Um4Sq} for g, m4, Ue4Sq, Um4Sq in paramlist_decay]
@@ -144,7 +144,7 @@ def create_grid_of_params_sin2theta(g, m4, sin2thetaSq, Um4Sq):
     paramlist = []
     for g, m4, s2ts, umu4s in paramlist_decay:
         ue4s = s2ts / 4 / umu4s
-        if (umu4s + ue4s <= 1.0) and ((g**2 / 4 / np.pi) < 1.0):
+        if (umu4s + ue4s < 1.0) and ((g**2 / 4 / np.pi) < 1.0):
             paramlist.append({"g": g, "m4": m4, "Ue4Sq": ue4s, "Um4Sq": umu4s})
     return np.array(paramlist)
 
@@ -577,17 +577,17 @@ def get_nue_rates(
                 Weight_numubar / n_replications, n=n_replications
             )
 
-            # if undo_numu_normalization:
-            #     # do not apply Pmumu in this case as the flux is already normalized
-            #     Weight_numu_dis = Weight_numu_ext
-            #     Weight_numubar_dis = Weight_numubar_ext
-            # else:
-            Weight_numu_dis = Weight_numu_ext * sterile.Pmm(
-                Etrue_numu_parent, Etrue_numu_daughter, Length_numu_ext
-            )
-            Weight_numubar_dis = Weight_numubar_ext * antisterile.Pmm(
-                Etrue_numubar_parent, Etrue_numubar_daughter, Length_numubar_ext
-            )
+            if undo_numu_normalization:
+                # do not apply Pmumu in this case as the flux is already normalized
+                Weight_numu_dis = Weight_numu_ext
+                Weight_numubar_dis = Weight_numubar_ext
+            else:
+                Weight_numu_dis = Weight_numu_ext * sterile.Pmm(
+                    Etrue_numu_parent, Etrue_numu_daughter, Length_numu_ext
+                )
+                Weight_numubar_dis = Weight_numubar_ext * antisterile.Pmm(
+                    Etrue_numubar_parent, Etrue_numubar_daughter, Length_numubar_ext
+                )
 
             if not energy_degradation:
                 dic["MC_numu_bkg_total_w_dis"] = fast_histogram(
