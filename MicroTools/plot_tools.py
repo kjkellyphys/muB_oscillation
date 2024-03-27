@@ -207,29 +207,31 @@ def nearest_neighbor_path(points):
 
 
 def get_ordered_closed_region(points, logx=False, logy=False):
-    x, y = points
+    xraw, yraw = points
 
     # check for nans
     if np.isnan(points).sum() > 0:
         raise ValueError("NaN's were found in input data. Cannot order the contour.")
 
-    # check for repeated x-entries --
-    # this is an error because
-    x, mask_diff = np.unique(x, return_index=True)
-    y = y[mask_diff]
+    # check for repeated x-entries -- remove them
+    # x, mask_diff = np.unique(x, return_index=True)
+    # y = y[mask_diff]
 
     if logy:
-        if (y == 0).any():
+        if (yraw == 0).any():
             raise ValueError("y values cannot contain any zeros in log mode.")
-        sy = np.sign(y)
-        ssy = (np.abs(y) < 1) * (-1) + (np.abs(y) > 1) * (1)
-        y = ssy * np.log10(y * sy)
+        yraw = np.log10(yraw)
     if logx:
-        if (x == 0).any():
+        if (xraw == 0).any():
             raise ValueError("x values cannot contain any zeros in log mode.")
-        sx = np.sign(x)
-        ssx = (x < 1) * (-1) + (x > 1) * (1)
-        x = ssx * np.log10(x * sx)
+        xraw = np.log10(xraw)
+
+    # Transform to unit square space:
+    xmin, xmax = np.min(xraw), np.max(xraw)
+    ymin, ymax = np.min(yraw), np.max(yraw)
+
+    x = (xraw - xmin) / (xmax - xmin)
+    y = (yraw - ymin) / (ymax - ymin)
 
     points = np.array([x, y]).T
     # points_s     = (points - points.mean(0))
@@ -268,11 +270,13 @@ def get_ordered_closed_region(points, logx=False, logy=False):
     # Return the ordered path indices and the corresponding points
     x_new, y_new = points[path].T
 
-    if logx:
-        x_new = sx * 10 ** (ssx * x_new)
-    if logy:
-        y_new = sy * 10 ** (ssy * y_new)
+    x_new = x_new * (xmax - xmin) + xmin
+    y_new = y_new * (ymax - ymin) + ymin
 
+    if logx:
+        x_new = 10 ** (x_new)
+    if logy:
+        y_new = 10 ** (y_new)
     return x_new, y_new
 
 
