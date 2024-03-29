@@ -16,7 +16,7 @@ fsize = 11
 fsize_annotate = 10
 
 std_figsize = (1.2 * 3.7, 1.3 * 2.3617)
-std_axes_form = [0.16, 0.16, 0.81, 0.76]
+std_axes_form = [0.18, 0.16, 0.79, 0.76]
 
 rcparams = {
     "axes.labelsize": fsize,
