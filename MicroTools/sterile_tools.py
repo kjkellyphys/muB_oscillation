@@ -272,12 +272,12 @@ class Sterile:
     # ----------------------------------------------------------------
     # DECAY AND OSC PROBABILITIES IN DISAPPEARANCE ENERGY DEGRADATION
     # ----------------------------------------------------------------
-    def Pmmdecay(self, Emin, Emax, Eintmin, Eintmax, Length, noffset=0):
+    def Pmmdecay(self, Ebins, e4_index, eint_index, Length, noffset=0):
+        Eintmin, Eintmax = Ebins[eint_index], Ebins[eint_index + 1]
+        Emin, Emax = Ebins[e4_index], Ebins[e4_index + 1]
+        E0 = Ebins[0]
+
         # decay term in Pmm, Emin and Emax are E4 bin edges
-        if Emin == 0.0:
-            Emin = 0.000001
-        if Emax == 0.0:
-            Emax = 0.000001
         if Emax < 1:
             n = 2 + noffset
         else:
@@ -285,7 +285,7 @@ class Sterile:
         pdecay = (
             self.Um4Sq
             * self.FdecayAna(Emin, Emax, Length)
-            * ((Eintmax**2 - Eintmin**2) / (Emax * Emin))
+            * ((Eintmax**2 - Eintmin**2) / ((Emax-E0) * (Emax+E0)))
             * ((Eintmin + Eintmax) / (Emin + Emax)) ** n
         )
         # ((Eintmax**2 - Eintmin**2)/(Emax*Emin)) factor is to account for the decay rate scaling with Eint/E4
@@ -302,11 +302,11 @@ class Sterile:
         # osc term in Pmm, does not involve energy degradation
         return 1 - self.Um4Sq * (1 - self.Um4Sq) * self.FoscAna(Emin, Emax, Length)
 
-    def Peedecay(self, Emin, Emax, Eintmin, Eintmax, Length, noffset=0):
-        if Emin == 0.0:
-            Emin = 0.000001
-        if Emax == 0.0:
-            Emax = 0.000001
+    def Peedecay(self, Ebins, e4_index, eint_index, Length, noffset=0):
+        Eintmin, Eintmax = Ebins[eint_index], Ebins[eint_index + 1]
+        Emin, Emax = Ebins[e4_index], Ebins[e4_index + 1]
+        E0 = Ebins[0]
+
         # decay term in Pee, Emin and Emax are E4 bin edges
         if Emax < 1:
             n = 2 + noffset
@@ -315,7 +315,7 @@ class Sterile:
         pdecay = (
             self.Ue4Sq
             * self.FdecayAna(Emin, Emax, Length)
-            * ((Eintmax**2 - Eintmin**2) / (Emax * Emin))
+            * ((Eintmax**2 - Eintmin**2) / ((Emax-E0) * (Emax+E0)))
             * ((Eintmin + Eintmax) / (Emin + Emax)) ** n
         )
         # pdecay = self.Ue4Sq * self.FdecayAvg(Emin, Emax, Length) * ((Eintmin + Eintmax) / (Emin + Emax)) ** n
@@ -410,24 +410,10 @@ class Sterile:
             for i in range(k + 1):
                 Pdecay = 1
                 if which_channel == "Pee":
-                    Pdecay = self.Peedecay(
-                        Etrue_bins[k],
-                        Etrue_bins[k + 1],
-                        Etrue_bins[i],
-                        Etrue_bins[i + 1],
-                        micro.L_micro,
-                        noffset=0,
-                    )
+                    Pdecay = self.Peedecay(Etrue_bins, k, i, micro.L_micro, noffset=0)
                 elif which_channel == "Pmm":
-                    Pdecay = self.Pmmdecay(
-                        Etrue_bins[k],
-                        Etrue_bins[k + 1],
-                        Etrue_bins[i],
-                        Etrue_bins[i + 1],
-                        micro.L_micro,
-                        noffset=0,
-                    )
-                R_deg[k][i] = Pdecay * Etrue_dist[i]
+                    Pdecay = self.Pmmdecay(Etrue_bins, k, i, micro.L_micro, noffset=0)
+                R_deg[k][i] = Pdecay * Etrue_dist[k] #k indexes true energy, i indexes degraded energy
         R_sum = np.sum(R_deg, axis=0)
 
         # oscillation piece
