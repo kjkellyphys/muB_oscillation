@@ -278,7 +278,7 @@ class Sterile:
         E0 = Ebins[0]
 
         # decay term in Pmm, Emin and Emax are E4 bin edges
-        if Emax < 1:
+        if Emax < 1: #Should this be Emax or Eintmax? We should discuss.
             n = 2 + noffset
         else:
             n = 1 + noffset
@@ -308,7 +308,7 @@ class Sterile:
         E0 = Ebins[0]
 
         # decay term in Pee, Emin and Emax are E4 bin edges
-        if Emax < 1:
+        if Emax < 1: #Should this be Emax or Eintmax? We should discuss.
             n = 2 + noffset
         else:
             n = 1 + noffset
