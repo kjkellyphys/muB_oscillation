@@ -93,7 +93,7 @@ def run_scan_gfixed_Ue4SQRfixed(
 
     # Range of mixings scanned
     dm_Vec = np.geomspace(np.sqrt(1e-1), np.sqrt(1e5), Npoints)
-    Umu4Sq = np.geomspace(1e-5, 0.5, Npoints)
+    Umu4Sq = np.geomspace(1e-4, 0.5, Npoints)
 
     # Cartesian product of grid -- already imposes unitarity and pertubatirbity of g
     paramlist = param_scan.create_grid_of_params(

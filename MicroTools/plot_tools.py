@@ -1,4 +1,6 @@
 import numpy as np
+from scipy.stats import chi2
+from math import log10, floor, erf
 
 import matplotlib
 import matplotlib.pyplot as plt
@@ -6,6 +8,8 @@ from matplotlib import rc, rcParams
 from matplotlib.font_manager import FontProperties
 import matplotlib.tri as tri
 from scipy.spatial.distance import pdist, squareform
+from matplotlib import colors as mpl_colors
+from matplotlib.collections import PatchCollection
 
 import scipy
 from scipy.interpolate import splprep, splev
@@ -32,6 +36,21 @@ rc("font", **{"family": "serif", "serif": ["Computer Modern Roman"]})
 matplotlib.rcParams["hatch.linewidth"] = 0.3
 
 rcParams.update(rcparams)
+
+
+##########################
+#
+def get_CL_from_sigma(sigma):
+    return erf(sigma / np.sqrt(2))
+
+
+def get_chi2vals_w_nsigmas(n_sigmas, ndof):
+    return [chi2.ppf(get_CL_from_sigma(i), ndof) for i in range(n_sigmas + 1)]
+
+
+def get_chi2vals_w_CL(CLs, ndof):
+    return [chi2.ppf(cl, ndof) for cl in CLs]
+
 
 ###########################
 # Kevin
@@ -299,14 +318,13 @@ def interp_grid(
 
     # log scale x
     if logx:
-        xi = np.logspace(np.min(np.log10(x)), np.max(np.log10(x)), fine_gridx)
+        xi = np.geomspace(np.min(x), np.max(x), fine_gridx)
     else:
         xi = np.linspace(np.min(x), np.max(x), fine_gridx)
 
     # log scale y
     if logy:
-        yi = np.logspace(np.min(np.log10(y)), np.max(np.log10(y)), fine_gridy)
-
+        yi = np.geomspace(np.min(y), np.max(y), fine_gridy)
     else:
         yi = np.linspace(np.min(y), np.max(y), fine_gridy)
 
@@ -322,7 +340,7 @@ def interp_grid(
 
     elif method == "interpolate":
         Zi = scipy.interpolate.griddata(
-            (x, y), z, (xi[None, :], yi[:, None]), method="linear", rescale=False
+            (x, y), z, (xi[None, :], yi[:, None]), method="linear", rescale=True
         )
     else:
         print(f"Method {method} not implemented.")
@@ -334,3 +352,117 @@ def interp_grid(
         )
 
     return Xi, Yi, Zi
+
+
+def round_sig(x, sig):
+    return round(x, sig - int(floor(log10(abs(x)))) - 1)
+
+
+def sci_notation(
+    num,
+    sig_digits=1,
+    precision=None,
+    exponent=None,
+    notex=False,
+    optional_sci=False,
+):
+    """
+    Returns a string representation of the scientific
+    notation of the given number formatted for use with
+    LaTeX or Mathtext, with specified number of significant
+    decimal digits and precision (number of decimal digits
+    to show). The exponent to be used can also be specified
+    explicitly.
+    """
+    if num != 0:
+        if exponent is None:
+            exponent = int(np.floor(np.log10(abs(num))))
+        coeff = round(num / float(10**exponent), sig_digits)
+        if coeff == 10:
+            coeff = 1
+            exponent += 1
+        if precision is None:
+            precision = sig_digits
+
+        if optional_sci and np.abs(exponent) < optional_sci:
+            string = rf"{round_sig(num, precision)}"
+        else:
+            string = r"{0:.{2}f}\times 10^{{{1:d}}}".format(coeff, exponent, precision)
+
+        if notex:
+            return string
+        else:
+            return f"${string}$"
+
+    else:
+        return r"0"
+
+
+# https://stackoverflow.com/questions/37765197/darken-or-lighten-a-color-in-matplotlib
+def lighten_color(color, amount=0.5):
+    """
+    Lightens the given color by multiplying (1-luminosity) by the given amount.
+    Input can be matplotlib color string, hex string, or RGB tuple.
+
+    Examples:
+    >> lighten_color('g', 0.3)
+    >> lighten_color('#F034A3', 0.6)
+    >> lighten_color((.3,.55,.1), 0.5)
+    """
+    try:
+        c = mc.cnames[color]
+    except:
+        c = color
+    c = colorsys.rgb_to_hls(*mc.to_rgb(c))
+    return colorsys.hls_to_rgb(c[0], 1 - amount * (1 - c[1]), c[2])
+
+
+###########################
+def get_cmap_colors(name, ncolors, cmin=0, cmax=1, reverse=False):
+    try:
+        cmap = plt.get_cmap(name)
+    except ValueError:
+        cmap = build_cmap(name, reverse=reverse)
+    return cmap(np.linspace(cmin, cmax, ncolors, endpoint=True))
+
+
+def build_cmap(color, reverse=False):
+    cvals = [0, 1]
+    colors = [color, "white"]
+    if reverse:
+        colors = colors[::-1]
+
+    norm = plt.Normalize(min(cvals), max(cvals))
+    tuples = list(zip(map(norm, cvals), colors))
+    return mpl_colors.LinearSegmentedColormap.from_list("", tuples)
+
+
+# define an object that will be used by the legend
+class MulticolorPatch(object):
+    def __init__(self, colors):
+        self.colors = colors
+
+
+# define a handler for the MulticolorPatch object
+class MulticolorPatchHandler(object):
+    def legend_artist(self, legend, orig_handle, fontsize, handlebox):
+        width, height = handlebox.width, handlebox.height
+        patches = []
+        for i, c in enumerate(orig_handle.colors):
+            patches.append(
+                plt.Rectangle(
+                    [
+                        width / len(orig_handle.colors) * i - handlebox.xdescent,
+                        -handlebox.ydescent,
+                    ],
+                    width / len(orig_handle.colors),
+                    height,
+                    facecolor=c,
+                    edgecolor="none",
+                )
+            )
+
+        patch = PatchCollection(patches, match_original=True)
+
+        handlebox.add_artist(patch)
+        return patch
