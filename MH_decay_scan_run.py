@@ -23,8 +23,8 @@ def run_scan(
         )
 
     else:
-        Ue4Sq = np.geomspace(1e-3, 0.5, Npoints)
-        Umu4Sq = np.geomspace(1e-3, 0.5, Npoints)
+        Ue4Sq = np.geomspace(1e-4, 0.5, Npoints)
+        Umu4Sq = np.geomspace(1e-4, 0.5, Npoints)
         # Cartesian product of grid -- already imposes unitarity and pertubatirbity of g
         paramlist = param_scan.create_grid_of_params(
             g=g_Vec, m4=dm_Vec, Ue4Sq=Ue4Sq, Um4Sq=Umu4Sq
@@ -132,23 +132,60 @@ kwargs_std = {
 }
 
 
-# n = 50
-# _ = run_scan(kwargs_std, 'MH_decay_test_30', Npoints=n)
-# _ = run_scan_gfixed(kwargs_std, "MH_decay_gfixed_2.5_30", Npoints=n, gfixed=2.5)
-# _ = run_scan_gfixed(kwargs_std, "MH_decay_gfixed_1.0_30", Npoints=n, gfixed=1.0)
+n = 50
 
-# n = 2
-# _ = run_scan_gfixed_Ue4SQRfixed(
-#     kwargs_std,
-#     "MH_decay_gfixed_2.5_Ue4SQRfixed_0.05",
-#     Npoints=n,
-#     gfixed=2.5,
-#     Ue4SQRfixed=0.05,
-# )
-# _ = run_scan_gfixed_Ue4SQRfixed(
-#     kwargs_std,
-#     "MH_decay_gfixed_2.5_Ue4SQRfixed_0.10",
-#     Npoints=n,
-#     gfixed=2.5,
-#     Ue4SQRfixed=0.10,
-# )
+# 4D scans
+_ = run_scan(kwargs_std, "MH_decay_test_50", Npoints=n)
+
+# 3D scans
+_ = run_scan_gfixed(kwargs_std, "MH_decay_gfixed_2.5_40", Npoints=n, gfixed=2.5)
+_ = run_scan_gfixed(kwargs_std, "MH_decay_gfixed_1.0_40", Npoints=n, gfixed=1.0)
+
+
+# 2D scans
+_ = run_scan_gfixed_Ue4SQRfixed(
+    kwargs_std,
+    "MH_decay_gfixed_2.5_Ue4SQRfixed_0.10",
+    Npoints=n,
+    gfixed=2.5,
+    Ue4SQRfixed=0.10,
+)
+
+_ = run_scan_gfixed_Ue4SQRfixed(
+    kwargs_std,
+    "MH_decay_gfixed_2.5_Ue4SQRfixed_0.05",
+    Npoints=n,
+    gfixed=2.5,
+    Ue4SQRfixed=0.05,
+)
+_ = run_scan_gfixed_Ue4SQRfixed(
+    kwargs_std,
+    "MH_decay_gfixed_2.5_Ue4SQRfixed_0.01",
+    Npoints=n,
+    gfixed=2.5,
+    Ue4SQRfixed=0.01,
+)
+
+
+_ = run_scan_gfixed_Ue4SQRfixed(
+    kwargs_std,
+    "MH_decay_gfixed_1_Ue4SQRfixed_0.10",
+    Npoints=n,
+    gfixed=1,
+    Ue4SQRfixed=0.10,
+)
+
+_ = run_scan_gfixed_Ue4SQRfixed(
+    kwargs_std,
+    "MH_decay_gfixed_1_Ue4SQRfixed_0.05",
+    Npoints=n,
+    gfixed=1,
+    Ue4SQRfixed=0.05,
+)
+_ = run_scan_gfixed_Ue4SQRfixed(
+    kwargs_std,
+    "MH_decay_gfixed_1_Ue4SQRfixed_0.01",
+    Npoints=n,
+    gfixed=1,
+    Ue4SQRfixed=0.01,
+)
