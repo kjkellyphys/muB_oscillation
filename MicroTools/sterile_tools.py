@@ -5,6 +5,7 @@ from scipy.special import expi
 from . import const
 import MicroTools as micro
 
+
 # --------------------------------------------------------------------------------
 class Sterile:
     def __init__(
@@ -191,7 +192,11 @@ class Sterile:
             / (Emax - Emin)
             * (
                 (Emax - np.exp(-cst / Emax) * Emax - cst * expi(-cst / Emax))
-                - (Emin - np.exp(-cst / Emin) * Emin - cst * expi(-cst / Emin))
+                - (
+                    Emin
+                    - np.exp(-cst / (Emin + 1e-10)) * Emin
+                    - cst * expi(-cst / (Emin + 1e-10))
+                )
             )
         )
 
@@ -206,7 +211,7 @@ class Sterile:
         # Oscillation term
         posc = self.Um4Sq * self.Ue4Sq * self.Fosc(E4, Length)
         return pdecay + posc
-    
+
     def Pmedecay(self, E4, Edaughter, Length):
         """Flavor transition probability, E4 -- GeV, Edaughter -- GeV, Length -- km"""
         # Decay term
@@ -215,12 +220,12 @@ class Sterile:
             # overlap of daughter with nu_e state
             pdecay *= self.Us4Sq * self.Ue4Sq / (1 - self.Us4Sq)
         return pdecay
-    
+
     def Pmeosc(self, E4, Length):
         # Oscillation term
         posc = self.Um4Sq * self.Ue4Sq * self.Fosc(E4, Length)
         return posc
-    
+
     def Pme_old(self, E4, Length):
         """The original appearance probability"""
         return (
@@ -272,20 +277,20 @@ class Sterile:
     # ----------------------------------------------------------------
     # DECAY AND OSC PROBABILITIES IN DISAPPEARANCE ENERGY DEGRADATION
     # ----------------------------------------------------------------
-    def Pmmdecay(self, Emin, Emax, Eintmin, Eintmax, Length, noffset=0):
+    def Pmmdecay(self, Ebins, e4_index, eint_index, Length, noffset=0):
+        Eintmin, Eintmax = Ebins[eint_index], Ebins[eint_index + 1]
+        Emin, Emax = Ebins[e4_index], Ebins[e4_index + 1]
+        E0 = Ebins[0]
+
         # decay term in Pmm, Emin and Emax are E4 bin edges
-        if Emin == 0.0:
-            Emin = 0.000001
-        if Emax == 0.0:
-            Emax = 0.000001
-        if Emax < 1:
+        if Emax < 1:  # Should this be Emax or Eintmax? We should discuss.
             n = 2 + noffset
         else:
             n = 1 + noffset
         pdecay = (
             self.Um4Sq
             * self.FdecayAna(Emin, Emax, Length)
-            * ((Eintmax**2 - Eintmin**2) / (Emax * Emin))
+            * ((Eintmax**2 - Eintmin**2) / ((Emax - E0) * (Emax + E0)))
             * ((Eintmin + Eintmax) / (Emin + Emax)) ** n
         )
         # ((Eintmax**2 - Eintmin**2)/(Emax*Emin)) factor is to account for the decay rate scaling with Eint/E4
@@ -302,20 +307,20 @@ class Sterile:
         # osc term in Pmm, does not involve energy degradation
         return 1 - self.Um4Sq * (1 - self.Um4Sq) * self.FoscAna(Emin, Emax, Length)
 
-    def Peedecay(self, Emin, Emax, Eintmin, Eintmax, Length, noffset=0):
-        if Emin == 0.0:
-            Emin = 0.000001
-        if Emax == 0.0:
-            Emax = 0.000001
+    def Peedecay(self, Ebins, e4_index, eint_index, Length, noffset=0):
+        Eintmin, Eintmax = Ebins[eint_index], Ebins[eint_index + 1]
+        Emin, Emax = Ebins[e4_index], Ebins[e4_index + 1]
+        E0 = Ebins[0]
+
         # decay term in Pee, Emin and Emax are E4 bin edges
-        if Emax < 1:
+        if Emax < 1:  # Should this be Emax or Eintmax? We should discuss.
             n = 2 + noffset
         else:
             n = 1 + noffset
         pdecay = (
             self.Ue4Sq
             * self.FdecayAna(Emin, Emax, Length)
-            * ((Eintmax**2 - Eintmin**2) / (Emax * Emin))
+            * ((Eintmax**2 - Eintmin**2) / ((Emax - E0) * (Emax + E0)))
             * ((Eintmin + Eintmax) / (Emin + Emax)) ** n
         )
         # pdecay = self.Ue4Sq * self.FdecayAvg(Emin, Emax, Length) * ((Eintmin + Eintmax) / (Emin + Emax)) ** n
@@ -410,24 +415,12 @@ class Sterile:
             for i in range(k + 1):
                 Pdecay = 1
                 if which_channel == "Pee":
-                    Pdecay = self.Peedecay(
-                        Etrue_bins[k],
-                        Etrue_bins[k + 1],
-                        Etrue_bins[i],
-                        Etrue_bins[i + 1],
-                        micro.L_micro,
-                        noffset=0,
-                    )
+                    Pdecay = self.Peedecay(Etrue_bins, k, i, micro.L_micro, noffset=0)
                 elif which_channel == "Pmm":
-                    Pdecay = self.Pmmdecay(
-                        Etrue_bins[k],
-                        Etrue_bins[k + 1],
-                        Etrue_bins[i],
-                        Etrue_bins[i + 1],
-                        micro.L_micro,
-                        noffset=0,
-                    )
-                R_deg[k][i] = Pdecay * Etrue_dist[i]
+                    Pdecay = self.Pmmdecay(Etrue_bins, k, i, micro.L_micro, noffset=0)
+                R_deg[k][i] = (
+                    Pdecay * Etrue_dist[k]
+                )  # k indexes true energy, i indexes degraded energy
         R_sum = np.sum(R_deg, axis=0)
 
         # oscillation piece
