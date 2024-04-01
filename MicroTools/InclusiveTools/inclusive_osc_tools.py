@@ -564,7 +564,7 @@ def Decay_muB_OscChi2(
                     ]
                     if energy_degradation:
                         RWVec = (
-                            sterile.EnergyDegradation(SigSets[SI], BE, "Pee")
+                            sterile.EnergyDegradation(SigSets[SI], BE, which_channel="Pee", which_experiment="microboone")
                             / SigSets[SI]
                         )
                     if not decay and oscillations:
@@ -581,7 +581,7 @@ def Decay_muB_OscChi2(
                     ]
                     if energy_degradation:
                         RWVec = (
-                            sterile.EnergyDegradation(SigSets[SI], BE, "Pmm")
+                            sterile.EnergyDegradation(SigSets[SI], BE, which_channel="Pmm", which_experiment="microboone")
                             / SigSets[SI]
                         )
                     if not decay and oscillations:
@@ -695,7 +695,7 @@ def DecayMuBNuEDis(
                 * sterile.PeeAvg(MuB_True_BinEdges[k], MuB_True_BinEdges[k + 1], LMBT)
             )
         if energy_degradation:
-            PeeRW = sterile.EnergyDegradation(MCT, MuB_True_BinEdges, "Pee")
+            PeeRW = sterile.EnergyDegradation(MCT, MuB_True_BinEdges, which_channel="Pee", which_experiment="microboone")
         if not decay and oscillations:
             for k in range(len(MCT)):
                 PeeRW[k] = MCT[k] * sterile.Peeosc(
@@ -747,10 +747,10 @@ def DecayMuBNuMuDis(
             )
         if energy_degradation:
             PmmRW_FC = sterile.EnergyDegradation(
-                NuMuCC_TrueEDist_FC, MuB_BinEdges_NuMu, "Pmm"
+                NuMuCC_TrueEDist_FC, MuB_BinEdges_NuMu, which_channel="Pmm", which_experiment="microboone"
             )
             PmmRW_PC = sterile.EnergyDegradation(
-                NuMuCC_TrueEDist_PC, MuB_BinEdges_NuMu, "Pmm"
+                NuMuCC_TrueEDist_PC, MuB_BinEdges_NuMu, which_channel="Pmm", which_experiment="microboone"
             )
         if not decay and oscillations:
             for k in range(len(NuMuCC_TrueEDist_FC)):

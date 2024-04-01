@@ -516,7 +516,8 @@ def get_nue_rates(
                         weights=Weight_nue_flux,
                     )[0],
                     e_prod_e_int_bins,
-                    "Pee",
+                    which_channel = "Pee",
+                    which_experiment = "miniboone",
                 ),
                 mini.apps.migration_matrix_official_bins_nue_11bins,
             )
@@ -537,7 +538,8 @@ def get_nue_rates(
                         weights=Weight_nuebar_flux,
                     )[0],
                     e_prod_e_int_bins,
-                    "Pee",
+                    which_channel = "Pee",
+                    which_experiment = "miniboone",
                 ),
                 mini.apps.migration_matrix_official_bins_nuebar_11bins,
             )
@@ -635,7 +637,8 @@ def get_nue_rates(
                             weights=Weight_numu_ext,
                         )[0],
                         e_prod_e_int_bins_numu,
-                        "Pmm",
+                        which_channel="Pmm",
+                        which_experiment="miniboone",
                     ),
                     mini.apps.migration_matrix_official_bins_numu,
                 )
@@ -647,7 +650,8 @@ def get_nue_rates(
                             weights=Weight_numubar_ext,
                         )[0],
                         e_prod_e_int_bins_numu,
-                        "Pmm",
+                        which_channel="Pmm",
+                        which_experiment="miniboone",
                     ),
                     mini.apps.migration_matrix_official_bins_numubar,
                 )

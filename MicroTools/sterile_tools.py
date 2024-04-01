@@ -78,6 +78,12 @@ class Sterile:
         self.PeeAvg_vec = np.vectorize(self.PeeAvg)
         self.PmmAvg_vec_deGouvea = np.vectorize(self.PmmAvg_deGouvea)
 
+        # Load MiniBooNE detector efficiency data
+        self.pathdata = "MiniTools/include/miniboone_eff/eg_effs.dat"
+        self.eff_data = np.loadtxt(self.pathdata)
+        self.eff_bin_edges = self.eff_data[:,0]/1000 # GeV
+        self.eff = self.eff_data[:,1]
+
     def GammaRestFrame(self):
         """Decay rate in GeV, Etrue -- GeV"""
         if not self.decay:
@@ -277,22 +283,31 @@ class Sterile:
     # ----------------------------------------------------------------
     # DECAY AND OSC PROBABILITIES IN DISAPPEARANCE ENERGY DEGRADATION
     # ----------------------------------------------------------------
-    def Pmmdecay(self, Ebins, e4_index, eint_index, Length, noffset=0):
+    def Pmmdecay(self, Ebins, e4_index, eint_index, Length, which_experiment, noffset=0):
         Eintmin, Eintmax = Ebins[eint_index], Ebins[eint_index + 1]
         Emin, Emax = Ebins[e4_index], Ebins[e4_index + 1]
         E0 = Ebins[0]
-
+        pdecay = 1
         # decay term in Pmm, Emin and Emax are E4 bin edges
-        if Emax < 1:  # Should this be Emax or Eintmax? We should discuss.
-            n = 2 + noffset
-        else:
-            n = 1 + noffset
-        pdecay = (
-            self.Um4Sq
-            * self.FdecayAna(Emin, Emax, Length)
-            * ((Eintmax**2 - Eintmin**2) / ((Emax - E0) * (Emax + E0)))
-            * ((Eintmin + Eintmax) / (Emin + Emax)) ** n
-        )
+        if which_experiment == "microboone":
+            if Eintmax < 1:  # Should this be Emax or Eintmax? We should discuss.
+                n = 2 + noffset
+            else:
+                n = 1 + noffset
+            pdecay = (
+                self.Um4Sq
+                * self.FdecayAna(Emin, Emax, Length)
+                * ((Eintmax**2 - Eintmin**2) / ((Emax - E0) * (Emax + E0)))
+                * ((Eintmin + Eintmax) / (Emin + Emax)) ** n
+            )
+        elif which_experiment == "miniboone":
+            pdecay = (
+                self.Um4Sq
+                * self.FdecayAna(Emin, Emax, Length)
+                * ((Eintmax**2 - Eintmin**2) / ((Emax - E0) * (Emax + E0)))
+                * ((Eintmin + Eintmax) / (Emin + Emax)) 
+                * ((self.MiniEff(Eintmin) + self.MiniEff(Eintmax)) / (self.MiniEff(Emin) + self.MiniEff(Emax)))
+            )
         # ((Eintmax**2 - Eintmin**2)/(Emax*Emin)) factor is to account for the decay rate scaling with Eint/E4
         if not self.decouple_decay:
             # overlap of daughter with nu_e state
@@ -307,22 +322,31 @@ class Sterile:
         # osc term in Pmm, does not involve energy degradation
         return 1 - self.Um4Sq * (1 - self.Um4Sq) * self.FoscAna(Emin, Emax, Length)
 
-    def Peedecay(self, Ebins, e4_index, eint_index, Length, noffset=0):
+    def Peedecay(self, Ebins, e4_index, eint_index, Length, which_experiment, noffset=0):
         Eintmin, Eintmax = Ebins[eint_index], Ebins[eint_index + 1]
         Emin, Emax = Ebins[e4_index], Ebins[e4_index + 1]
         E0 = Ebins[0]
-
+        pdecay = 1
         # decay term in Pee, Emin and Emax are E4 bin edges
-        if Emax < 1:  # Should this be Emax or Eintmax? We should discuss.
-            n = 2 + noffset
-        else:
-            n = 1 + noffset
-        pdecay = (
-            self.Ue4Sq
-            * self.FdecayAna(Emin, Emax, Length)
-            * ((Eintmax**2 - Eintmin**2) / ((Emax - E0) * (Emax + E0)))
-            * ((Eintmin + Eintmax) / (Emin + Emax)) ** n
-        )
+        if which_experiment == "microboone":
+            if Eintmax < 1:  # Should this be Emax or Eintmax? We should discuss.
+                n = 2 + noffset
+            else:
+                n = 1 + noffset
+            pdecay = (
+                self.Ue4Sq
+                * self.FdecayAna(Emin, Emax, Length)
+                * ((Eintmax**2 - Eintmin**2) / ((Emax - E0) * (Emax + E0)))
+                * ((Eintmin + Eintmax) / (Emin + Emax)) ** n
+            )
+        elif which_experiment == "miniboone":
+            pdecay = (
+                self.Um4Sq
+                * self.FdecayAna(Emin, Emax, Length)
+                * ((Eintmax**2 - Eintmin**2) / ((Emax - E0) * (Emax + E0)))
+                * ((Eintmin + Eintmax) / (Emin + Emax)) 
+                * ((self.MiniEff(Eintmin) + self.MiniEff(Eintmax)) / (self.MiniEff(Emin) + self.MiniEff(Emax)))
+            )
         # pdecay = self.Ue4Sq * self.FdecayAvg(Emin, Emax, Length) * ((Eintmin + Eintmax) / (Emin + Emax)) ** n
         # ((Eintmax**2 - Eintmin**2)/(Emax*Emin)) factor is to account for the decay rate scaling with Eint/E4 -- gives the fraction of
         # events in this bin
@@ -407,7 +431,7 @@ class Sterile:
     #         )
     #     )
 
-    def EnergyDegradation(self, Etrue_dist, Etrue_bins, which_channel):
+    def EnergyDegradation(self, Etrue_dist, Etrue_bins, which_channel, which_experiment):
         R_deg = np.zeros((len(Etrue_dist), len(Etrue_dist)))
         R_osc = []
         # degradation piece
@@ -415,9 +439,9 @@ class Sterile:
             for i in range(k + 1):
                 Pdecay = 1
                 if which_channel == "Pee":
-                    Pdecay = self.Peedecay(Etrue_bins, k, i, micro.L_micro, noffset=0)
+                    Pdecay = self.Peedecay(Etrue_bins, k, i, micro.L_micro, which_experiment, noffset=0)
                 elif which_channel == "Pmm":
-                    Pdecay = self.Pmmdecay(Etrue_bins, k, i, micro.L_micro, noffset=0)
+                    Pdecay = self.Pmmdecay(Etrue_bins, k, i, micro.L_micro, which_experiment, noffset=0)
                 R_deg[k][i] = (
                     Pdecay * Etrue_dist[k]
                 )  # k indexes true energy, i indexes degraded energy
@@ -435,3 +459,12 @@ class Sterile:
         R_tot = R_sum + R_osc
 
         return R_tot
+
+    def MiniEff(self, E):
+        if E < 0.15:
+            return 0.00001
+        if E > 2.0:
+            return 0.026
+        mask = np.histogram(E, bins=self.eff_bin_edges)[0]
+        pos = np.nonzero(mask)[0]
+        return self.eff[pos[0]]

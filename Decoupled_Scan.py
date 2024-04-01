@@ -19,7 +19,7 @@ from IPython.display import display
 
 def run_scan_osc_dec(kwargs, filename, Npoints=10, path_results = "fit_data/"):
 
-    gvec = np.geomspace(1e-4, 3.5, Npoints)
+    gvec = np.geomspace(1e-2, 3.5, Npoints)
     mvec = np.geomspace(1e-1, 1e2, Npoints)
     #Ue4Sq = np.geomspace(1e-4, 0.49, Npoints)
     Umu4Sq = np.geomspace(1e-4, 0.49, Npoints)
