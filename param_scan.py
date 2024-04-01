@@ -1,7 +1,7 @@
 import numpy as np
 import pickle
 import copy
-
+from scipy.stats import chi2
 import MicroTools as micro
 from MicroTools.sterile_tools import Sterile
 from MicroTools.InclusiveTools.inclusive_osc_tools import (
@@ -170,6 +170,60 @@ def pickle_read(filename):
     with open(filename, "rb") as f:
         out = pickle.load(f)
     return out
+
+
+def load_scan_data(filename, wi=None, w_fixed=None, w2i=None, w2_fixed=None):
+    data = pickle_read(filename)
+
+    if wi is not None:
+        cut_in_w = data[np.argmin(np.abs(data[:, wi] - w_fixed)), wi]
+        data = data[(data[:, wi] == cut_in_w)]
+        if w2i is not None:
+            cut_in_w2 = data[np.argmin(np.abs(data[:, w2i] - w2_fixed)), w2i]
+            data = data[(data[:, w2i] == cut_in_w2)]
+    data_dic = {}
+    data_dic["g"] = data[:, 0]
+    data_dic["m4"] = data[:, 1]
+    data_dic["Ue4SQR"] = data[:, 2]
+    data_dic["Umu4SQR"] = data[:, 3]
+    s2t = 4 * data_dic["Ue4SQR"] * data_dic["Umu4SQR"]
+    data_dic["sin2theta"] = np.round(s2t, decimals=6)
+    data_dic["dm4SQR"] = data[:, 1] ** 2
+
+    data_dic["MiniApp_chi2"] = data[:, -3]
+    data_dic["MicroApp_chi2"] = data[:, -2]
+    data_dic["MicroApp_Asimov_chi2"] = data[:, -1]
+
+    data_dic["MiniApp_deltachi2"] = data_dic["MiniApp_chi2"] - np.min(
+        data_dic["MiniApp_chi2"]
+    )
+    data_dic["MicroApp_deltachi2"] = data_dic["MicroApp_chi2"] - np.min(
+        data_dic["MicroApp_chi2"]
+    )
+    data_dic["MicroApp_Asimov_deltachi2"] = data_dic["MicroApp_Asimov_chi2"] - np.min(
+        data_dic["MicroApp_Asimov_chi2"]
+    )
+
+    return data_dic
+
+
+def get_best_fit_point(dic):
+    argmin = np.argmin(dic["MiniApp_chi2"])
+    dic_best_fit = {}
+    for key in dic.keys():
+        if key == "Ue4SQR":
+            new_key = "Ue4Sq"
+        elif key == "Umu4SQR":
+            new_key = "Um4Sq"
+        else:
+            new_key = key
+        dic_best_fit[new_key] = dic[key][argmin]
+    return dic_best_fit
+
+
+def get_best_fit_point_pval(dic, ndof=20):
+    chi2min = np.min(dic["MiniApp_chi2"])
+    return chi2.sf(chi2min, ndof)
 
 
 def MiniBooNEChi2_deGouvea(
@@ -516,8 +570,8 @@ def get_nue_rates(
                         weights=Weight_nue_flux,
                     )[0],
                     e_prod_e_int_bins,
-                    which_channel = "Pee",
-                    which_experiment = "miniboone",
+                    which_channel="Pee",
+                    which_experiment="miniboone",
                 ),
                 mini.apps.migration_matrix_official_bins_nue_11bins,
             )
@@ -538,8 +592,8 @@ def get_nue_rates(
                         weights=Weight_nuebar_flux,
                     )[0],
                     e_prod_e_int_bins,
-                    which_channel = "Pee",
-                    which_experiment = "miniboone",
+                    which_channel="Pee",
+                    which_experiment="miniboone",
                 ),
                 mini.apps.migration_matrix_official_bins_nuebar_11bins,
             )
