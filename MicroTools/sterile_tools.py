@@ -218,10 +218,13 @@ class Sterile:
         posc = self.Um4Sq * self.Ue4Sq * self.Fosc(E4, Length)
         return pdecay + posc
 
-    def Pmedecay(self, E4, Edaughter, Length):
+    def Pmedecay(self, E4, Edaughter, Length, unfold=False):
         """Flavor transition probability, E4 -- GeV, Edaughter -- GeV, Length -- km"""
         # Decay term
-        pdecay = self.Um4Sq * self.Fdecay(E4, Edaughter, Length)
+        if unfold==True:
+            pdecay = self.Um4Sq * self.Fdecay(E4, Edaughter, Length)
+        if unfold==False:
+            pdecay = self.Um4Sq * Sterile._Fdec(Length, self.Ldec(E4)) * Sterile.dPdecaydX(E4, Edaughter) * self.MiniEff(Edaughter)/self.MiniEff(E4)
         if not self.decouple_decay:
             # overlap of daughter with nu_e state
             pdecay *= self.Us4Sq * self.Ue4Sq / (1 - self.Us4Sq)
@@ -460,11 +463,40 @@ class Sterile:
 
         return R_tot
 
+    """
     def MiniEff(self, E):
         if E < 0.15:
             return 0.00001
         if E > 2.0:
             return 0.026
-        mask = np.histogram(E, bins=self.eff_bin_edges)[0]
+        mask = numba_histogram(a = np.array([E]), bin_edges=np.array(self.eff_bin_edges),weights=[1])[0]
         pos = np.nonzero(mask)[0]
         return self.eff[pos[0]]
+    
+    
+    def MiniEffApp(self, E):
+        "Here E is an array, Eparent or Edaughter"
+        # Initialize the efficiency array
+        eff = [1]*len(E)
+        for i in range(len(E)):
+            if E[i] < 0.15:
+                eff[i] = 0.00001
+            elif E[i] > 2.0:
+                eff[i] = 0.026
+            else:
+                #mask = param_scan.numba_histogram(a = np.array([E[i]]), bin_edges=np.array(self.eff_bin_edges), weights=[1])[0]
+                mask = np.histogram(E[i], bins=self.eff_bin_edges)[0]
+                pos = np.nonzero(mask)[0]
+                eff[i] = self.eff[pos[0]]
+        return eff
+    """
+    
+    def MiniEff(self, x):
+        conditions = [x < 0.15] + \
+                    [(x >= 0.15 + 0.1*i) & (x < 0.25 + 0.1*i) for i in range(9)] + \
+                    [(x >= 1.05) & (x < 1.2)] + \
+                    [(x >= 1.2 + 0.2*j) & (x < 1.4 + 0.2*j) for j in range(4)] + \
+                    [x >= 2.0]
+        functions = [0.00001, 0.089, 0.135, 0.139, 0.131, 0.123, 0.116, 0.106, 0.102, 0.095, 0.089, 0.082,
+                     0.073, 0.067, 0.052, 0.026]
+        return np.piecewise(x, conditions, functions)
