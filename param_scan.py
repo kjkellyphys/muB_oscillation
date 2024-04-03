@@ -414,7 +414,6 @@ def get_nue_rates(
 
     # decay and oscillation flavor transition probabilities
     Pmedecay = sterile.Pmedecay(Etrue_nue_parent, Etrue_nue_daughter, Length_nue_ext)
-    Pmedecay_unfold = sterile.Pmedecay(Etrue_nue_parent, Etrue_nue_daughter, Length_nue_ext, unfold=True)
     Pmeosc = sterile.Pmeosc(Etrue_nue_parent, Length_nue_ext)
     Pmebardecay = antisterile.Pmedecay(
         Etrue_nuebar_parent, Etrue_nuebar_daughter, Length_nuebar_ext
@@ -429,7 +428,6 @@ def get_nue_rates(
 
     # decay and oscillation event weights. NOTE: factor of 2 is to acconunt for the decay rate scaling with Edaughter/Eparent
     Weight_nue_decay_app = 2 * Weight_nue_ext * Pmedecay
-    Weight_nue_decay_app_unfold = 2 * Weight_nue_ext * Pmedecay_unfold
     Weight_nue_osc_app = Weight_nue_ext * Pmeosc
     Weight_nuebar_decay_app = 2 * Weight_nuebar_ext * Pmebardecay
     Weight_nuebar_osc_app = Weight_nuebar_ext * Pmebarosc
@@ -452,7 +450,6 @@ def get_nue_rates(
         Weight_nuebar_decay_app /= Pmmbar
         Weight_nue_osc_app /= Pmm
         Weight_nuebar_osc_app /= Pmmbar
-        Weight_nue_decay_app_unfold /= Pmm
 
     # Calculate the MiniBooNE chi2
     if not decay and oscillations:
@@ -505,7 +502,7 @@ def get_nue_rates(
     dic["MC_nue_app_for_unfolding"] = np.dot(
         (
             fast_histogram(
-                Etrue_nue_daughter, weights=Weight_nue_decay_app_unfold, bins=e_prod_e_int_bins
+                Etrue_nue_daughter, weights=Weight_nue_decay_app, bins=e_prod_e_int_bins
             )[0]
             + fast_histogram(
                 Etrue_nue_parent, weights=Weight_nue_osc_app, bins=e_prod_e_int_bins
