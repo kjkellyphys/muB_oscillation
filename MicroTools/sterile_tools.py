@@ -81,8 +81,8 @@ class Sterile:
         # Load MiniBooNE detector efficiency data
         self.pathdata = "MiniTools/include/miniboone_eff/eg_effs.dat"
         self.eff_data = np.loadtxt(self.pathdata)
-        self.eff_bin_edges = self.eff_data[:,0]/1000 # GeV
-        self.eff = self.eff_data[:,1]
+        self.eff_bin_edges = self.eff_data[:, 0] / 1000  # GeV
+        self.eff = self.eff_data[:, 1]
 
     def GammaRestFrame(self):
         """Decay rate in GeV, Etrue -- GeV"""
@@ -260,6 +260,7 @@ class Sterile:
 
         # Oscillation term
         posc = self.Ue4Sq * (1 - self.Ue4Sq) * self.Fosc(E4, Length)
+        print(posc, pdecay)
         return 1 + pdecay - posc
 
     # ----------------------------------------------------------------
@@ -283,7 +284,9 @@ class Sterile:
     # ----------------------------------------------------------------
     # DECAY AND OSC PROBABILITIES IN DISAPPEARANCE ENERGY DEGRADATION
     # ----------------------------------------------------------------
-    def Pmmdecay(self, Ebins, e4_index, eint_index, Length, which_experiment, noffset=0):
+    def Pmmdecay(
+        self, Ebins, e4_index, eint_index, Length, which_experiment, noffset=0
+    ):
         Eintmin, Eintmax = Ebins[eint_index], Ebins[eint_index + 1]
         Emin, Emax = Ebins[e4_index], Ebins[e4_index + 1]
         E0 = Ebins[0]
@@ -305,8 +308,11 @@ class Sterile:
                 self.Um4Sq
                 * self.FdecayAna(Emin, Emax, Length)
                 * ((Eintmax**2 - Eintmin**2) / ((Emax - E0) * (Emax + E0)))
-                * ((Eintmin + Eintmax) / (Emin + Emax)) 
-                * ((self.MiniEff(Eintmin) + self.MiniEff(Eintmax)) / (self.MiniEff(Emin) + self.MiniEff(Emax)))
+                * ((Eintmin + Eintmax) / (Emin + Emax))
+                * (
+                    (self.MiniEff(Eintmin) + self.MiniEff(Eintmax))
+                    / (self.MiniEff(Emin) + self.MiniEff(Emax))
+                )
             )
         # ((Eintmax**2 - Eintmin**2)/(Emax*Emin)) factor is to account for the decay rate scaling with Eint/E4
         if not self.decouple_decay:
@@ -322,7 +328,9 @@ class Sterile:
         # osc term in Pmm, does not involve energy degradation
         return 1 - self.Um4Sq * (1 - self.Um4Sq) * self.FoscAna(Emin, Emax, Length)
 
-    def Peedecay(self, Ebins, e4_index, eint_index, Length, which_experiment, noffset=0):
+    def Peedecay(
+        self, Ebins, e4_index, eint_index, Length, which_experiment, noffset=0
+    ):
         Eintmin, Eintmax = Ebins[eint_index], Ebins[eint_index + 1]
         Emin, Emax = Ebins[e4_index], Ebins[e4_index + 1]
         E0 = Ebins[0]
@@ -344,8 +352,11 @@ class Sterile:
                 self.Um4Sq
                 * self.FdecayAna(Emin, Emax, Length)
                 * ((Eintmax**2 - Eintmin**2) / ((Emax - E0) * (Emax + E0)))
-                * ((Eintmin + Eintmax) / (Emin + Emax)) 
-                * ((self.MiniEff(Eintmin) + self.MiniEff(Eintmax)) / (self.MiniEff(Emin) + self.MiniEff(Emax)))
+                * ((Eintmin + Eintmax) / (Emin + Emax))
+                * (
+                    (self.MiniEff(Eintmin) + self.MiniEff(Eintmax))
+                    / (self.MiniEff(Emin) + self.MiniEff(Emax))
+                )
             )
         # pdecay = self.Ue4Sq * self.FdecayAvg(Emin, Emax, Length) * ((Eintmin + Eintmax) / (Emin + Emax)) ** n
         # ((Eintmax**2 - Eintmin**2)/(Emax*Emin)) factor is to account for the decay rate scaling with Eint/E4 -- gives the fraction of
@@ -431,30 +442,47 @@ class Sterile:
     #         )
     #     )
 
-    def EnergyDegradation(self, Etrue_dist, Etrue_bins, which_channel, which_experiment):
+    def EnergyDegradation(
+        self, Etrue_dist, Etrue_bins, which_channel, which_experiment
+    ):
         R_deg = np.zeros((len(Etrue_dist), len(Etrue_dist)))
         R_osc = []
         # degradation piece
         for k in range(len(Etrue_dist)):
             for i in range(k + 1):
                 Pdecay = 1
+
                 if which_channel == "Pee":
-                    Pdecay = self.Peedecay(Etrue_bins, k, i, micro.L_micro, which_experiment, noffset=0)
+                    Pdecay = self.Peedecay(
+                        Etrue_bins, k, i, micro.L_micro, which_experiment, noffset=0
+                    )
                 elif which_channel == "Pmm":
-                    Pdecay = self.Pmmdecay(Etrue_bins, k, i, micro.L_micro, which_experiment, noffset=0)
+                    Pdecay = self.Pmmdecay(
+                        Etrue_bins, k, i, micro.L_micro, which_experiment, noffset=0
+                    )
+                else:
+                    raise ValueError(
+                        f"Channel {which_channel} not recognzied. Valid options: 'Pmm' and 'Pee'."
+                    )
+
                 R_deg[k][i] = (
                     Pdecay * Etrue_dist[k]
                 )  # k indexes true energy, i indexes degraded energy
+
         R_sum = np.sum(R_deg, axis=0)
 
         # oscillation piece
         for i in range(len(Etrue_dist)):
-            Peeosc = self.Peeosc(Etrue_bins[i], Etrue_bins[i + 1], micro.L_micro)
-            Pmmosc = self.Pmmosc(Etrue_bins[i], Etrue_bins[i + 1], micro.L_micro)
             if which_channel == "Pee":
+                Peeosc = self.Peeosc(Etrue_bins[i], Etrue_bins[i + 1], micro.L_micro)
                 R_osc.append(Peeosc * Etrue_dist[i])
-            if which_channel == "Pmm":
+            elif which_channel == "Pmm":
+                Pmmosc = self.Pmmosc(Etrue_bins[i], Etrue_bins[i + 1], micro.L_micro)
                 R_osc.append(Pmmosc * Etrue_dist[i])
+            else:
+                raise ValueError(
+                    f"Channel {which_channel} not recognzied. Valid options: 'Pmm' and 'Pee'."
+                )
 
         R_tot = R_sum + R_osc
 

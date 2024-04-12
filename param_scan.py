@@ -421,10 +421,10 @@ def get_nue_rates(
     Pmebarosc = antisterile.Pmeosc(Etrue_nuebar_parent, Length_nuebar_ext)
 
     # old flavor transition probabilities
-    Pme = sterile.Pme(Etrue_nue_parent, Etrue_nue_daughter, Length_nue_ext)
-    Pmebar = antisterile.Pme(
-        Etrue_nuebar_parent, Etrue_nuebar_daughter, Length_nuebar_ext
-    )
+    # Pme = sterile.Pme(Etrue_nue_parent, Etrue_nue_daughter, Length_nue_ext)
+    # Pmebar = antisterile.Pme(
+    #     Etrue_nuebar_parent, Etrue_nuebar_daughter, Length_nuebar_ext
+    # )
 
     # decay and oscillation event weights. NOTE: factor of 2 is to acconunt for the decay rate scaling with Edaughter/Eparent
     Weight_nue_decay_app = 2 * Weight_nue_ext * Pmedecay
@@ -481,7 +481,6 @@ def get_nue_rates(
             mini.apps.migration_matrix_official_bins_nue_11bins,
         )
 
-        # NOTE: Need to update to nubar migration matrix!!!!
         dic["MC_nuebar_app"] = np.dot(
             (
                 fast_histogram(
