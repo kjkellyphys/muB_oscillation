@@ -1,27 +1,28 @@
 import numpy as np
+import numba
 import pickle
 import copy
 from scipy.stats import chi2
-import MicroTools as micro
-from MicroTools.sterile_tools import Sterile
-from MicroTools.InclusiveTools.inclusive_osc_tools import (
+from .sterile_tools import Sterile
+from .InclusiveTools.inclusive_osc_tools import (
     Decay_muB_OscChi2,
     DecayMuBNuMuDis,
     DecayMuBNuEDis,
 )
 import MiniTools as mini
-import numba
+from . import unfolder
+from . import bin_edges, bin_edges_reco, bin_edges_numu, L_micro, L_mini
 
 RHE = False
 UFMB = True
-GBPC = micro.unfolder.MBtomuB(
+GBPC = unfolder.MBtomuB(
     analysis="1eX_PC",
     remove_high_energy=RHE,
     unfold=UFMB,
     effNoUnfold=True,
     which_template="2020",
 )
-GBFC = micro.unfolder.MBtomuB(
+GBFC = unfolder.MBtomuB(
     analysis="1eX",
     remove_high_energy=RHE,
     unfold=UFMB,
@@ -30,9 +31,9 @@ GBFC = micro.unfolder.MBtomuB(
 )
 
 # Load the MiniBooNE MC from data release
-MB_Ereco_unfold_bins = micro.bin_edges_reco
-MB_Ereco_official_bins = micro.bin_edges * 1e-3
-MB_Ereco_official_bins_numu = micro.bin_edges_numu * 1e-3
+MB_Ereco_unfold_bins = bin_edges_reco
+MB_Ereco_official_bins = bin_edges * 1e-3
+MB_Ereco_official_bins_numu = bin_edges_numu * 1e-3
 e_prod_e_int_bins = np.linspace(0, 3, 51)  # GeV
 
 # NOTE: this in principle can be a different set of bins...
@@ -70,22 +71,29 @@ def replicate(x, n):
 
 
 @numba.jit(nopython=True)
-def create_e_daughter(e_prod, n_replications=10):
+def create_e_daughter(e_prod, energy_degradation=True, n_replications=10):
     # e_prod: parent neutrino energy
     de = e_prod / n_replications
-    e_daughter = np.linspace(de / 2, e_prod - de / 2, n_replications)
+    if energy_degradation:
+        e_daughter = np.linspace(de / 2, e_prod - de / 2, n_replications).astype(
+            np.float64
+        )
+    else:
+        e_daughter = np.repeat(e_prod, n_replications).astype(np.float64)
     return e_daughter
 
 
 @numba.jit(nopython=True)
-def create_Etrue_and_Weight_int(etrue, n_replications=10):
+def create_Etrue_and_Weight_int(etrue, energy_degradation=True, n_replications=10):
     # For every Etrue, create a list of possible daughter neutrino energy
     Etrue_daughter = np.empty((etrue.size, n_replications))
     for i in range(etrue.size):
-        Etrue_daughter[i] = create_e_daughter(etrue[i], n_replications=n_replications)
-
+        Etrue_daughter[i] = create_e_daughter(
+            etrue[i],
+            n_replications=n_replications,
+            energy_degradation=energy_degradation,
+        )
     Etrue_extended = np.repeat(etrue, n_replications)
-
     return Etrue_extended, Etrue_daughter.flatten()
 
 
@@ -227,7 +235,12 @@ def get_best_fit_point_pval(dic, ndof=20):
 
 
 def MiniBooNEChi2_deGouvea(
-    theta, oscillations=False, decay=True, decouple_decay=True, n_replications=10
+    theta,
+    oscillations=False,
+    decay=True,
+    decouple_decay=True,
+    n_replications=10,
+    energy_degradation=True,
 ):
     """
     Returns the MicroBooNE chi2 for deGouvea's model
@@ -255,10 +268,14 @@ def MiniBooNEChi2_deGouvea(
 
     # Replicating events for multiple daughter neutrino energies
     Etrue_nue_parent, Etrue_nue_daughter = create_Etrue_and_Weight_int(
-        etrue=Etrue_nue, n_replications=n_replications
+        etrue=Etrue_nue,
+        n_replications=n_replications,
+        energy_degradation=energy_degradation,
     )
     Etrue_nuebar_parent, Etrue_nuebar_daughter = create_Etrue_and_Weight_int(
-        etrue=Etrue_nuebar, n_replications=n_replications
+        etrue=Etrue_nuebar,
+        n_replications=n_replications,
+        energy_degradation=energy_degradation,
     )
 
     # replicating entries of the MC data release -- baseline L and weight
@@ -387,20 +404,11 @@ def get_nue_rates(
         CP=+1,
     )
 
-    antisterile = Sterile(
-        theta,
-        oscillations=oscillations,
-        decay=decay,
-        decouple_decay=decouple_decay,
-        CP=-1,
-    )
-
     # Replicating events for multiple daughter neutrino energies
     Etrue_nue_parent, Etrue_nue_daughter = create_Etrue_and_Weight_int(
-        etrue=Etrue_nue, n_replications=n_replications
-    )
-    Etrue_nuebar_parent, Etrue_nuebar_daughter = create_Etrue_and_Weight_int(
-        etrue=Etrue_nuebar, n_replications=n_replications
+        etrue=Etrue_nue,
+        n_replications=n_replications,
+        energy_degradation=energy_degradation,
     )
 
     # replicating entries of the MC data release -- baseline L and weight
@@ -408,62 +416,68 @@ def get_nue_rates(
     Length_nue_ext = replicate(Length_nue, n=n_replications)
     Weight_nue_ext = replicate(Weight_nue / n_replications, n=n_replications)
 
-    Ereco_nuebar_ext = replicate(Ereco_nuebar, n=n_replications)
-    Length_nuebar_ext = replicate(Length_nuebar, n=n_replications)
-    Weight_nuebar_ext = replicate(Weight_nuebar / n_replications, n=n_replications)
-
-    # decay and oscillation flavor transition probabilities
-    Pmedecay = sterile.Pmedecay(Etrue_nue_parent, Etrue_nue_daughter, Length_nue_ext)
-    Pmeosc = sterile.Pmeosc(Etrue_nue_parent, Length_nue_ext)
-    Pmebardecay = antisterile.Pmedecay(
-        Etrue_nuebar_parent, Etrue_nuebar_daughter, Length_nuebar_ext
+    # decay and oscillation event weights.
+    Weight_nue_osc_app = Weight_nue_ext * sterile.Pmeosc(
+        Etrue_nue_parent, Length_nue_ext
     )
-    Pmebarosc = antisterile.Pmeosc(Etrue_nuebar_parent, Length_nuebar_ext)
+    Weight_nue_decay_app = Weight_nue_ext * sterile.Pmedecay(
+        Etrue_nue_parent, Etrue_nue_daughter, Length_nue_ext
+    )
 
-    # old flavor transition probabilities
-    # Pme = sterile.Pme(Etrue_nue_parent, Etrue_nue_daughter, Length_nue_ext)
-    # Pmebar = antisterile.Pme(
-    #     Etrue_nuebar_parent, Etrue_nuebar_daughter, Length_nuebar_ext
-    # )
+    if include_antineutrinos:
+        antisterile = Sterile(
+            theta,
+            oscillations=oscillations,
+            decay=decay,
+            decouple_decay=decouple_decay,
+            CP=-1,
+        )
+        Etrue_nuebar_parent, Etrue_nuebar_daughter = create_Etrue_and_Weight_int(
+            etrue=Etrue_nuebar,
+            n_replications=n_replications,
+            energy_degradation=energy_degradation,
+        )
 
-    # decay and oscillation event weights. NOTE: factor of 2 is to acconunt for the decay rate scaling with Edaughter/Eparent
-    Weight_nue_decay_app = 2 * Weight_nue_ext * Pmedecay
-    Weight_nue_osc_app = Weight_nue_ext * Pmeosc
-    Weight_nuebar_decay_app = 2 * Weight_nuebar_ext * Pmebardecay
-    Weight_nuebar_osc_app = Weight_nuebar_ext * Pmebarosc
+        Ereco_nuebar_ext = replicate(Ereco_nuebar, n=n_replications)
+        Length_nuebar_ext = replicate(Length_nuebar, n=n_replications)
+        Weight_nuebar_ext = replicate(Weight_nuebar / n_replications, n=n_replications)
 
-    # oscillation only event weights
-    Weight_nue_app = Weight_nue_ext * Pmeosc
-    Weight_nuebar_app = Weight_nuebar_ext * Pmebarosc
-
-    if undo_numu_normalization:
-        # flux is already normalized to data, so undo Pmumu from MC prediction
-        # NOTE: evaluated at nu_e energies since that is what the flux is based on
-        Pmm = sterile.Pmm(Etrue_nue_parent, Etrue_nue_daughter, Length_nue_ext)
-        Pmmbar = antisterile.Pmm(
+        Weight_nuebar_osc_app = Weight_nuebar_ext * antisterile.Pmeosc(
+            Etrue_nuebar_parent, Length_nuebar_ext
+        )
+        Weight_nuebar_decay_app = Weight_nuebar_ext * antisterile.Pmedecay(
             Etrue_nuebar_parent, Etrue_nuebar_daughter, Length_nuebar_ext
         )
 
-        Weight_nue_app /= Pmm
-        Weight_nuebar_app /= Pmmbar
+    if undo_numu_normalization:
+        # undo Pmumu from MC prediction
+        # NOTE: evaluated at nu_e energies since that is what the flux is based on
+
+        Pmm = sterile.Pmm(Etrue_nue_parent, Etrue_nue_daughter, Length_nue_ext)
         Weight_nue_decay_app /= Pmm
-        Weight_nuebar_decay_app /= Pmmbar
         Weight_nue_osc_app /= Pmm
-        Weight_nuebar_osc_app /= Pmmbar
+
+        if include_antineutrinos:
+            Pmmbar = antisterile.Pmm(
+                Etrue_nuebar_parent, Etrue_nuebar_daughter, Length_nuebar_ext
+            )
+            Weight_nuebar_decay_app /= Pmmbar
+            Weight_nuebar_osc_app /= Pmmbar
 
     # Calculate the MiniBooNE chi2
     if not decay and oscillations:
         # NOTE: Using Ereco from MC for oscillation-only
         dic["MC_nue_app"] = fast_histogram(
             Ereco_nue_ext,
-            weights=Weight_nue_app,
+            weights=Weight_nue_osc_app,
             bins=MB_Ereco_official_bins,
         )[0]
-        dic["MC_nuebar_app"] = fast_histogram(
-            Ereco_nuebar_ext,
-            weights=Weight_nuebar_app,
-            bins=MB_Ereco_official_bins,
-        )[0]
+        if include_antineutrinos:
+            dic["MC_nuebar_app"] = fast_histogram(
+                Ereco_nuebar_ext,
+                weights=Weight_nuebar_osc_app,
+                bins=MB_Ereco_official_bins,
+            )[0]
 
     else:
         # Migrate nue signal from Etrue to Ereco with 11 bins
@@ -480,22 +494,22 @@ def get_nue_rates(
             ),
             mini.apps.migration_matrix_official_bins_nue_11bins,
         )
-
-        dic["MC_nuebar_app"] = np.dot(
-            (
-                fast_histogram(
-                    Etrue_nuebar_daughter,
-                    bins=e_prod_e_int_bins,
-                    weights=Weight_nuebar_decay_app,
-                )[0]
-                + fast_histogram(
-                    Etrue_nuebar_parent,
-                    bins=e_prod_e_int_bins,
-                    weights=Weight_nuebar_osc_app,
-                )[0]
-            ),
-            mini.apps.migration_matrix_official_bins_nuebar_11bins,
-        )
+        if include_antineutrinos:
+            dic["MC_nuebar_app"] = np.dot(
+                (
+                    fast_histogram(
+                        Etrue_nuebar_daughter,
+                        bins=e_prod_e_int_bins,
+                        weights=Weight_nuebar_decay_app,
+                    )[0]
+                    + fast_histogram(
+                        Etrue_nuebar_parent,
+                        bins=e_prod_e_int_bins,
+                        weights=Weight_nuebar_osc_app,
+                    )[0]
+                ),
+                mini.apps.migration_matrix_official_bins_nuebar_11bins,
+            )
 
     # For MicroBooNE unfolding -- different binning
     dic["MC_nue_app_for_unfolding"] = np.dot(
@@ -515,16 +529,22 @@ def get_nue_rates(
         Weight_nue_flux = mini.apps.reweight_MC_to_nue_flux(
             Etrue_nue_parent, Weight_nue_ext, mode="fhc"
         )
-        Weight_nue_dis = Weight_nue_flux * sterile.Pee(
+        Weight_nue_dis_osc = Weight_nue_flux * sterile.Peeosc(
+            Etrue_nue_parent, Length_nue_ext
+        )
+        Weight_nue_dis_dec = Weight_nue_flux * sterile.Peedecay(
             Etrue_nue_parent, Etrue_nue_daughter, Length_nue_ext
         )
-
-        Weight_nuebar_flux = mini.apps.reweight_MC_to_nue_flux(
-            Etrue_nuebar_parent, Weight_nuebar_ext, mode="rhc"
-        )
-        Weight_nuebar_dis = Weight_nuebar_flux * antisterile.Pee(
-            Etrue_nuebar_parent, Etrue_nuebar_daughter, Length_nuebar_ext
-        )
+        if include_antineutrinos:
+            Weight_nuebar_flux = mini.apps.reweight_MC_to_nue_flux(
+                Etrue_nuebar_parent, Weight_nuebar_ext, mode="rhc"
+            )
+            Weight_nuebar_dis_osc = Weight_nuebar_flux * antisterile.Peeosc(
+                Etrue_nuebar_parent, Length_nuebar_ext
+            )
+            Weight_nuebar_dis_dec = Weight_nuebar_flux * antisterile.Peedecay(
+                Etrue_nuebar_parent, Etrue_nuebar_daughter, Length_nuebar_ext
+            )
         if (not decay) and oscillations:
             """
             If only oscillations, then we can simply histogram the MC events
@@ -536,21 +556,22 @@ def get_nue_rates(
             )[0]
             MC_nue_bkg_intrinsic_osc = fast_histogram(
                 Ereco_nue_ext,
-                weights=Weight_nue_dis,
+                weights=Weight_nue_dis_osc,
                 bins=MB_Ereco_official_bins,
             )[0]
+            if include_antineutrinos:
 
-            MC_nuebar_bkg_intrinsic = fast_histogram(
-                Ereco_nuebar_ext,
-                weights=Weight_nuebar_flux,
-                bins=MB_Ereco_official_bins,
-            )[0]
-            MC_nuebar_bkg_intrinsic_osc = fast_histogram(
-                Ereco_nuebar_ext,
-                weights=Weight_nuebar_dis,
-                bins=MB_Ereco_official_bins,
-            )[0]
-        elif energy_degradation:
+                MC_nuebar_bkg_intrinsic = fast_histogram(
+                    Ereco_nuebar_ext,
+                    weights=Weight_nuebar_flux,
+                    bins=MB_Ereco_official_bins,
+                )[0]
+                MC_nuebar_bkg_intrinsic_osc = fast_histogram(
+                    Ereco_nuebar_ext,
+                    weights=Weight_nuebar_dis_osc,
+                    bins=MB_Ereco_official_bins,
+                )[0]
+        else:
             """
             If decay is involved, then we take energy degradation into account
             """
@@ -561,96 +582,78 @@ def get_nue_rates(
                 )[0],
                 mini.apps.migration_matrix_official_bins_nue_11bins,
             )
-            MC_nue_bkg_intrinsic_osc = np.dot(
-                sterile.EnergyDegradation(
-                    fast_histogram(
-                        Etrue_nue_parent,
-                        bins=e_prod_e_int_bins,
-                        weights=Weight_nue_flux,
-                    )[0],
-                    e_prod_e_int_bins,
-                    which_channel="Pee",
-                    which_experiment="miniboone",
-                ),
-                mini.apps.migration_matrix_official_bins_nue_11bins,
-            )
 
-            MC_nuebar_bkg_intrinsic = np.dot(
-                fast_histogram(
-                    Etrue_nuebar_parent,
-                    bins=e_prod_e_int_bins,
-                    weights=Weight_nuebar_flux,
-                )[0],
-                mini.apps.migration_matrix_official_bins_nuebar_11bins,
-            )
-            MC_nuebar_bkg_intrinsic_osc = np.dot(
-                antisterile.EnergyDegradation(
+            if include_antineutrinos:
+
+                MC_nue_bkg_intrinsic_osc = np.dot(
+                    (
+                        fast_histogram(
+                            Etrue_nue_parent,
+                            bins=e_prod_e_int_bins,
+                            weights=Weight_nue_dis_osc,
+                        )[0]
+                        + fast_histogram(
+                            Etrue_nue_daughter,
+                            bins=e_prod_e_int_bins,
+                            weights=Weight_nue_dis_dec,
+                        )[0]
+                    ),
+                    mini.apps.migration_matrix_official_bins_nue_11bins,
+                )
+
+                MC_nuebar_bkg_intrinsic = np.dot(
                     fast_histogram(
                         Etrue_nuebar_parent,
                         bins=e_prod_e_int_bins,
                         weights=Weight_nuebar_flux,
                     )[0],
-                    e_prod_e_int_bins,
-                    which_channel="Pee",
-                    which_experiment="miniboone",
-                ),
-                mini.apps.migration_matrix_official_bins_nuebar_11bins,
-            )
-        else:
-            # Migrate nue signal from Etrue to Ereco with 11 bins
-            MC_nue_bkg_intrinsic = np.dot(
-                fast_histogram(
-                    Etrue_nue_daughter, bins=e_prod_e_int_bins, weights=Weight_nue_flux
-                )[0],
-                mini.apps.migration_matrix_official_bins_nue_11bins,
-            )
-            MC_nue_bkg_intrinsic_osc = np.dot(
-                fast_histogram(
-                    Etrue_nue_daughter, bins=e_prod_e_int_bins, weights=Weight_nue_dis
-                )[0],
-                mini.apps.migration_matrix_official_bins_nue_11bins,
-            )
+                    mini.apps.migration_matrix_official_bins_nuebar_11bins,
+                )
 
-            MC_nuebar_bkg_intrinsic = np.dot(
-                fast_histogram(
-                    Etrue_nuebar_daughter,
-                    bins=e_prod_e_int_bins,
-                    weights=Weight_nuebar_flux,
-                )[0],
-                mini.apps.migration_matrix_official_bins_nuebar_11bins,
-            )
-            MC_nuebar_bkg_intrinsic_osc = np.dot(
-                fast_histogram(
-                    Etrue_nuebar_daughter,
-                    bins=e_prod_e_int_bins,
-                    weights=Weight_nuebar_dis,
-                )[0],
-                mini.apps.migration_matrix_official_bins_nuebar_11bins,
-            )
+                MC_nuebar_bkg_intrinsic_osc = np.dot(
+                    (
+                        fast_histogram(
+                            Etrue_nuebar_parent,
+                            bins=e_prod_e_int_bins,
+                            weights=Weight_nuebar_dis_osc,
+                        )[0]
+                        + fast_histogram(
+                            Etrue_nuebar_daughter,
+                            bins=e_prod_e_int_bins,
+                            weights=Weight_nuebar_dis_dec,
+                        )[0]
+                    ),
+                    mini.apps.migration_matrix_official_bins_nuebar_11bins,
+                )
 
         # Final MC prediction for nu_e sample (w/ oscillated intrinsics)
         dic["MC_nue_bkg_total_w_dis"] = (
             mini.MC_nue_bkg_tot - MC_nue_bkg_intrinsic + MC_nue_bkg_intrinsic_osc
         )
-        dic["MC_nuebar_bkg_total_w_dis"] = (
-            mini.MC_nuebar_bkg_tot
-            - MC_nuebar_bkg_intrinsic
-            + MC_nuebar_bkg_intrinsic_osc
-        )
+        if include_antineutrinos:
+            dic["MC_nuebar_bkg_total_w_dis"] = (
+                mini.MC_nuebar_bkg_tot
+                - MC_nuebar_bkg_intrinsic
+                + MC_nuebar_bkg_intrinsic_osc
+            )
 
         # NUMU DISAPPEARANCE
         if use_numu_MC:
             Etrue_numu_parent, Etrue_numu_daughter = create_Etrue_and_Weight_int(
-                etrue=Etrue_numu, n_replications=n_replications
+                etrue=Etrue_numu,
+                n_replications=n_replications,
+                energy_degradation=energy_degradation,
             )
-            Ereco_numu_ext = replicate(Ereco_numu, n=n_replications)
+            # Ereco_numu_ext = replicate(Ereco_numu, n=n_replications)
             Length_numu_ext = replicate(Length_numu, n=n_replications)
             Weight_numu_ext = replicate(Weight_numu / n_replications, n=n_replications)
 
             Etrue_numubar_parent, Etrue_numubar_daughter = create_Etrue_and_Weight_int(
-                etrue=Etrue_numubar, n_replications=n_replications
+                etrue=Etrue_numubar,
+                n_replications=n_replications,
+                energy_degradation=energy_degradation,
             )
-            Ereco_numubar_ext = replicate(Ereco_numubar, n=n_replications)
+            # Ereco_numubar_ext = replicate(Ereco_numubar, n=n_replications)
             Length_numubar_ext = replicate(Length_numubar, n=n_replications)
             Weight_numubar_ext = replicate(
                 Weight_numubar / n_replications, n=n_replications
@@ -658,64 +661,57 @@ def get_nue_rates(
 
             if undo_numu_normalization:
                 # do not apply Pmumu in this case as the flux is already normalized
-                Weight_numu_dis = Weight_numu_ext
-                Weight_numubar_dis = Weight_numubar_ext
+                # NOTE: technically, there is also an energy dependent correction that we are ignoring here
+                Weight_numu_dis_osc = Weight_numu_ext
+                Weight_numu_dis_dec = Weight_numu_ext
+                Weight_numubar_dis_osc = Weight_numubar_ext
+                Weight_numubar_dis_dec = Weight_numubar_ext
             else:
-                Weight_numu_dis = Weight_numu_ext * sterile.Pmm(
+                Weight_numu_dis_osc = Weight_numu_ext * sterile.Pmmosc(
+                    Etrue_numu_parent, Length_numu_ext
+                )
+                Weight_numu_dis_dec = Weight_numu_ext * sterile.Pmmdecay(
                     Etrue_numu_parent, Etrue_numu_daughter, Length_numu_ext
                 )
-                Weight_numubar_dis = Weight_numubar_ext * antisterile.Pmm(
+                Weight_numubar_dis_osc = Weight_numubar_ext * antisterile.Pmmosc(
+                    Etrue_numubar_parent, Length_numubar_ext
+                )
+                Weight_numubar_dis_dec = Weight_numubar_ext * antisterile.Pmmdecay(
                     Etrue_numubar_parent, Etrue_numubar_daughter, Length_numubar_ext
                 )
 
-            if not energy_degradation:
-                dic["MC_numu_bkg_total_w_dis"] = fast_histogram(
-                    Ereco_numu_ext,
-                    weights=Weight_numu_dis,
-                    bins=MB_Ereco_official_bins_numu,
-                )[0]
-                dic["MC_numubar_bkg_total_w_dis"] = fast_histogram(
-                    Ereco_numubar_ext,
-                    weights=Weight_numubar_dis,
-                    bins=MB_Ereco_official_bins_numu,
-                )[0]
+            dic["MC_numu_bkg_total_w_dis"] = np.dot(
+                (
+                    fast_histogram(
+                        Etrue_numu_parent,
+                        bins=e_prod_e_int_bins_numu,
+                        weights=Weight_numu_dis_osc,
+                    )[0]
+                    + fast_histogram(
+                        Etrue_numu_daughter,
+                        bins=e_prod_e_int_bins,
+                        weights=Weight_numu_dis_dec,
+                    )[0]
+                ),
+                mini.apps.migration_matrix_official_bins_numu,
+            )
+            if include_antineutrinos:
 
-            else:
-                # now apply energy degradation to Etrue, then migrate to Ereco
-                dic["MC_numu_bkg_total_w_dis"] = np.dot(
-                    sterile.EnergyDegradation(
-                        fast_histogram(
-                            Etrue_numu_parent,
-                            bins=e_prod_e_int_bins_numu,
-                            weights=Weight_numu_ext,
-                        )[0],
-                        e_prod_e_int_bins_numu,
-                        which_channel="Pmm",
-                        which_experiment="miniboone",
-                    ),
-                    mini.apps.migration_matrix_official_bins_numu,
-                )
                 dic["MC_numubar_bkg_total_w_dis"] = np.dot(
-                    antisterile.EnergyDegradation(
+                    (
                         fast_histogram(
                             Etrue_numubar_parent,
                             bins=e_prod_e_int_bins_numu,
-                            weights=Weight_numubar_ext,
-                        )[0],
-                        e_prod_e_int_bins_numu,
-                        which_channel="Pmm",
-                        which_experiment="miniboone",
+                            weights=Weight_numubar_dis_osc,
+                        )[0]
+                        + fast_histogram(
+                            Etrue_numubar_daughter,
+                            bins=e_prod_e_int_bins,
+                            weights=Weight_numubar_dis_dec,
+                        )[0]
                     ),
                     mini.apps.migration_matrix_official_bins_numubar,
                 )
-
-            # # Migrate nue signal from Etrue to Ereco with 11 bins
-            # MC_numu_bkg_total_w_dis = np.dot(
-            # fast_histogram(
-            #     Etrue_daughter, bins=e_prod_e_int_bins, weights=Weight_numu_dis
-            # )[0],
-            # mini.apps.migration_matrix_official_bins_nue_11bins,
-            # )
 
         else:
             # NOTE: Averaged
@@ -727,16 +723,19 @@ def get_nue_rates(
             P_mumu_avg = sterile.PmmAvg_vec(
                 MB_Ereco_official_bins_numu[:-1],
                 MB_Ereco_official_bins_numu[1:],
-                micro.L_mini,
+                L_mini,
             )
             dic["MC_numu_bkg_total_w_dis"] = mini.MC_numu_bkg_tot * P_mumu_avg
+            if include_antineutrinos:
 
-            P_mumu_avg_bar = antisterile.PmmAvg_vec(
-                MB_Ereco_official_bins_numu[:-1],
-                MB_Ereco_official_bins_numu[1:],
-                micro.L_mini,
-            )
-            dic["MC_numubar_bkg_total_w_dis"] = mini.MC_numubar_bkg_tot * P_mumu_avg_bar
+                P_mumu_avg_bar = antisterile.PmmAvg_vec(
+                    MB_Ereco_official_bins_numu[:-1],
+                    MB_Ereco_official_bins_numu[1:],
+                    L_mini,
+                )
+                dic["MC_numubar_bkg_total_w_dis"] = (
+                    mini.MC_numubar_bkg_tot * P_mumu_avg_bar
+                )
 
     return dic
 

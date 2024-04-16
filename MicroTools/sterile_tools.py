@@ -3,7 +3,7 @@ import numba
 from scipy import integrate
 from scipy.special import expi
 from . import const
-import MicroTools as micro
+from . import L_micro, L_mini
 
 
 # --------------------------------------------------------------------------------
@@ -221,7 +221,17 @@ class Sterile:
     def Pmedecay(self, E4, Edaughter, Length):
         """Flavor transition probability, E4 -- GeV, Edaughter -- GeV, Length -- km"""
         # Decay term
-        pdecay = self.Um4Sq * self.Fdecay(E4, Edaughter, Length)
+        # pdecay = self.Um4Sq * self.Fdecay(E4, Edaughter, Length)
+        # degradation * xsec * efficiency
+        pdecay = (
+            self.Um4Sq
+            * Sterile._Fdec(Length, self.Ldec(E4))
+            * Sterile.dPdecaydX(E4, Edaughter)
+            * Edaughter
+            / E4
+            * self.MiniEff(Edaughter)
+            / self.MiniEff(E4)
+        )
         if not self.decouple_decay:
             # overlap of daughter with nu_e state
             pdecay *= self.Us4Sq * self.Ue4Sq / (1 - self.Us4Sq)
@@ -260,8 +270,56 @@ class Sterile:
 
         # Oscillation term
         posc = self.Ue4Sq * (1 - self.Ue4Sq) * self.Fosc(E4, Length)
-        print(posc, pdecay)
+        # print(posc, pdecay)
         return 1 + pdecay - posc
+
+    def Peedecay(self, E4, Edaughter, Length):
+        """Flavor transition probability, E4 -- GeV, Edaughter -- GeV, Length -- km"""
+        # Decay term
+        # pdecay = self.Um4Sq * self.Fdecay(E4, Edaughter, Length)
+        # degradation * xsec * efficiency
+        pdecay = (
+            self.Ue4Sq
+            * Sterile._Fdec(Length, self.Ldec(E4))
+            * Sterile.dPdecaydX(E4, Edaughter)
+            * Edaughter
+            / E4
+            * self.MiniEff(Edaughter)
+            / self.MiniEff(E4)
+        )
+        if not self.decouple_decay:
+            # overlap of daughter with nu_e state
+            pdecay *= self.Us4Sq * self.Ue4Sq / (1 - self.Us4Sq)
+        return pdecay
+
+    def Peeosc(self, E4, Length):
+        # Oscillation term
+        posc = self.Ue4Sq * (1 - self.Ue4Sq) * self.Fosc(E4, Length)
+        return 1 - posc
+
+    def Pmmdecay(self, E4, Edaughter, Length):
+        """Flavor transition probability, E4 -- GeV, Edaughter -- GeV, Length -- km"""
+        # Decay term
+        # pdecay = self.Um4Sq * self.Fdecay(E4, Edaughter, Length)
+        # degradation * xsec * efficiency
+        pdecay = (
+            self.Um4Sq
+            * Sterile._Fdec(Length, self.Ldec(E4))
+            * Sterile.dPdecaydX(E4, Edaughter)
+            * Edaughter
+            / E4
+            * self.MiniEff(Edaughter)
+            / self.MiniEff(E4)
+        )
+        if not self.decouple_decay:
+            # overlap of daughter with nu_e state
+            pdecay *= self.Us4Sq * self.Um4Sq / (1 - self.Us4Sq)
+        return pdecay
+
+    def Pmmosc(self, E4, Length):
+        # Oscillation term
+        posc = self.Um4Sq * (1 - self.Um4Sq) * self.Fosc(E4, Length)
+        return 1 - posc
 
     # ----------------------------------------------------------------
     # de Gouvea's model
@@ -284,7 +342,7 @@ class Sterile:
     # ----------------------------------------------------------------
     # DECAY AND OSC PROBABILITIES IN DISAPPEARANCE ENERGY DEGRADATION
     # ----------------------------------------------------------------
-    def Pmmdecay(
+    def PmmdecayAvg(
         self, Ebins, e4_index, eint_index, Length, which_experiment, noffset=0
     ):
         Eintmin, Eintmax = Ebins[eint_index], Ebins[eint_index + 1]
@@ -320,7 +378,7 @@ class Sterile:
             pdecay *= self.Us4Sq * self.Um4Sq / (1 - self.Us4Sq)
         return pdecay
 
-    def Pmmosc(self, Emin, Emax, Length):
+    def PmmoscAvg(self, Emin, Emax, Length):
         if Emin == 0.0:
             Emin = 0.000001
         if Emax == 0.0:
@@ -328,7 +386,7 @@ class Sterile:
         # osc term in Pmm, does not involve energy degradation
         return 1 - self.Um4Sq * (1 - self.Um4Sq) * self.FoscAna(Emin, Emax, Length)
 
-    def Peedecay(
+    def PeedecayAvg(
         self, Ebins, e4_index, eint_index, Length, which_experiment, noffset=0
     ):
         Eintmin, Eintmax = Ebins[eint_index], Ebins[eint_index + 1]
@@ -366,7 +424,7 @@ class Sterile:
             pdecay *= self.Us4Sq * self.Ue4Sq / (1 - self.Us4Sq)
         return pdecay
 
-    def Peeosc(self, Emin, Emax, Length):
+    def PeeoscAvg(self, Emin, Emax, Length):
         if Emin == 0.0:
             Emin = 0.000001
         if Emax == 0.0:
@@ -413,8 +471,8 @@ class Sterile:
         """The probability of daughter neutrino energy"""
 
         decay_w_base = Edaughter / Eparent
-
-        return decay_w_base
+        # NOTE: factor of 2 is to acconunt for the decay rate scaling with Edaughter/Eparent
+        return decay_w_base * 2
 
     # def Pdecay_binned_avg(self, E4_bin_edges, fixed_Length=L_micro):
     #     """E4_bin_edges -- array in GeV, Length -- Kilometers"""
@@ -453,12 +511,12 @@ class Sterile:
                 Pdecay = 1
 
                 if which_channel == "Pee":
-                    Pdecay = self.Peedecay(
-                        Etrue_bins, k, i, micro.L_micro, which_experiment, noffset=0
+                    Pdecay = self.PeedecayAvg(
+                        Etrue_bins, k, i, L_micro, which_experiment, noffset=0
                     )
                 elif which_channel == "Pmm":
-                    Pdecay = self.Pmmdecay(
-                        Etrue_bins, k, i, micro.L_micro, which_experiment, noffset=0
+                    Pdecay = self.PmmdecayAvg(
+                        Etrue_bins, k, i, L_micro, which_experiment, noffset=0
                     )
                 else:
                     raise ValueError(
@@ -474,10 +532,10 @@ class Sterile:
         # oscillation piece
         for i in range(len(Etrue_dist)):
             if which_channel == "Pee":
-                Peeosc = self.Peeosc(Etrue_bins[i], Etrue_bins[i + 1], micro.L_micro)
+                Peeosc = self.PeeoscAvg(Etrue_bins[i], Etrue_bins[i + 1], L_micro)
                 R_osc.append(Peeosc * Etrue_dist[i])
             elif which_channel == "Pmm":
-                Pmmosc = self.Pmmosc(Etrue_bins[i], Etrue_bins[i + 1], micro.L_micro)
+                Pmmosc = self.PmmoscAvg(Etrue_bins[i], Etrue_bins[i + 1], L_micro)
                 R_osc.append(Pmmosc * Etrue_dist[i])
             else:
                 raise ValueError(
@@ -488,11 +546,58 @@ class Sterile:
 
         return R_tot
 
+    """
     def MiniEff(self, E):
         if E < 0.15:
             return 0.00001
         if E > 2.0:
             return 0.026
-        mask = np.histogram(E, bins=self.eff_bin_edges)[0]
+        mask = numba_histogram(a = np.array([E]), bin_edges=np.array(self.eff_bin_edges),weights=[1])[0]
         pos = np.nonzero(mask)[0]
         return self.eff[pos[0]]
+    
+    
+    def MiniEffApp(self, E):
+        "Here E is an array, Eparent or Edaughter"
+        # Initialize the efficiency array
+        eff = [1]*len(E)
+        for i in range(len(E)):
+            if E[i] < 0.15:
+                eff[i] = 0.00001
+            elif E[i] > 2.0:
+                eff[i] = 0.026
+            else:
+                #mask = param_scan.numba_histogram(a = np.array([E[i]]), bin_edges=np.array(self.eff_bin_edges), weights=[1])[0]
+                mask = np.histogram(E[i], bins=self.eff_bin_edges)[0]
+                pos = np.nonzero(mask)[0]
+                eff[i] = self.eff[pos[0]]
+        return eff
+    """
+
+    def MiniEff(self, x):
+        conditions = (
+            [x < 0.15]
+            + [(x >= 0.15 + 0.1 * i) & (x < 0.25 + 0.1 * i) for i in range(9)]
+            + [(x >= 1.05) & (x < 1.2)]
+            + [(x >= 1.2 + 0.2 * j) & (x < 1.4 + 0.2 * j) for j in range(4)]
+            + [x >= 2.0]
+        )
+        functions = [
+            0.00001,
+            0.089,
+            0.135,
+            0.139,
+            0.131,
+            0.123,
+            0.116,
+            0.106,
+            0.102,
+            0.095,
+            0.089,
+            0.082,
+            0.073,
+            0.067,
+            0.052,
+            0.026,
+        ]
+        return np.piecewise(x, conditions, functions)

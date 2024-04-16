@@ -1,5 +1,6 @@
 import numpy as np
 from scipy.stats import chi2
+import copy
 from math import log10, floor, erf
 
 import matplotlib
@@ -13,6 +14,16 @@ from matplotlib.collections import PatchCollection
 
 import scipy
 from scipy.interpolate import splprep, splev
+from importlib.resources import open_text
+
+from MicroTools.InclusiveTools.inclusive_osc_tools import (
+    Decay_muB_OscChi2,
+    DecayMuBNuMuDis,
+    DecayMuBNuEDis,
+)
+import MiniTools as mini
+from . import muB_inclusive_datarelease_path, bin_width
+from MicroTools import param_scan
 
 ###########################
 # Matheus
@@ -36,6 +47,15 @@ rc("font", **{"family": "serif", "serif": ["Computer Modern Roman"]})
 matplotlib.rcParams["hatch.linewidth"] = 0.3
 
 rcParams.update(rcparams)
+
+# settings for Mini Figs
+TOTAL_RATE = False
+INCLUDE_MB_LAST_BIN = False
+STACKED = False
+PLOT_FAMILY = False
+PATH_PLOTS = "plots/event_rates/"
+
+PAPER_TAG = r"HKZ\,2024"
 
 
 ##########################
@@ -466,3 +486,423 @@ class MulticolorPatchHandler(object):
 
         handlebox.add_artist(patch)
         return patch
+
+
+def make_rate_plot(rates, params, name="3+1_osc"):
+    fig, ax1 = std_fig(figsize=(3.3 * 1.2, 2.1 * 1.2))
+    bins = param_scan.MB_Ereco_official_bins
+    bin_w = np.diff(bins)
+    bin_c = bins[:-1] + bin_w / 2
+
+    ######################################
+    # MiniBooNE
+    if TOTAL_RATE:
+        units = 1
+        ax1.set_ylabel(r"Events")
+    else:
+        units = 1 / bin_width
+        ax1.set_ylabel(r"Events/MeV")
+
+    nue_data = np.genfromtxt(
+        open_text(
+            f"MiniTools.include.MB_data_release_2020.combined",
+            f"miniboone_nuedata_lowe.txt",
+        )
+    )
+    nue_tot_bkg = np.genfromtxt(
+        open_text(
+            f"MiniTools.include.MB_data_release_2020.combined",
+            f"miniboone_nuebgr_lowe.txt",
+        )
+    )
+
+    Weight_nue_flux = mini.apps.reweight_MC_to_nue_flux(
+        param_scan.Etrue_nue, param_scan.Weight_nue, mode="fhc"
+    )
+
+    MC_nue_bkg_intrinsic = np.dot(
+        param_scan.fast_histogram(
+            param_scan.Etrue_nue,
+            bins=param_scan.e_prod_e_int_bins,
+            weights=Weight_nue_flux,
+        )[0],
+        mini.apps.migration_matrix_official_bins_nue_11bins,
+    )
+    nue_bkg_midID = nue_tot_bkg - MC_nue_bkg_intrinsic
+
+    # plot data
+    data_plot(
+        ax1,
+        X=bin_c,
+        Y=nue_data * units,
+        xerr=bin_w / 2,
+        yerr=np.sqrt(nue_data) * units,
+        zorder=3,
+    )
+
+    ax1.hist(
+        bins[:-1],
+        bins=bins,
+        weights=(nue_tot_bkg) * units,
+        edgecolor="black",
+        lw=0.5,
+        ls=(1, (2, 1)),
+        label=r"unoscillated total bkg",
+        histtype="step",
+        zorder=1.6,
+    )
+    ax1.hist(
+        bins[:-1],
+        bins=bins,
+        weights=(nue_bkg_midID) * units,
+        edgecolor="black",
+        facecolor="lightgrey",
+        lw=0.5,
+        label=r"misID bkg",
+        histtype="stepfilled",
+        zorder=2,
+    )
+    ax1.hist(
+        bins[:-1],
+        bins=bins,
+        # weights=(nue_tot_bkg)*units,
+        weights=rates["MC_nue_bkg_total_w_dis"] * units,
+        edgecolor="black",
+        facecolor="peachpuff",
+        lw=0.5,
+        label=r"$\nu_e$ disappearance",
+        histtype="stepfilled",
+        zorder=1.6,
+    )
+    ax1.hist(
+        bins[:-1],
+        bins=bins,
+        weights=(rates["MC_nue_app"] + rates["MC_nue_bkg_total_w_dis"]) * units,
+        # weights=(rates_dic_osc['MC_nue_app'] + nue_tot_bkg)*units,
+        edgecolor="black",
+        facecolor="lightblue",
+        lw=0.5,
+        linestyle=(1, (3, 0)),
+        label=r"$\nu_\mu \to \nu_e$ appearance",
+        histtype="stepfilled",
+        zorder=1.5,
+    )
+
+    ax1.legend(fontsize=8, markerfirst=False, ncol=1)
+    pval = r"$p_{\rm val}$"
+    pval_str = rf"{pval} $\,= {sci_notation(mini.fit.get_pval(rates, 38-5)*100, sig_digits=2, optional_sci=2, notex=True)}\%$"
+    # ax1.annotate(text=r'MiniBooNE FHC 2020 -- '+ pval_str, xy=(0.0,1.025), xycoords='axes fraction', fontsize=9)
+    ax1.annotate(
+        text=r"MiniBooNE FHC 2020",
+        xy=(0.0, 1.025),
+        xycoords="axes fraction",
+        fontsize=9,
+    )
+    ax1.annotate(
+        text=rf'\noindent $g_\varphi = {params["g"]:.1f}$\\$m_4 = {params["m4"]:.1f}$ eV\\$|U_{{e4}}|^2 = {params["Ue4Sq"]:.2f}$\\$|U_{{\mu 4}}|^2 = {params["Um4Sq"]:.3f}$',
+        xy=(0.72, 0.45),
+        xycoords="axes fraction",
+        fontsize=8.5,
+        bbox=dict(
+            facecolor="none",
+            edgecolor="black",
+            linewidth=0.5,
+            boxstyle="square,pad=0.3",
+        ),
+    )
+    ax1.set_xlabel(r"Reconstructed $E_\nu^{\rm QE}$ (GeV)", fontsize=9, labelpad=2.5)
+    if INCLUDE_MB_LAST_BIN:
+        ax1.set_xticks([0.2, 0.5, 1, 1.5, 2, 2.5, 3])
+        ax1.set_xlim(0.2, 3)
+    else:
+        ax1.set_xticks([0.2, 0.4, 0.6, 0.8, 1, 1.2, 1.4])
+        ax1.set_xlim(0.2, 1.5)
+    ax1.set_ylim(0, 8)
+    # ax1.xaxis.set_major_locator(MultipleLocator(0.5))
+    # ax1.xaxis.set_minor_locator(MultipleLocator(0.1))
+
+    ax1.annotate(
+        text=PAPER_TAG,
+        xy=(1, 1.025),
+        xycoords="axes fraction",
+        fontsize=8.5,
+        ha="right",
+    )
+    # ax1.annotate(text=fr'{pval} $\,= {mini.fit.get_pval(rates, 38-5)*100:.1f}\%$', xy=(0.15,0.9), xycoords='axes fraction', fontsize=8.5)
+    # fig.savefig(f"{PATH_PLOTS}/Mini_{name}.png", dpi=400)
+    fig.savefig(f"{PATH_PLOTS}/Mini_{name}.pdf", dpi=400, bbox_inches="tight")
+
+
+def make_numu_rate_plot(rates, params, name="3+1_osc"):
+    fig, ax1 = std_fig(figsize=(3.3 * 1.2, 2 * 1.2))
+    bins = param_scan.MB_Ereco_official_bins_numu
+    bin_w = np.diff(bins)
+    bin_c = bins[:-1] + bin_w / 2
+
+    ######################################
+    # MiniBooNE
+    if TOTAL_RATE:
+        units = 1
+        ax1.set_ylabel(r"Events")
+    else:
+        units = 1 / bin_w / 1e3
+        ax1.set_ylabel(r"Events/MeV")
+
+    numu_data = np.genfromtxt(
+        open_text(
+            f"MiniTools.include.MB_data_release_2020.combined",
+            f"miniboone_numudata.txt",
+        )
+    )
+    numu_tot_bkg = np.genfromtxt(
+        open_text(
+            f"MiniTools.include.MB_data_release_2020.combined",
+            f"miniboone_numu.txt",
+        )
+    )
+
+    # plot data
+    data_plot(
+        ax1,
+        X=bin_c,
+        Y=numu_data * units,
+        xerr=bin_w / 2,
+        yerr=np.sqrt(numu_data) * units,
+        zorder=3,
+    )
+
+    ax1.hist(
+        bins[:-1],
+        bins=bins,
+        weights=(numu_tot_bkg) * units,
+        edgecolor="black",
+        lw=0.5,
+        ls=(1, (2, 1)),
+        label=r"unoscillated total bkg",
+        histtype="step",
+        zorder=1.6,
+    )
+
+    ax1.hist(
+        bins[:-1],
+        bins=bins,
+        weights=rates["MC_numu_bkg_total_w_dis"] * units,
+        edgecolor="black",
+        facecolor="thistle",
+        lw=0.5,
+        label=r"$\nu_\mu$ w/ disappearance",
+        histtype="stepfilled",
+        zorder=1.6,
+    )
+
+    ax1.legend(fontsize=8, markerfirst=False, ncol=1)
+    ax1.annotate(
+        text=r"MiniBooNE FHC 2020",
+        xy=(0.0, 1.025),
+        xycoords="axes fraction",
+        fontsize=9,
+    )
+    ax1.annotate(
+        text=rf'\noindent $g_\varphi = {params["g"]:.1f}$\\$m_4 = {params["m4"]:.0f}$ eV\\$|U_{{e4}}|^2 = {params["Ue4Sq"]:.2f}$\\$|U_{{\mu 4}}|^2 = {params["Um4Sq"]:.3f}$',
+        xy=(0.72, 0.6),
+        xycoords="axes fraction",
+        fontsize=8.5,
+        bbox=dict(
+            facecolor="none",
+            edgecolor="black",
+            linewidth=0.5,
+            boxstyle="square,pad=0.3",
+        ),
+    )
+    ax1.set_xlabel(r"Reconstructed $E_\nu^{\rm QE}$ (GeV)", fontsize=9, labelpad=2.5)
+    ax1.set_xticks([0, 0.5, 1.0, 1.5, 1.9])
+    ax1.set_xlim(0.0, 1.9)
+    ax1.set_ylim(0, 500)
+
+    ax1.annotate(
+        text=PAPER_TAG,
+        xy=(1, 1.025),
+        xycoords="axes fraction",
+        fontsize=8.5,
+        ha="right",
+    )
+
+    # fig.savefig(f"{PATH_PLOTS}/Mini_{name}_numu.png", dpi=400)
+    fig.savefig(f"{PATH_PLOTS}/Mini_{name}_numu.pdf", dpi=400)
+
+
+MuBchi2_null_hyp = 93
+
+
+def make_micro_rate_plot(rates, params, name="micro_3+1_osc", PC=False):
+    fig, ax1 = std_fig(figsize=(3.3 * 1.2, 2 * 1.2))
+
+    bins = np.array([0.0 + 0.1 * j for j in range(26)] + [10.0])
+    bin_w = np.diff(bins)
+    bin_c = bins[:-1] + bin_w / 2
+
+    # MicroBooNE fully inclusive signal by unfolding MiniBooNE Signal
+    uBFC = param_scan.GBFC.miniToMicro(rates["MC_nue_app_for_unfolding"])
+    uBFC = np.insert(uBFC, 0, [0.0])
+    uBFC = np.append(uBFC, 0.0)
+
+    # MicroBooNE partially inclusive signal by unfolding MiniBooNE Signal
+    MC_nue_app_for_unfolding2 = copy.deepcopy(rates["MC_nue_app_for_unfolding"])
+    uBPC = param_scan.GBPC.miniToMicro(MC_nue_app_for_unfolding2)
+    uBPC = np.insert(uBPC, 0, [0.0])
+    uBPC = np.append(uBPC, 0.0)
+
+    uBtemp = np.concatenate([uBFC, uBPC, np.zeros(85)])
+
+    uB_signal = uBPC if PC else uBFC
+    #     unfolding = unfolder.MBtomuB(
+    #     analysis="1eX_PC" if PC else "1eX",
+    #     remove_high_energy=False,
+    #     unfold=True,
+    #     effNoUnfold=True,
+    #     which_template="2020",
+    #     )
+
+    # MicroBooNE fully inclusive signal by unfolding MiniBooNE Signal
+    #     uB_signal = unfolding.miniToMicro(rates["MC_nue_app_for_unfolding"])
+    #     uB_signal = np.insert(uB_signal, 0, [0.0])
+    #     uB_signal = np.append(uB_signal, 0.0)
+
+    SAMPLE = "PC" if PC else "FC"
+    other_bkg = np.load(muB_inclusive_datarelease_path + f"nueCC_{SAMPLE}_Bkg.npy")
+    intrinsic_bkg = np.load(muB_inclusive_datarelease_path + f"nueCC_{SAMPLE}_Sig.npy")
+    data = np.load(muB_inclusive_datarelease_path + f"nueCC_{SAMPLE}_Obs.npy")
+
+    # \nu_e disappearance signal replacement
+    NuEReps = DecayMuBNuEDis(
+        params,
+        oscillations=True,
+        decay=True,
+        decouple_decay=False,
+        disappearance=True,
+        energy_degradation=True,
+    )
+
+    # \nu_mu disappearance signal replacement
+
+    NuMuReps = DecayMuBNuMuDis(
+        params,
+        oscillations=True,
+        decay=True,
+        decouple_decay=False,
+        disappearance=True,
+        energy_degradation=True,
+    )
+
+    # MicroBooNE
+    MuB_chi2 = Decay_muB_OscChi2(
+        params,
+        uBtemp,
+        constrained=False,
+        sigReps=[NuEReps[0], NuEReps[1], NuMuReps[0], NuMuReps[1], None, None, None],
+        RemoveOverflow=True,
+        oscillations=True,
+        decay=True,
+        decouple_decay=False,
+        disappearance=True,
+        energy_degradation=True,
+    )
+
+    ######################################
+    if TOTAL_RATE:
+        units = 1
+        ax1.set_ylabel(r"Events")
+    else:
+        units = 1 / bin_w / 1e3
+        ax1.set_ylabel(r"Events/MeV")
+
+    # plot data
+    data_plot(
+        ax1,
+        X=bin_c,
+        Y=data * units,
+        xerr=bin_w / 2,
+        yerr=np.sqrt(data) * units,
+        zorder=3,
+    )
+
+    ax1.hist(
+        bins[:-1],
+        bins=bins,
+        weights=(other_bkg + intrinsic_bkg) * units,
+        edgecolor="black",
+        lw=0.5,
+        ls=(1, (2, 1)),
+        label=r"unoscillated total bkg",
+        histtype="step",
+        zorder=1.8,
+    )
+    ax1.hist(
+        bins[:-1],
+        bins=bins,
+        weights=other_bkg * units,
+        edgecolor="black",
+        facecolor="lightgrey",
+        lw=0.5,
+        label=r"Non-$\nu_e$ bkg",
+        histtype="stepfilled",
+        zorder=1.7,
+    )
+    ax1.hist(
+        bins[:-1],
+        bins=bins,
+        weights=(other_bkg + NuEReps[1 if PC else 0]) * units,
+        edgecolor="black",
+        facecolor="peachpuff",
+        lw=0.5,
+        label=r"$\nu_e$ disappearance",
+        histtype="stepfilled",
+        zorder=1.6,
+    )
+    ax1.hist(
+        bins[:-1],
+        bins=bins,
+        weights=(uB_signal + NuEReps[1 if PC else 0]) * units,
+        edgecolor="black",
+        facecolor="lightblue",
+        lw=0.5,
+        label=r"$\nu_e$ appearance",
+        histtype="stepfilled",
+        zorder=1.4,
+    )
+
+    ax1.legend(loc="upper right", fontsize=8, markerfirst=False, ncol=1)
+    ax1.annotate(
+        text=rf'MicroBooNE {"PC" if PC else "FC"} 2020 $\vert$ $\Delta \chi^2 = {MuB_chi2 - MuBchi2_null_hyp:.0f}$',
+        xy=(0.0, 1.025),
+        xycoords="axes fraction",
+        fontsize=9,
+    )
+    ax1.annotate(
+        text=rf'\noindent $g_\varphi = {params["g"]:.1f},\, m_4 = {params["m4"]:.0f}$ eV\\$|U_{{e4}}|^2 = {params["Ue4Sq"]:.2f}\\|U_{{\mu 4}}|^2 = {params["Um4Sq"]:.3f}$',
+        xy=(0.025, 0.91),
+        xycoords="axes fraction",
+        fontsize=8.5,
+        bbox=dict(
+            facecolor="none",
+            edgecolor="black",
+            linewidth=0.5,
+            boxstyle="square,pad=0.3",
+        ),
+    )
+
+    ax1.set_xlabel(r"Reconstructed $E_\nu^{\rm QE}$ (GeV)", fontsize=9, labelpad=2.5)
+    ax1.set_xticks([0, 0.5, 1.0, 1.5, 2.0, 2.5])
+    ax1.set_xlim(0.0, 2.5)
+    ax1.set_ylim(0, 0.3 if PC else 0.5)
+
+    ax1.annotate(
+        text=PAPER_TAG,
+        xy=(1, 1.025),
+        xycoords="axes fraction",
+        fontsize=8.5,
+        ha="right",
+    )
+
+    #     fig.savefig(f"{PATH_PLOTS}/Micro_{name}_{'PC' if PC else 'FC'}.png", dpi=400)
+    fig.savefig(f"{PATH_PLOTS}/Micro_{name}_{'PC' if PC else 'FC'}.pdf", dpi=400)

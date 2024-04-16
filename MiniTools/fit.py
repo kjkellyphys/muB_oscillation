@@ -1,4 +1,5 @@
 import numpy as np
+import scipy
 from importlib.resources import open_text
 
 
@@ -352,3 +353,26 @@ def chi2_MiniBooNE_combined(
         return chi2
     else:
         return 1e10
+
+
+def get_pval(rates_dic, ndof=8.7):
+    MB_chi2 = chi2_MiniBooNE_combined(
+        MC_nue_app=rates_dic["MC_nue_app"],
+        MC_nuebar_app=rates_dic["MC_nuebar_app"],
+        MC_nue_dis=rates_dic["MC_nue_bkg_total_w_dis"],
+        MC_numu_dis=rates_dic["MC_numu_bkg_total_w_dis"],
+        MC_nuebar_dis=rates_dic["MC_nuebar_bkg_total_w_dis"],
+        MC_numubar_dis=rates_dic["MC_numubar_bkg_total_w_dis"],
+        year="2020",
+    )
+    return scipy.stats.chi2.sf(MB_chi2, ndof)
+
+
+def get_pval_nu(rates_dic, ndof=8.7):
+    MB_chi2 = chi2_MiniBooNE_combined(
+        MC_nue_app=rates_dic["MC_nue_app"],
+        MC_nue_dis=rates_dic["MC_nue_bkg_total_w_dis"],
+        MC_numu_dis=rates_dic["MC_numu_bkg_total_w_dis"],
+        year="2020",
+    )
+    return scipy.stats.chi2.sf(MB_chi2, ndof)
