@@ -2,11 +2,12 @@ import numpy as np
 from pathlib import Path
 
 # For more convenient imports
-from . import antinu_tools
-from . import const
-from . import plot_tools
-from . import sterile_tools
-from . import unfolder
+# from . import antinu_tools
+# from . import const
+# from . import plot_tools
+# from . import sterile_tools
+# from . import unfolder
+# from . import param_scan
 
 local_dir = Path(__file__).parent
 

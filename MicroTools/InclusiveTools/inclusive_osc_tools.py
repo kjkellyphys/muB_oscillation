@@ -2,19 +2,20 @@ import numpy as np
 from scipy.linalg import inv
 from scipy.special import sici, expi
 
-import MicroTools as micro
+from MicroTools import unfolder
+from MicroTools import muB_inclusive_datarelease_path, muB_inclusive_data_path
 from MicroTools.sterile_tools import Sterile
 
 import copy
 
-GBPC_NuE = micro.unfolder.MBtomuB(
+GBPC_NuE = unfolder.MBtomuB(
     analysis="1eX_PC",
     remove_high_energy=False,
     unfold=False,
     effNoUnfold=False,
     which_template="2018",
 )
-GBFC_NuE = micro.unfolder.MBtomuB(
+GBFC_NuE = unfolder.MBtomuB(
     analysis="1eX",
     remove_high_energy=False,
     unfold=False,
@@ -32,17 +33,17 @@ Sets = [
     "NCpi0_",
 ]
 LEEStr, SigStr, BkgStr, ObsStr = "LEE.npy", "Sig.npy", "Bkg.npy", "Obs.npy"
-LEESets = [np.load(micro.muB_inclusive_datarelease_path + si + LEEStr) for si in Sets]
-SigSets = [np.load(micro.muB_inclusive_datarelease_path + si + SigStr) for si in Sets]
-BkgSets = [np.load(micro.muB_inclusive_datarelease_path + si + BkgStr) for si in Sets]
-ObsSets = [np.load(micro.muB_inclusive_datarelease_path + si + ObsStr) for si in Sets]
+LEESets = [np.load(muB_inclusive_datarelease_path + si + LEEStr) for si in Sets]
+SigSets = [np.load(muB_inclusive_datarelease_path + si + SigStr) for si in Sets]
+BkgSets = [np.load(muB_inclusive_datarelease_path + si + BkgStr) for si in Sets]
+ObsSets = [np.load(muB_inclusive_datarelease_path + si + ObsStr) for si in Sets]
 
 LEESetsF = np.concatenate(LEESets)
 SigSetsF = np.concatenate(SigSets)
 BkgSetsF = np.concatenate(BkgSets)
 ObsSetsF = np.concatenate(ObsSets)
 
-FCov = np.load(micro.muB_inclusive_datarelease_path + "MuBInclusive_FracCov_Square.npy")
+FCov = np.load(muB_inclusive_datarelease_path + "MuBInclusive_FracCov_Square.npy")
 
 SigTypes = ["nue", "nue", "numu", "numu", "numuPi0", "numuPi0", "NCPi0"]
 BEdges0 = [0.0 + 0.1 * j for j in range(26)]
@@ -55,17 +56,13 @@ LMBT = 0.4685  # Baseline length in kilometers
 
 ###########
 # Numu data
-NuMuCC_TrueEDist_FC = np.loadtxt(
-    f"{micro.muB_inclusive_data_path}/TrueEDist_numuCC_FC.dat"
-)
-NuMuCC_MigMat_FC = np.loadtxt(f"{micro.muB_inclusive_data_path}/MigMat_numuCC_FC.dat")
-NuMuCC_Eff_FC = np.loadtxt(f"{micro.muB_inclusive_data_path}/Efficiency_numuCC_FC.dat")
+NuMuCC_TrueEDist_FC = np.loadtxt(f"{muB_inclusive_data_path}/TrueEDist_numuCC_FC.dat")
+NuMuCC_MigMat_FC = np.loadtxt(f"{muB_inclusive_data_path}/MigMat_numuCC_FC.dat")
+NuMuCC_Eff_FC = np.loadtxt(f"{muB_inclusive_data_path}/Efficiency_numuCC_FC.dat")
 
-NuMuCC_TrueEDist_PC = np.loadtxt(
-    f"{micro.muB_inclusive_data_path}/TrueEDist_numuCC_PC.dat"
-)
-NuMuCC_MigMat_PC = np.loadtxt(f"{micro.muB_inclusive_data_path}/MigMat_numuCC_PC.dat")
-NuMuCC_Eff_PC = np.loadtxt(f"{micro.muB_inclusive_data_path}/Efficiency_numuCC_PC.dat")
+NuMuCC_TrueEDist_PC = np.loadtxt(f"{muB_inclusive_data_path}/TrueEDist_numuCC_PC.dat")
+NuMuCC_MigMat_PC = np.loadtxt(f"{muB_inclusive_data_path}/MigMat_numuCC_PC.dat")
+NuMuCC_Eff_PC = np.loadtxt(f"{muB_inclusive_data_path}/Efficiency_numuCC_PC.dat")
 
 MuB_BinEdges_NuMu = [0.0 + 0.05 * j for j in range(61)]
 
@@ -364,7 +361,7 @@ def muB_OscChi2(
     return TS
 
 
-MCT = np.load(f"{micro.muB_inclusive_data_path}/MuB_NuE_True.npy")
+MCT = np.load(f"{muB_inclusive_data_path}/MuB_NuE_True.npy")
 MuB_True_BinEdges = [
     0.200,
     0.250,
@@ -564,7 +561,12 @@ def Decay_muB_OscChi2(
                     ]
                     if energy_degradation:
                         RWVec = (
-                            sterile.EnergyDegradation(SigSets[SI], BE, which_channel="Pee", which_experiment="microboone")
+                            sterile.EnergyDegradation(
+                                SigSets[SI],
+                                BE,
+                                which_channel="Pee",
+                                which_experiment="microboone",
+                            )
                             / SigSets[SI]
                         )
                     if not decay and oscillations:
@@ -581,7 +583,12 @@ def Decay_muB_OscChi2(
                     ]
                     if energy_degradation:
                         RWVec = (
-                            sterile.EnergyDegradation(SigSets[SI], BE, which_channel="Pmm", which_experiment="microboone")
+                            sterile.EnergyDegradation(
+                                SigSets[SI],
+                                BE,
+                                which_channel="Pmm",
+                                which_experiment="microboone",
+                            )
                             / SigSets[SI]
                         )
                     if not decay and oscillations:
@@ -695,7 +702,12 @@ def DecayMuBNuEDis(
                 * sterile.PeeAvg(MuB_True_BinEdges[k], MuB_True_BinEdges[k + 1], LMBT)
             )
         if energy_degradation:
-            PeeRW = sterile.EnergyDegradation(MCT, MuB_True_BinEdges, which_channel="Pee", which_experiment="microboone")
+            PeeRW = sterile.EnergyDegradation(
+                MCT,
+                MuB_True_BinEdges,
+                which_channel="Pee",
+                which_experiment="microboone",
+            )
         if not decay and oscillations:
             for k in range(len(MCT)):
                 PeeRW[k] = MCT[k] * sterile.Peeosc(
@@ -747,10 +759,16 @@ def DecayMuBNuMuDis(
             )
         if energy_degradation:
             PmmRW_FC = sterile.EnergyDegradation(
-                NuMuCC_TrueEDist_FC, MuB_BinEdges_NuMu, which_channel="Pmm", which_experiment="microboone"
+                NuMuCC_TrueEDist_FC,
+                MuB_BinEdges_NuMu,
+                which_channel="Pmm",
+                which_experiment="microboone",
             )
             PmmRW_PC = sterile.EnergyDegradation(
-                NuMuCC_TrueEDist_PC, MuB_BinEdges_NuMu, which_channel="Pmm", which_experiment="microboone"
+                NuMuCC_TrueEDist_PC,
+                MuB_BinEdges_NuMu,
+                which_channel="Pmm",
+                which_experiment="microboone",
             )
         if not decay and oscillations:
             for k in range(len(NuMuCC_TrueEDist_FC)):
