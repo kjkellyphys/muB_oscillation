@@ -227,8 +227,8 @@ class Sterile:
             self.Um4Sq
             * Sterile._Fdec(Length, self.Ldec(E4))
             * Sterile.dPdecaydX(E4, Edaughter)
-            * Edaughter
-            / E4
+            * self.Xsec(Edaughter)
+            / self.Xsec(E4)
             * self.MiniEff(Edaughter)
             / self.MiniEff(E4)
         )
@@ -282,8 +282,8 @@ class Sterile:
             self.Ue4Sq
             * Sterile._Fdec(Length, self.Ldec(E4))
             * Sterile.dPdecaydX(E4, Edaughter)
-            * Edaughter
-            / E4
+            * self.Xsec(Edaughter)
+            / self.Xsec(E4)
             * self.MiniEff(Edaughter)
             / self.MiniEff(E4)
         )
@@ -306,8 +306,8 @@ class Sterile:
             self.Um4Sq
             * Sterile._Fdec(Length, self.Ldec(E4))
             * Sterile.dPdecaydX(E4, Edaughter)
-            * Edaughter
-            / E4
+            * self.Xsec(Edaughter)
+            / self.Xsec(E4)
             * self.MiniEff(Edaughter)
             / self.MiniEff(E4)
         )
@@ -601,3 +601,8 @@ class Sterile:
             0.026,
         ]
         return np.piecewise(x, conditions, functions)
+
+    def Xsec(self, E):
+        """Cross section in cm^2, E -- GeV"""
+        polyfit = -129.16 * E**4 + 146.38 * E**3 - 40.046 * E**2 + 4.5652 * E + 0.0358
+        return polyfit
