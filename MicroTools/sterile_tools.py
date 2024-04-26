@@ -6,6 +6,11 @@ from . import const
 from . import L_micro, L_mini
 
 
+from pathlib import Path
+
+local_dir = Path(__file__).parent
+
+
 # --------------------------------------------------------------------------------
 class Sterile:
     def __init__(
@@ -227,7 +232,7 @@ class Sterile:
             self.Um4Sq
             * Sterile._Fdec(Length, self.Ldec(E4))
             * Sterile.dPdecaydX(E4, Edaughter)
-            * Correction(Edaughter, E4, exp)
+            * DegradationCorrection(Edaughter, E4, exp)
         )
         if not self.decouple_decay:
             # overlap of daughter with nu_e state
@@ -270,7 +275,7 @@ class Sterile:
         # print(posc, pdecay)
         return 1 + pdecay - posc
 
-    def Peedecay(self, E4, Edaughter, Length):
+    def Peedecay(self, E4, Edaughter, Length, exp="miniboone"):
         """Flavor transition probability, E4 -- GeV, Edaughter -- GeV, Length -- km"""
         # Decay term
         # pdecay = self.Um4Sq * self.Fdecay(E4, Edaughter, Length)
@@ -279,10 +284,7 @@ class Sterile:
             self.Ue4Sq
             * Sterile._Fdec(Length, self.Ldec(E4))
             * Sterile.dPdecaydX(E4, Edaughter)
-            * Edaughter
-            / E4
-            * self.MiniEff(Edaughter)
-            / self.MiniEff(E4)
+            * DegradationCorrection(Edaughter, E4, exp)
         )
         if not self.decouple_decay:
             # overlap of daughter with nu_e state
@@ -294,7 +296,7 @@ class Sterile:
         posc = self.Ue4Sq * (1 - self.Ue4Sq) * self.Fosc(E4, Length)
         return 1 - posc
 
-    def Pmmdecay(self, E4, Edaughter, Length):
+    def Pmmdecay(self, E4, Edaughter, Length, exp="miniboone"):
         """Flavor transition probability, E4 -- GeV, Edaughter -- GeV, Length -- km"""
         # Decay term
         # pdecay = self.Um4Sq * self.Fdecay(E4, Edaughter, Length)
@@ -303,10 +305,7 @@ class Sterile:
             self.Um4Sq
             * Sterile._Fdec(Length, self.Ldec(E4))
             * Sterile.dPdecaydX(E4, Edaughter)
-            * Edaughter
-            / E4
-            * self.MiniEff(Edaughter)
-            / self.MiniEff(E4)
+            * DegradationCorrection(Edaughter, E4, exp)
         )
         if not self.decouple_decay:
             # overlap of daughter with nu_e state
@@ -365,8 +364,8 @@ class Sterile:
                 * ((Eintmax**2 - Eintmin**2) / ((Emax - E0) * (Emax + E0)))
                 * ((Eintmin + Eintmax) / (Emin + Emax))
                 * (
-                    (self.MiniEff(Eintmin) + self.MiniEff(Eintmax))
-                    / (self.MiniEff(Emin) + self.MiniEff(Emax))
+                    (MiniEff(Eintmin) + MiniEff(Eintmax))
+                    / (MiniEff(Emin) + MiniEff(Emax))
                 )
             )
         # ((Eintmax**2 - Eintmin**2)/(Emax*Emin)) factor is to account for the decay rate scaling with Eint/E4
@@ -409,8 +408,8 @@ class Sterile:
                 * ((Eintmax**2 - Eintmin**2) / ((Emax - E0) * (Emax + E0)))
                 * ((Eintmin + Eintmax) / (Emin + Emax))
                 * (
-                    (self.MiniEff(Eintmin) + self.MiniEff(Eintmax))
-                    / (self.MiniEff(Emin) + self.MiniEff(Emax))
+                    (MiniEff(Eintmin) + MiniEff(Eintmax))
+                    / (MiniEff(Emin) + MiniEff(Emax))
                 )
             )
         # pdecay = self.Ue4Sq * self.FdecayAvg(Emin, Emax, Length) * ((Eintmin + Eintmax) / (Emin + Emax)) ** n
@@ -467,7 +466,7 @@ class Sterile:
     def dPdecaydX(Eparent, Edaughter):
         """The probability of daughter neutrino energy"""
 
-        decay_w_base = 1 - Edaughter / Eparent
+        decay_w_base = Edaughter / Eparent
         # NOTE: factor of 2 is to acconunt for the decay rate scaling with Edaughter/Eparent
         return decay_w_base * 2
 
@@ -572,7 +571,7 @@ class Sterile:
     """
 
 
-def MiniEff(self, x):
+def MiniEff(x):
     conditions = (
         [x < 0.15]
         + [(x >= 0.15 + 0.1 * i) & (x < 0.25 + 0.1 * i) for i in range(9)]
@@ -601,10 +600,22 @@ def MiniEff(self, x):
     return np.piecewise(x, conditions, functions)
 
 
-def Correction(Edaughter, E4, exp):
+f_sigma = np.load(
+    local_dir.joinpath("InclusiveTools/f_sigma.npy"),
+    allow_pickle=True,
+).item()
+
+
+def Xsec(E):
+    """Cross section in cm^2, E -- GeV"""
+    # polyfit = -129.16 * E**4 + 146.38 * E**3 - 40.046 * E**2 + 4.5652 * E + 0.0358
+    return f_sigma(E)
+
+
+def DegradationCorrection(Edaughter, E4, exp):
     if exp == "miniboone":
-        return Edaughter / E4 * MiniEff(Edaughter) / MiniEff(E4)
+        return Xsec(Edaughter) / Xsec(E4) * MiniEff(Edaughter) / MiniEff(E4)
     elif exp == "microboone":
-        return Edaughter / E4
+        return Xsec(Edaughter) / Xsec(E4)
     else:
         raise ValueError(f"Experiment {exp} not recognized.")
