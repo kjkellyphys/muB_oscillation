@@ -218,7 +218,7 @@ class Sterile:
         posc = self.Um4Sq * self.Ue4Sq * self.Fosc(E4, Length)
         return pdecay + posc
 
-    def Pmedecay(self, E4, Edaughter, Length):
+    def Pmedecay(self, E4, Edaughter, Length, exp="miniboone"):
         """Flavor transition probability, E4 -- GeV, Edaughter -- GeV, Length -- km"""
         # Decay term
         # pdecay = self.Um4Sq * self.Fdecay(E4, Edaughter, Length)
@@ -227,10 +227,7 @@ class Sterile:
             self.Um4Sq
             * Sterile._Fdec(Length, self.Ldec(E4))
             * Sterile.dPdecaydX(E4, Edaughter)
-            * Edaughter
-            / E4
-            * self.MiniEff(Edaughter)
-            / self.MiniEff(E4)
+            * Correction(Edaughter, E4, exp)
         )
         if not self.decouple_decay:
             # overlap of daughter with nu_e state
@@ -470,7 +467,7 @@ class Sterile:
     def dPdecaydX(Eparent, Edaughter):
         """The probability of daughter neutrino energy"""
 
-        decay_w_base = Edaughter / Eparent
+        decay_w_base = 1 - Edaughter / Eparent
         # NOTE: factor of 2 is to acconunt for the decay rate scaling with Edaughter/Eparent
         return decay_w_base * 2
 
@@ -574,30 +571,40 @@ class Sterile:
         return eff
     """
 
-    def MiniEff(self, x):
-        conditions = (
-            [x < 0.15]
-            + [(x >= 0.15 + 0.1 * i) & (x < 0.25 + 0.1 * i) for i in range(9)]
-            + [(x >= 1.05) & (x < 1.2)]
-            + [(x >= 1.2 + 0.2 * j) & (x < 1.4 + 0.2 * j) for j in range(4)]
-            + [x >= 2.0]
-        )
-        functions = [
-            0.00001,
-            0.089,
-            0.135,
-            0.139,
-            0.131,
-            0.123,
-            0.116,
-            0.106,
-            0.102,
-            0.095,
-            0.089,
-            0.082,
-            0.073,
-            0.067,
-            0.052,
-            0.026,
-        ]
-        return np.piecewise(x, conditions, functions)
+
+def MiniEff(self, x):
+    conditions = (
+        [x < 0.15]
+        + [(x >= 0.15 + 0.1 * i) & (x < 0.25 + 0.1 * i) for i in range(9)]
+        + [(x >= 1.05) & (x < 1.2)]
+        + [(x >= 1.2 + 0.2 * j) & (x < 1.4 + 0.2 * j) for j in range(4)]
+        + [x >= 2.0]
+    )
+    functions = [
+        0.00001,
+        0.089,
+        0.135,
+        0.139,
+        0.131,
+        0.123,
+        0.116,
+        0.106,
+        0.102,
+        0.095,
+        0.089,
+        0.082,
+        0.073,
+        0.067,
+        0.052,
+        0.026,
+    ]
+    return np.piecewise(x, conditions, functions)
+
+
+def Correction(Edaughter, E4, exp):
+    if exp == "miniboone":
+        return Edaughter / E4 * MiniEff(Edaughter) / MiniEff(E4)
+    elif exp == "microboone":
+        return Edaughter / E4
+    else:
+        raise ValueError(f"Experiment {exp} not recognized.")

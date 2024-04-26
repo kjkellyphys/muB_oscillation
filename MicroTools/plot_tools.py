@@ -549,7 +549,7 @@ def make_rate_plot(rates, params, name="3+1_osc"):
         ls=(1, (2, 1)),
         label=r"unoscillated total bkg",
         histtype="step",
-        zorder=1.6,
+        zorder=3,
     )
     ax1.hist(
         bins[:-1],
@@ -631,6 +631,7 @@ def make_rate_plot(rates, params, name="3+1_osc"):
     # ax1.annotate(text=fr'{pval} $\,= {mini.fit.get_pval(rates, 38-5)*100:.1f}\%$', xy=(0.15,0.9), xycoords='axes fraction', fontsize=8.5)
     # fig.savefig(f"{PATH_PLOTS}/Mini_{name}.png", dpi=400)
     fig.savefig(f"{PATH_PLOTS}/Mini_{name}.pdf", dpi=400, bbox_inches="tight")
+    return fig, ax1
 
 
 def make_numu_rate_plot(rates, params, name="3+1_osc"):
@@ -729,6 +730,7 @@ def make_numu_rate_plot(rates, params, name="3+1_osc"):
 
     # fig.savefig(f"{PATH_PLOTS}/Mini_{name}_numu.png", dpi=400)
     fig.savefig(f"{PATH_PLOTS}/Mini_{name}_numu.pdf", dpi=400)
+    return fig, ax1
 
 
 MuBchi2_null_hyp = 93
@@ -906,3 +908,4 @@ def make_micro_rate_plot(rates, params, name="micro_3+1_osc", PC=False):
 
     #     fig.savefig(f"{PATH_PLOTS}/Micro_{name}_{'PC' if PC else 'FC'}.png", dpi=400)
     fig.savefig(f"{PATH_PLOTS}/Micro_{name}_{'PC' if PC else 'FC'}.pdf", dpi=400)
+    return fig, ax1
