@@ -238,6 +238,7 @@ def MiniBooNEChi2_deGouvea(
     theta,
     oscillations=False,
     decay=True,
+    disappearance=False,
     decouple_decay=True,
     n_replications=10,
     energy_degradation=True,
@@ -317,27 +318,42 @@ def MiniBooNEChi2_deGouvea(
     ################################################
     # NOTE: Are you sure about L_micro here? Shouldnt it be L_mini?
     ################################################
+    if disappearance:
+        P_mumu_avg_deGouvea = sterile.PmmAvg_vec_deGouvea(
+            MB_Ereco_official_bins_numu[:-1], MB_Ereco_official_bins_numu[1:], L_micro
+        )
+        MC_numu_bkg_total_w_dis_deGouvea = mini.MC_numu_bkg_tot * P_mumu_avg_deGouvea
 
-    # P_mumu_avg_deGouvea = sterile.PmmAvg_vec_deGouvea(
-    # MB_Ereco_official_bins_numu[:-1], MB_Ereco_official_bins_numu[1:], L_micro
-    # )
-    # MC_numu_bkg_total_w_dis_deGouvea = mini.MC_numu_bkg_tot * P_mumu_avg_deGouvea
+        P_mumu_avg_deGouvea_bar = antisterile.PmmAvg_vec_deGouvea(
+            MB_Ereco_official_bins_numu[:-1], MB_Ereco_official_bins_numu[1:], L_micro
+        )
+        MC_numubar_bkg_total_w_dis_deGouvea = (
+            mini.MC_numu_bkg_tot * P_mumu_avg_deGouvea_bar
+        )
 
-    # P_mumu_avg_deGouvea_bar = antisterile.PmmAvg_vec_deGouvea(
-    # MB_Ereco_official_bins_numu[:-1], MB_Ereco_official_bins_numu[1:], L_micro
-    # )
-    # MC_numu_bkg_total_w_dis_deGouvea = mini.MC_numu_bkg_tot * P_mumu_avg_deGouvea
+        # Calculate MiniBooNE chi2
+        MB_chi2 = mini.fit.chi2_MiniBooNE_combined(
+            MC_nue_app=MBSig_for_MBfit,
+            MC_nue_dis=None,
+            MC_numu_dis=MC_numu_bkg_total_w_dis_deGouvea,
+            MC_nuebar_app=MBSig_for_MBfit_bar,
+            MC_nuebar_dis=None,
+            MC_numubar_dis=MC_numubar_bkg_total_w_dis_deGouvea,
+            year="2018",
+        )
 
-    # Calculate MiniBooNE chi2
-    MB_chi2 = mini.fit.chi2_MiniBooNE_combined(
-        MC_nue_app=MBSig_for_MBfit,
-        MC_nue_dis=None,
-        MC_numu_dis=None,
-        MC_nuebar_app=MBSig_for_MBfit_bar,
-        MC_nuebar_dis=None,
-        MC_numubar_dis=None,
-        year="2018",
-    )
+    else:
+
+        # Calculate MiniBooNE chi2
+        MB_chi2 = mini.fit.chi2_MiniBooNE_combined(
+            MC_nue_app=MBSig_for_MBfit,
+            MC_nue_dis=None,
+            MC_numu_dis=None,
+            MC_nuebar_app=MBSig_for_MBfit_bar,
+            MC_nuebar_dis=None,
+            MC_numubar_dis=None,
+            year="2018",
+        )
 
     return [g, m4, Ue4Sq, Um4Sq, MB_chi2]
 
@@ -714,28 +730,30 @@ def get_nue_rates(
                 )
 
         else:
+            print("DEPRECATED: option `use_numu_MC = False` is deprecated")
             # NOTE: Averaged
             # Final MC prediction for nu_mu sample (w/ oscillated numus)
             # if undo_numu_normalization:
             # do not apply Pmumu in this case as the flux is already normalized
             # MC_numu_bkg_total_w_dis = mini.MC_numu_bkg_tot
             # else:
-            P_mumu_avg = sterile.PmmAvg_vec(
-                MB_Ereco_official_bins_numu[:-1],
-                MB_Ereco_official_bins_numu[1:],
-                L_mini,
-            )
-            dic["MC_numu_bkg_total_w_dis"] = mini.MC_numu_bkg_tot * P_mumu_avg
-            if include_antineutrinos:
+            # P_mumu_avg = sterile.PmmAvg_vec(
+            # MB_Ereco_official_bins_numu[:-1],
+            # MB_Ereco_official_bins_numu[1:],
+            # L_mini,
+            # )
+            # dic["MC_numu_bkg_total_w_dis"] = mini.MC_numu_bkg_tot * P_mumu_avg
 
-                P_mumu_avg_bar = antisterile.PmmAvg_vec(
-                    MB_Ereco_official_bins_numu[:-1],
-                    MB_Ereco_official_bins_numu[1:],
-                    L_mini,
-                )
-                dic["MC_numubar_bkg_total_w_dis"] = (
-                    mini.MC_numubar_bkg_tot * P_mumu_avg_bar
-                )
+            # if include_antineutrinos:
+
+            #     P_mumu_avg_bar = antisterile.PmmAvg_vec(
+            #         MB_Ereco_official_bins_numu[:-1],
+            #         MB_Ereco_official_bins_numu[1:],
+            #         L_mini,
+            #     )
+            #     dic["MC_numubar_bkg_total_w_dis"] = (
+            #         mini.MC_numubar_bkg_tot * P_mumu_avg_bar
+            #     )
 
     return dic
 

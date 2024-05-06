@@ -79,8 +79,6 @@ class Sterile:
         )
 
         # Vectorizing some class function
-        self.PmmAvg_vec = np.vectorize(self.PmmAvg)
-        self.PeeAvg_vec = np.vectorize(self.PeeAvg)
         self.PmmAvg_vec_deGouvea = np.vectorize(self.PmmAvg_deGouvea)
 
         # Load MiniBooNE detector efficiency data
@@ -118,11 +116,21 @@ class Sterile:
 
     @staticmethod
     @numba.jit(nopython=True, cache=True)
+    def _Fosc_crossterm(Length, Losc, Ldec):
+        return 1 - np.exp(-Length / Ldec / 2) * np.cos(np.pi * Length / Losc)
+
+    @staticmethod
+    @numba.jit(nopython=True, cache=True)
     def _Fosc(Length, Losc, Ldec):
         return (
-            4 * np.sin(np.pi / 2 * Length / Losc) ** 2 * np.exp(-Length / Ldec / 2)
-            + (1 - np.exp(-Length / Ldec / 2)) ** 2
+            1
+            - 2 * np.exp(-Length / Ldec / 2) * np.cos(np.pi * Length / Losc)
+            + np.exp(-Length / Ldec)
         )
+
+    def Fosc_crossterm(self, E4, Length):
+        """Prob of oscillation, E4 -- GeV, Length -- Kilometers"""
+        return Sterile._Fosc_crossterm(Length, self.Losc(E4), self.Ldec(E4))
 
     def Fosc(self, E4, Length):
         """Prob of oscillation, E4 -- GeV, Length -- Kilometers"""
@@ -139,77 +147,97 @@ class Sterile:
 
     def FdecayAvg(self, Emin, Emax, Length):
         """dPdecaydX --> 1"""
-        return integrate.quad(
-            lambda E4: (1 - np.exp(-Length / self.Ldec(E4))), Emin, Emax
-        )[0] / (Emax - Emin)
+        x = np.linspace(Emin, Emax, 100)
+        dx = x[1] - x[0]
+        if len(Length) > 1:
+            xx, ll = np.meshgrid(x, Length)
+            return np.sum(self.Fdecay(xx, ll), axis=1) * dx / (Emax - Emin)
+        else:
+            return np.sum(self.Fdecay(x, Length) * (x[1] - x[0])) / (Emax - Emin)
 
-    def FoscAvg(self, Emin, Emax, Length):
-        # integrand = lambda E4: self.Fosc(E4, Length)
-        # return integrate.quad(integrand, Emin, Emax, )[0] / (Emax - Emin)
-        x = np.linspace(Emin + 1e-6, Emax, 1000)
-        return np.sum(self.Fosc(x, Length) * (x[1] - x[0])) / (Emax - Emin)
+    def FoscAvg_numerical(self, Emin, Emax, Length):
+        """Prob of oscillation, E4 -- GeV, Length -- Kilometers"""
+        x = np.linspace(Emin, Emax, 100, endpoint=True)
+        dx = x[1] - x[0]
+        if len(Length) > 1:
+            xx, ll = np.meshgrid(x, Length)
+            return np.sum(self.Fosc(xx, ll), axis=1) * dx / (Emax - Emin)
+        else:
+            return np.sum(self.Fosc(x, Length) * (x[1] - x[0])) / (Emax - Emin)
 
-    def FoscAna(self, Emin, Emax, Length):
+    def FoscAvg_crossterm_numerical(self, Emin, Emax, Length):
+        """Prob of oscillation, E4 -- GeV, Length -- Kilometers"""
+        x = np.linspace(Emin, Emax, 100, endpoint=True)
+        dx = x[1] - x[0]
+        if len(Length) > 1:
+            xx, ll = np.meshgrid(x, Length)
+            return np.sum(self.Fosc_crossterm(xx, ll), axis=1) * dx / (Emax - Emin)
+        else:
+            return np.sum(self.Fosc_crossterm(x, Length) * (x[1] - x[0])) / (
+                Emax - Emin
+            )
+
+    def FoscAvg_crossterm_analytical(self, Emin, Emax, Length):
+        """here we evaluate the integral analytically"""
+
+        # NOTE: This is actually slower than the numerical one because of the scipy special func expi
+
+        if Emin == 0.0:
+            Emin = 0.000001
+        if Emax == 0.0:
+            Emax = 0.000001
+
+        a = Length / self.Ldec_0 * self.m4_in_GeV
+        b = np.pi * Length / self.Losc_0 * self.m4_in_GeV
+
+        res = (Emax - Emin) * (1 + 0 * 1j)
+        res += np.exp(-a / Emin / 2) * Emin * np.cos(b / Emin)
+        res += -np.exp(-a / Emax / 2) * Emax * np.cos(b / Emax)
+        res += 0.25 * (
+            -(a - b * 2j) * expi(-((a - b * 2j) / Emax / 2))
+            - (a + b * 2j) * expi(-((a + b * 2j) / Emax / 2))
+            + (a - b * 2j) * expi(-((a - b * 2j) / Emin / 2))
+            + (a + b * 2j) * expi(-((a + b * 2j) / Emin / 2))
+        )
+        return res.real / (Emax - Emin)
+
+    def FoscAvg_analytical(self, Emin, Emax, Length):
         """here we evaluate the integral analytically"""
         if Emin == 0.0:
             Emin = 0.000001
         if Emax == 0.0:
             Emax = 0.000001
-        a = Length * self.m4**2 * 1e3 / (4 * 197.3269804)
-        b = (
-            Length
-            * self.Us4Sq
-            * (1 - self.Us4Sq)
-            * (self.g * self.m4_in_GeV) ** 2
-            / (32 * np.pi)
-        ) / (1e-5 * 197.3269804e-16)
-        z = (
-            1
-            / (Emax - Emin)
-            * (
-                (
-                    Emax
-                    + np.exp(-(2 * b) / Emax) * Emax
-                    - 2 * np.exp(-b / Emax) * Emax * np.cos((2 * a) / Emax)
-                    + (2j * a - b) * expi((2j * a - b) / Emax)
-                    + 2 * b * expi(-(2 * b) / Emax)
-                    - (2j * a + b) * expi(-(2j * a + b) / Emax)
-                )
-                - (
-                    (
-                        Emin
-                        + np.exp(-(2 * b) / Emin) * Emin
-                        - 2 * np.exp(-b / Emin) * Emin * np.cos((2 * a) / Emin)
-                        + (2j * a - b) * expi((2j * a - b) / Emin)
-                        + 2 * b * expi(-(2 * b) / Emin)
-                        - (2j * a + b) * expi(-(2j * a + b) / Emin)
-                    )
-                )
-            )
-        )
-        return z.real
 
-    def FdecayAna(self, Emin, Emax, Length):
-        """here we evaluate the integral analytically"""
-        cst = (
-            Length
-            * self.Us4Sq
-            * (1 - self.Us4Sq)
-            * (self.g * self.m4_in_GeV) ** 2
-            / (16 * np.pi)
-        ) / (1e-5 * 197.3269804e-16)
-        return (
-            1
-            / (Emax - Emin)
-            * (
-                (Emax - np.exp(-cst / Emax) * Emax - cst * expi(-cst / Emax))
-                - (
-                    Emin
-                    - np.exp(-cst / (Emin + 1e-10)) * Emin
-                    - cst * expi(-cst / (Emin + 1e-10))
-                )
-            )
+        a = Length / self.Ldec_0 * self.m4_in_GeV
+        b = np.pi * Length / self.Losc_0 * self.m4_in_GeV
+
+        res = (Emax - Emin) * (1 + 0 * 1j)
+        res += np.exp(-a / Emax) * Emax - np.exp(-a / Emin) * Emin
+        res += a * expi(-a / Emax) - a * expi(-a / Emin)
+        res += 0.5 * (
+            -4 * np.exp(-a / (2 * Emax)) * Emax * np.cos(b / Emax)
+            + 4 * np.exp(-a / (2 * Emin)) * Emin * np.cos(b / Emin)
+            - (a - 2j * b) * expi(-((a - 2j * b) / (2 * Emax)))
+            - (a + 2j * b) * expi(-((a + 2j * b) / (2 * Emax)))
+            + (a - 2j * b) * expi(-((a - 2j * b) / (2 * Emin)))
+            + (a + 2j * b) * expi(-((a + 2j * b) / (2 * Emin)))
         )
+
+        return res.real / (Emax - Emin)
+
+    def FdecAvg_analytical(self, E4min, E4max, Length):
+        """Average of the decay function in a given E4 bin"""
+        if E4min == 0.0:
+            E4min = 0.000001
+        if E4max == 0.0:
+            E4max = 0.000001
+
+        a = Length / self.Ldec_0 * self.m4_in_GeV
+
+        res = E4max - E4min
+        res -= E4max * np.exp(-a / E4max) - E4min * np.exp(-a / E4min)
+        res -= a * (expi(-a / E4max) - expi(-a / E4min))
+        return res.real / (E4max - E4min)
 
     def Pme(self, E4, Edaughter, Length):
         """Flavor transition probability, E4 -- GeV, Edaughter -- GeV, Length -- km"""
@@ -230,8 +258,7 @@ class Sterile:
         # degradation * xsec * efficiency
         pdecay = (
             self.Um4Sq
-            * Sterile._Fdec(Length, self.Ldec(E4))
-            * Sterile.dPdecaydX(E4, Edaughter)
+            * self.Fdecay(E4, Edaughter, Length)
             * DegradationCorrection(Edaughter, E4, exp)
         )
         if not self.decouple_decay:
@@ -244,37 +271,6 @@ class Sterile:
         posc = self.Um4Sq * self.Ue4Sq * self.Fosc(E4, Length)
         return posc
 
-    def Pme_old(self, E4, Length):
-        """The original appearance probability"""
-        return (
-            4 * self.Um4Sq * self.Ue4Sq * np.sin(1.267 * self.m4**2 * Length / E4) ** 2
-        )
-
-    def Pmm(self, E4, Edaughter, Length):
-        """Flavor transition probability, E4 -- GeV, Edaughter -- GeV, Length -- km"""
-        # Decay term
-        pdecay = self.Um4Sq * self.Fdecay(E4, Edaughter, Length)
-        if not self.decouple_decay:
-            # overlap of daughter with nu_mu state
-            pdecay *= self.Us4Sq * self.Um4Sq / (1 - self.Us4Sq)
-
-        # Oscillation term
-        posc = self.Um4Sq * (1 - self.Um4Sq) * self.Fosc(E4, Length)
-        return 1 + pdecay - posc
-
-    def Pee(self, E4, Edaughter, Length):
-        """Flavor transition probability, E4 -- GeV, Edaughter -- GeV, Length -- km"""
-        # Decay term
-        pdecay = self.Ue4Sq * self.Fdecay(E4, Edaughter, Length)
-        if not self.decouple_decay:
-            # overlap of daughter with nu_e state
-            pdecay *= self.Us4Sq * self.Ue4Sq / (1 - self.Us4Sq)
-
-        # Oscillation term
-        posc = self.Ue4Sq * (1 - self.Ue4Sq) * self.Fosc(E4, Length)
-        # print(posc, pdecay)
-        return 1 + pdecay - posc
-
     def Peedecay(self, E4, Edaughter, Length, exp="miniboone"):
         """Flavor transition probability, E4 -- GeV, Edaughter -- GeV, Length -- km"""
         # Decay term
@@ -282,8 +278,7 @@ class Sterile:
         # degradation * xsec * efficiency
         pdecay = (
             self.Ue4Sq
-            * Sterile._Fdec(Length, self.Ldec(E4))
-            * Sterile.dPdecaydX(E4, Edaughter)
+            * self.Fdecay(E4, Edaughter, Length)
             * DegradationCorrection(Edaughter, E4, exp)
         )
         if not self.decouple_decay:
@@ -293,8 +288,11 @@ class Sterile:
 
     def Peeosc(self, E4, Length):
         # Oscillation term
-        posc = self.Ue4Sq * (1 - self.Ue4Sq) * self.Fosc(E4, Length)
-        return 1 - posc
+        return (
+            1
+            - 2 * self.Ue4Sq * self.Fosc_crossterm(E4, Length)
+            + self.Ue4Sq**2 * self.Fosc(E4, Length)
+        )
 
     def Pmmdecay(self, E4, Edaughter, Length, exp="miniboone"):
         """Flavor transition probability, E4 -- GeV, Edaughter -- GeV, Length -- km"""
@@ -303,8 +301,7 @@ class Sterile:
         # degradation * xsec * efficiency
         pdecay = (
             self.Um4Sq
-            * Sterile._Fdec(Length, self.Ldec(E4))
-            * Sterile.dPdecaydX(E4, Edaughter)
+            * self.Fdecay(E4, Edaughter, Length)
             * DegradationCorrection(Edaughter, E4, exp)
         )
         if not self.decouple_decay:
@@ -314,8 +311,11 @@ class Sterile:
 
     def Pmmosc(self, E4, Length):
         # Oscillation term
-        posc = self.Um4Sq * (1 - self.Um4Sq) * self.Fosc(E4, Length)
-        return 1 - posc
+        return (
+            1
+            - 2 * self.Um4Sq * self.Fosc_crossterm(E4, Length)
+            + self.Um4Sq**2 * self.Fosc(E4, Length)
+        )
 
     # ----------------------------------------------------------------
     # de Gouvea's model
@@ -344,43 +344,31 @@ class Sterile:
         Eintmin, Eintmax = Ebins[eint_index], Ebins[eint_index + 1]
         Emin, Emax = Ebins[e4_index], Ebins[e4_index + 1]
         E0 = Ebins[0]
-        pdecay = 1
-        # decay term in Pmm, Emin and Emax are E4 bin edges
-        if which_experiment == "microboone":
-            if Eintmax < 1:  # Should this be Emax or Eintmax? We should discuss.
-                n = 2 + noffset
-            else:
-                n = 1 + noffset
-            pdecay = (
-                self.Um4Sq
-                * self.FdecayAna(Emin, Emax, Length)
-                * ((Eintmax**2 - Eintmin**2) / ((Emax - E0) * (Emax + E0)))
-                * ((Eintmin + Eintmax) / (Emin + Emax)) ** n
+        # decay term in Pee, Emin and Emax are E4 bin edges
+        pdecay = (
+            self.Um4Sq
+            * self.FdecAvg_analytical(Emin, Emax, Length)
+            * DegradationCorrection(
+                (Eintmin + Eintmax) / 2,
+                (Emin + Emax) / 2,
+                which_experiment,
+                noffset=noffset,
             )
-        elif which_experiment == "miniboone":
-            pdecay = (
-                self.Um4Sq
-                * self.FdecayAna(Emin, Emax, Length)
-                * ((Eintmax**2 - Eintmin**2) / ((Emax - E0) * (Emax + E0)))
-                * ((Eintmin + Eintmax) / (Emin + Emax))
-                * (
-                    (MiniEff(Eintmin) + MiniEff(Eintmax))
-                    / (MiniEff(Emin) + MiniEff(Emax))
-                )
-            )
+        )
         # ((Eintmax**2 - Eintmin**2)/(Emax*Emin)) factor is to account for the decay rate scaling with Eint/E4
+        # It gives the fraction of events in this bin
         if not self.decouple_decay:
             # overlap of daughter with nu_e state
             pdecay *= self.Us4Sq * self.Um4Sq / (1 - self.Us4Sq)
         return pdecay
 
     def PmmoscAvg(self, Emin, Emax, Length):
-        if Emin == 0.0:
-            Emin = 0.000001
-        if Emax == 0.0:
-            Emax = 0.000001
         # osc term in Pmm, does not involve energy degradation
-        return 1 - self.Um4Sq * (1 - self.Um4Sq) * self.FoscAna(Emin, Emax, Length)
+        return (
+            1
+            - 2 * self.Um4Sq * self.FoscAvg_crossterm_analytical(Emin, Emax, Length)
+            + self.Um4Sq**2 * self.FoscAvg_analytical(Emin, Emax, Length)
+        )
 
     def PeedecayAvg(
         self, Ebins, e4_index, eint_index, Length, which_experiment, noffset=0
@@ -388,33 +376,20 @@ class Sterile:
         Eintmin, Eintmax = Ebins[eint_index], Ebins[eint_index + 1]
         Emin, Emax = Ebins[e4_index], Ebins[e4_index + 1]
         E0 = Ebins[0]
-        pdecay = 1
         # decay term in Pee, Emin and Emax are E4 bin edges
-        if which_experiment == "microboone":
-            if Eintmax < 1:  # Should this be Emax or Eintmax? We should discuss.
-                n = 2 + noffset
-            else:
-                n = 1 + noffset
-            pdecay = (
-                self.Ue4Sq
-                * self.FdecayAna(Emin, Emax, Length)
-                * ((Eintmax**2 - Eintmin**2) / ((Emax - E0) * (Emax + E0)))
-                * ((Eintmin + Eintmax) / (Emin + Emax)) ** n
+        pdecay = (
+            self.Ue4Sq
+            * self.FdecAvg_analytical(Emin, Emax, Length)
+            * ((Eintmax**2 - Eintmin**2) / ((Emax - E0) * (Emax + E0)))
+            * DegradationCorrection(
+                (Eintmin + Eintmax) / 2,
+                (Emin + Emax) / 2,
+                which_experiment,
+                noffset=noffset,
             )
-        elif which_experiment == "miniboone":
-            pdecay = (
-                self.Um4Sq
-                * self.FdecayAna(Emin, Emax, Length)
-                * ((Eintmax**2 - Eintmin**2) / ((Emax - E0) * (Emax + E0)))
-                * ((Eintmin + Eintmax) / (Emin + Emax))
-                * (
-                    (MiniEff(Eintmin) + MiniEff(Eintmax))
-                    / (MiniEff(Emin) + MiniEff(Emax))
-                )
-            )
-        # pdecay = self.Ue4Sq * self.FdecayAvg(Emin, Emax, Length) * ((Eintmin + Eintmax) / (Emin + Emax)) ** n
-        # ((Eintmax**2 - Eintmin**2)/(Emax*Emin)) factor is to account for the decay rate scaling with Eint/E4 -- gives the fraction of
-        # events in this bin
+        )
+        # ((Eintmax**2 - Eintmin**2)/(Emax*Emin)) factor is to account for the decay rate scaling with Eint/E4
+        # It gives the fraction of events in this bin
         if not self.decouple_decay:
             # overlap of daughter with nu_e state
             pdecay *= self.Us4Sq * self.Ue4Sq / (1 - self.Us4Sq)
@@ -425,8 +400,13 @@ class Sterile:
             Emin = 0.000001
         if Emax == 0.0:
             Emax = 0.000001
+
         # osc term in Pee, does not involve energy degradation
-        return 1 - self.Ue4Sq * (1 - self.Ue4Sq) * self.FoscAna(Emin, Emax, Length)
+        return (
+            1
+            - 2 * self.Ue4Sq * self.FoscAvg_crossterm_analytical(Emin, Emax, Length)
+            + self.Ue4Sq**2 * self.FoscAvg_analytical(Emin, Emax, Length)
+        )
 
     # ----------------------------------------------------------------
     # DISAPPEARANCE PROBABILITIES WITHOUT ENERGY DEGRADATION
@@ -437,14 +417,14 @@ class Sterile:
         E4 and Edaughter are approximated to be equal, since the discrepancy is suppressed by mixing squared
         """
         # Decay term
-        pdecay = self.Um4Sq * self.FdecayAvg(Emin, Emax, Length)
+        pdecay = self.Um4Sq * self.FdecAvg_analytical(Emin, Emax, Length)
         if not self.decouple_decay:
             # overlap of daughter with nu_e state
             pdecay *= self.Us4Sq * self.Um4Sq / (1 - self.Us4Sq)
 
         # Oscillation term
-        posc = self.Um4Sq * (1 - self.Um4Sq) * self.FoscAvg(Emin, Emax, Length)
-        return 1 + pdecay - posc
+        posc = self.PmmoscAvg(Emin, Emax, Length)
+        return pdecay + posc
 
     def PeeAvg(self, Emin, Emax, Length):
         """
@@ -452,67 +432,45 @@ class Sterile:
         E4 and Edaughter are approximated to be equal, since the discrepancy is suppressed by mixing squared
         """
         # Decay term
-        pdecay = self.Ue4Sq * self.FdecayAvg(Emin, Emax, Length)
+        pdecay = self.Ue4Sq * self.FdecAvg_analytical(Emin, Emax, Length)
         if not self.decouple_decay:
             # overlap of daughter with nu_e state
             pdecay *= self.Us4Sq * self.Ue4Sq / (1 - self.Us4Sq)
 
         # Oscillation term
-        posc = self.Ue4Sq * (1 - self.Ue4Sq) * self.FoscAvg(Emin, Emax, Length)
-        return 1 + pdecay - posc
+        posc = self.PeeoscAvg(Emin, Emax, Length)
+        return pdecay + posc
 
     @staticmethod
     @numba.jit(nopython=True, cache=True)
     def dPdecaydX(Eparent, Edaughter):
-        """The probability of daughter neutrino energy"""
+        """The probability of daughter neutrino energy
 
-        decay_w_base = Edaughter / Eparent
-        # NOTE: factor of 2 is to acconunt for the decay rate scaling with Edaughter/Eparent
-        return decay_w_base * 2
+        1/Gamma * (dGamma/dEdaughter) = 2 * (dEdaughter/dEparent)
 
-    # def Pdecay_binned_avg(self, E4_bin_edges, fixed_Length=L_micro):
-    #     """E4_bin_edges -- array in GeV, Length -- Kilometers"""
-
-    #     # NOTE: I guess we also have to update this to include oscillations etc.
-    #     # My impression is that there's probably an easier way to use the same functions above to calculate the average,
-    #     # instead of rewrite the formulae already integrated. Maybe enough to do a quad by hand?
-
-    #     de = np.diff(E4_bin_edges)
-    #     el = E4_bin_edges[:-1]
-
-    #     # # NOTE: We should check our fits are independent of this choice!!
-    #     el[el == 0] = 1e-3  # 1 MeV regulator
-    #     er = E4_bin_edges[1:]
-
-    #     # exponential argument
-    #     x = -1.267 * (4 * self.GammaLab(1) * fixed_Length)
-
-    #     return (
-    #         1
-    #         / de
-    #         * (
-    #             (er * np.exp(x / er) - x * expi(x / er))
-    #             - (el * np.exp(x / el) - x * expi(x / el))
-    #         )
-    #     )
+        NOTE: factor of 2 is to ensure the above is normalized to 1.
+        """
+        return 2 * Edaughter / Eparent
 
     def EnergyDegradation(
-        self, Etrue_dist, Etrue_bins, which_channel, which_experiment
+        self, R_in_Enutrue, Etrue_bins_edge, which_channel, which_experiment
     ):
-        R_deg = np.zeros((len(Etrue_dist), len(Etrue_dist)))
+        n_bins = len(R_in_Enutrue)
+        R_deg = np.zeros((n_bins, n_bins))
         R_osc = []
+        L_avg = L_micro if which_experiment == "microboone" else L_mini
+
         # degradation piece
-        for k in range(len(Etrue_dist)):
+        for k in range(n_bins):
             for i in range(k + 1):
-                Pdecay = 1
 
                 if which_channel == "Pee":
                     Pdecay = self.PeedecayAvg(
-                        Etrue_bins, k, i, L_micro, which_experiment, noffset=0
+                        Etrue_bins_edge, k, i, L_avg, which_experiment, noffset=0
                     )
                 elif which_channel == "Pmm":
                     Pdecay = self.PmmdecayAvg(
-                        Etrue_bins, k, i, L_micro, which_experiment, noffset=0
+                        Etrue_bins_edge, k, i, L_avg, which_experiment, noffset=0
                     )
                 else:
                     raise ValueError(
@@ -520,19 +478,23 @@ class Sterile:
                     )
 
                 R_deg[k][i] = (
-                    Pdecay * Etrue_dist[k]
+                    Pdecay * R_in_Enutrue[k]
                 )  # k indexes true energy, i indexes degraded energy
 
         R_sum = np.sum(R_deg, axis=0)
 
         # oscillation piece
-        for i in range(len(Etrue_dist)):
+        for i in range(n_bins):
             if which_channel == "Pee":
-                Peeosc = self.PeeoscAvg(Etrue_bins[i], Etrue_bins[i + 1], L_micro)
-                R_osc.append(Peeosc * Etrue_dist[i])
+                Peeosc = self.PeeoscAvg(
+                    Etrue_bins_edge[i], Etrue_bins_edge[i + 1], L_avg
+                )
+                R_osc.append(Peeosc * R_in_Enutrue[i])
             elif which_channel == "Pmm":
-                Pmmosc = self.PmmoscAvg(Etrue_bins[i], Etrue_bins[i + 1], L_micro)
-                R_osc.append(Pmmosc * Etrue_dist[i])
+                Pmmosc = self.PmmoscAvg(
+                    Etrue_bins_edge[i], Etrue_bins_edge[i + 1], L_avg
+                )
+                R_osc.append(Pmmosc * R_in_Enutrue[i])
             else:
                 raise ValueError(
                     f"Channel {which_channel} not recognzied. Valid options: 'Pmm' and 'Pee'."
@@ -612,10 +574,21 @@ def Xsec(E):
     return f_sigma(E)
 
 
-def DegradationCorrection(Edaughter, E4, exp):
+def DegradationCorrection(Edaughter, E4, exp, noffset=0):
+
     if exp == "miniboone":
         return Xsec(Edaughter) / Xsec(E4) * MiniEff(Edaughter) / MiniEff(E4)
     elif exp == "microboone":
-        return Xsec(Edaughter) / Xsec(E4)
+
+        if Edaughter < 1:  # Should this be Emax or Edaughtermax? We should discuss.
+            n = 2 + noffset
+        else:
+            n = 1 + noffset
+
+        xsec_nu4 = Xsec(E4)
+        return (
+            np.where(xsec_nu4 > 0, Xsec(Edaughter) / xsec_nu4, 0)
+            * (Edaughter / E4) ** n
+        )
     else:
         raise ValueError(f"Experiment {exp} not recognized.")
