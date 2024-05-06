@@ -579,7 +579,7 @@ def Decay_muB_OscChi2(
                         )
                     if not decay and oscillations:
                         RWVec = [
-                            sterile.Peeosc(BE[kk], BE[kk + 1], LMBT)
+                            sterile.PeeoscAvg(BE[kk], BE[kk + 1], LMBT)
                             for kk in range(len(BE) - 1)
                         ]
             elif ST == "numu":
@@ -601,7 +601,7 @@ def Decay_muB_OscChi2(
                         )
                     if not decay and oscillations:
                         RWVec = [
-                            sterile.Pmmosc(BE[kk], BE[kk + 1], LMBT)
+                            sterile.PmmoscAvg(BE[kk], BE[kk + 1], LMBT)
                             for kk in range(len(BE) - 1)
                         ]
             elif ST == "NCPi0" or ST == "numuPi0":
@@ -723,7 +723,7 @@ def DecayMuBNuEDis(
             )
         if not decay and oscillations:
             for k in range(len(MCT)):
-                PeeRW[k] = MCT[k] * sterile.Peeosc(
+                PeeRW[k] = MCT[k] * sterile.PeeoscAvg(
                     MuB_True_BinEdges[k], MuB_True_BinEdges[k + 1], LMBT
                 )
     PeeRW2 = copy.deepcopy(PeeRW)
@@ -790,10 +790,10 @@ def DecayMuBNuMuDis(
             )
         if not decay and oscillations:
             for k in range(len(NuMuCC_TrueEDist_FC)):
-                PmmRW_FC[k] = NuMuCC_TrueEDist_FC[k] * sterile.Pmmosc(
+                PmmRW_FC[k] = NuMuCC_TrueEDist_FC[k] * sterile.PmmoscAvg(
                     MuB_BinEdges_NuMu[k], MuB_BinEdges_NuMu[k + 1], LMBT
                 )
-                PmmRW_PC[k] = NuMuCC_TrueEDist_PC[k] * sterile.Pmmosc(
+                PmmRW_PC[k] = NuMuCC_TrueEDist_PC[k] * sterile.PmmoscAvg(
                     MuB_BinEdges_NuMu[k], MuB_BinEdges_NuMu[k + 1], LMBT
                 )
     RecoDist_FC_0 = np.dot(NuMuCC_MigMat_FC, PmmRW_FC)

@@ -518,11 +518,11 @@ class Sterile:
             for i in range(k + 1):
 
                 if which_channel == "Pee":
-                    Pdecay = self.PeedecayAvg(
+                    pdecay = self.PeedecayAvg(
                         Etrue_bins_edge, k, i, L_avg, which_experiment, noffset=0
                     )
                 elif which_channel == "Pmm":
-                    Pdecay = self.PmmdecayAvg(
+                    pdecay = self.PmmdecayAvg(
                         Etrue_bins_edge, k, i, L_avg, which_experiment, noffset=0
                     )
                 else:
@@ -531,7 +531,7 @@ class Sterile:
                     )
 
                 R_deg[k][i] = (
-                    Pdecay * R_in_Enutrue[k]
+                    pdecay * R_in_Enutrue[k]
                 )  # k indexes parent energy, i indexes daughter energy
 
         R_sum = np.sum(R_deg, axis=0)
@@ -539,15 +539,15 @@ class Sterile:
         # oscillation piece
         for i in range(n_bins):
             if which_channel == "Pee":
-                Peeosc = self.PeeoscAvg(
+                peeosc = self.PeeoscAvg(
                     Etrue_bins_edge[i], Etrue_bins_edge[i + 1], L_avg
                 )
-                R_osc.append(Peeosc * R_in_Enutrue[i])
+                R_osc.append(peeosc * R_in_Enutrue[i])
             elif which_channel == "Pmm":
-                Pmmosc = self.PmmoscAvg(
+                pmmosc = self.PmmoscAvg(
                     Etrue_bins_edge[i], Etrue_bins_edge[i + 1], L_avg
                 )
-                R_osc.append(Pmmosc * R_in_Enutrue[i])
+                R_osc.append(pmmosc * R_in_Enutrue[i])
             else:
                 raise ValueError(
                     f"Channel {which_channel} not recognzied. Valid options: 'Pmm' and 'Pee'."
@@ -586,46 +586,63 @@ class Sterile:
     """
 
 
+@numba.jit(nopython=True, cache=True)
 def MiniEff(x):
-    conditions = (
-        [x < 0.15]
-        + [(x >= 0.15 + 0.1 * i) & (x < 0.25 + 0.1 * i) for i in range(9)]
-        + [(x >= 1.05) & (x < 1.2)]
-        + [(x >= 1.2 + 0.2 * j) & (x < 1.4 + 0.2 * j) for j in range(4)]
-        + [x >= 2.0]
+    # conditions = (
+    #     [x < 0.15]
+    #     + [(x >= 0.15 + 0.1 * i) & (x < 0.25 + 0.1 * i) for i in range(9)]
+    #     + [(x >= 1.05) & (x < 1.2)]
+    #     + [(x >= 1.2 + 0.2 * j) & (x < 1.4 + 0.2 * j) for j in range(4)]
+    #     + [x >= 2.0]
+    # )
+    # functions = [
+    #     0.00001,
+    #     0.089,
+    #     0.135,
+    #     0.139,
+    #     0.131,
+    #     0.123,
+    #     0.116,
+    #     0.106,
+    #     0.102,
+    #     0.095,
+    #     0.089,
+    #     0.082,
+    #     0.073,
+    #     0.067,
+    #     0.052,
+    #     0.026,
+    # ]
+    # return np.piecewise(x, conditions, functions)
+    return x * (
+        -3.88742773
+        + 32.85200551 * x**0.5
+        - 90.92369434 * x**1
+        + 121.49849608 * x**1.5
+        - 86.02309798 * x**2
+        + 31.09764703 * x**2.5
+        - 4.52279067 * x**3
     )
-    functions = [
-        0.00001,
-        0.089,
-        0.135,
-        0.139,
-        0.131,
-        0.123,
-        0.116,
-        0.106,
-        0.102,
-        0.095,
-        0.089,
-        0.082,
-        0.073,
-        0.067,
-        0.052,
-        0.026,
-    ]
-    return np.piecewise(x, conditions, functions)
 
 
-f_sigma = np.load(
-    local_dir.joinpath("InclusiveTools/f_sigma.npy"),
-    allow_pickle=True,
-).item()
-
-
+# f_sigma = np.load(
+#     local_dir.joinpath("InclusiveTools/f_sigma.npy"),
+#     allow_pickle=True,
+# ).item()
+@numba.jit(nopython=True, cache=True)
 def Xsec(E):
-    """Cross section in cm^2, E -- GeV"""
-    return f_sigma(E)
+    """Cross section in 1e-38 cm^2, E -- GeV"""
+    return (
+        -0.0179117
+        + 0.36782288 * E**0.5
+        - 1.45913609 * E**1
+        + 4.95745549 * E**1.5
+        - 3.94338749 * E**2
+        + 1.01718591 * E**2.5
+    )
 
 
+@numba.jit(nopython=True, cache=True)
 def DegradationCorrection(Edaughter, E4, exp, noffset=0):
 
     if exp == "miniboone":
@@ -638,9 +655,6 @@ def DegradationCorrection(Edaughter, E4, exp, noffset=0):
             n = 0 + noffset
 
         xsec_nu4 = Xsec(E4)
-        return (
-            np.where(xsec_nu4 > 0, Xsec(Edaughter) / xsec_nu4, 0)
-            * (Edaughter / E4) ** n
-        )
+        return Xsec(Edaughter) / xsec_nu4 * (Edaughter / E4) ** n
     else:
         raise ValueError(f"Experiment {exp} not recognized.")

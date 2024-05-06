@@ -6,29 +6,19 @@ from tqdm import tqdm
 import MicroTools.param_scan as param_scan
 
 
-def run_scan(
+def run_scan_4D(
     kwargs, filename, Npoints=10, path_results="fit_data/", sin2theta_scan=False
 ):
 
     # Range of mixings scanned
     dm_Vec = np.geomspace(np.sqrt(1e-1), np.sqrt(1e5), Npoints)
     g_Vec = np.geomspace(1e-2, 10, Npoints)
-
-    if sin2theta_scan:
-        s2thetaSq = np.geomspace(1e-4, 0.5, Npoints)
-        Umu4Sq = 0.5
-        # Cartesian product of grid -- already imposes unitarity and pertubatirbity of g
-        paramlist = param_scan.create_grid_of_params_sin2theta(
-            g=g_Vec, m4=dm_Vec, sin2thetaSq=s2thetaSq, Um4Sq=Umu4Sq
-        )
-
-    else:
-        Ue4Sq = np.geomspace(1e-4, 0.5, Npoints)
-        Umu4Sq = np.geomspace(1e-4, 0.5, Npoints)
-        # Cartesian product of grid -- already imposes unitarity and pertubatirbity of g
-        paramlist = param_scan.create_grid_of_params(
-            g=g_Vec, m4=dm_Vec, Ue4Sq=Ue4Sq, Um4Sq=Umu4Sq
-        )
+    Ue4Sq = np.geomspace(1e-4, 0.5, Npoints)
+    Umu4Sq = np.geomspace(1e-4, 0.5, Npoints)
+    # Cartesian product of grid -- already imposes unitarity and pertubatirbity of g
+    paramlist = param_scan.create_grid_of_params(
+        g=g_Vec, m4=dm_Vec, Ue4Sq=Ue4Sq, Um4Sq=Umu4Sq
+    )
 
     # Pure oscillation method
     func_scan = partial(param_scan.DecayReturnMicroBooNEChi2, **kwargs)
@@ -42,34 +32,24 @@ def run_scan(
     return res
 
 
-def run_scan_gfixed(
+def run_scan_gfixed_3D(
     kwargs,
     filename,
     gfixed=2.5,
     Npoints=10,
     path_results="fit_data/",
-    sin2theta_scan=False,
 ):
 
     # Range of mixings scanned
     dm_Vec = np.geomspace(np.sqrt(1e-1), np.sqrt(1e5), Npoints)
+    Ue4Sq = np.geomspace(1e-3, 0.5, Npoints)
+    Umu4Sq = np.geomspace(1e-4, 0.5, Npoints)
     g_Vec = gfixed
 
-    if sin2theta_scan:
-        s2thetaSq = np.geomspace(1e-4, 0.5, Npoints)
-        Umu4Sq = 0.5
-        # Cartesian product of grid -- already imposes unitarity and pertubatirbity of g
-        paramlist = param_scan.create_grid_of_params_sin2theta(
-            g=g_Vec, m4=dm_Vec, sin2thetaSq=s2thetaSq, Um4Sq=Umu4Sq
-        )
-
-    else:
-        Ue4Sq = np.geomspace(1e-3, 0.5, Npoints)
-        Umu4Sq = np.geomspace(1e-4, 0.5, Npoints)
-        # Cartesian product of grid -- already imposes unitarity and pertubatirbity of g
-        paramlist = param_scan.create_grid_of_params(
-            g=g_Vec, m4=dm_Vec, Ue4Sq=Ue4Sq, Um4Sq=Umu4Sq
-        )
+    # Cartesian product of grid -- already imposes unitarity and pertubatirbity of g
+    paramlist = param_scan.create_grid_of_params(
+        g=g_Vec, m4=dm_Vec, Ue4Sq=Ue4Sq, Um4Sq=Umu4Sq
+    )
 
     # Pure oscillation method
     func_scan = partial(param_scan.DecayReturnMicroBooNEChi2, **kwargs)
@@ -83,14 +63,13 @@ def run_scan_gfixed(
     return res
 
 
-def run_scan_gfixed_Ue4SQRfixed(
+def run_scan_gfixed_Ue4SQRfixed_2D(
     kwargs,
     filename,
     gfixed=2.5,
     Ue4SQRfixed=0.05,
     Npoints=10,
     path_results="fit_data/",
-    sin2theta_scan=False,
 ):
 
     # Range of mixings scanned
@@ -134,62 +113,69 @@ kwargs_std = {
 }
 
 
-n = 30
+if __name__ == "__main__":
 
-# 4D scans
-_ = run_scan(kwargs_std, "MH_decay_test_30", Npoints=n)
+    ###################
+    MOCK_SCAN = True
+    N_MOCK = 3
 
-n = 40
-# 3D scans
-_ = run_scan_gfixed(kwargs_std, "MH_decay_gfixed_2.5_40", Npoints=n, gfixed=2.5)
-_ = run_scan_gfixed(kwargs_std, "MH_decay_gfixed_1.0_40", Npoints=n, gfixed=1.0)
+    # 4D scans
+    n = 30 if not MOCK_SCAN else N_MOCK
+    _ = run_scan_4D(kwargs_std, f"MH_decay_4D_{n}", Npoints=n)
 
+    n = 40 if not MOCK_SCAN else N_MOCK
+    # 3D scans
+    _ = run_scan_gfixed_3D(
+        kwargs_std, f"MH_decay_gfixed_2.5_3D_{n}", Npoints=n, gfixed=2.5
+    )
+    _ = run_scan_gfixed_3D(
+        kwargs_std, f"MH_decay_gfixed_1.0_3D_{n}", Npoints=n, gfixed=1.0
+    )
 
-n = 60
-# 2D scans
-_ = run_scan_gfixed_Ue4SQRfixed(
-    kwargs_std,
-    "MH_decay_gfixed_2.5_Ue4SQRfixed_0.10",
-    Npoints=n,
-    gfixed=2.5,
-    Ue4SQRfixed=0.10,
-)
+    n = 60 if not MOCK_SCAN else N_MOCK
+    # 2D scans
+    _ = run_scan_gfixed_Ue4SQRfixed_2D(
+        kwargs_std,
+        "MH_decay_gfixed_2.5_Ue4SQRfixed_0.10_2D_{n}",
+        Npoints=n,
+        gfixed=2.5,
+        Ue4SQRfixed=0.10,
+    )
 
-_ = run_scan_gfixed_Ue4SQRfixed(
-    kwargs_std,
-    "MH_decay_gfixed_2.5_Ue4SQRfixed_0.05",
-    Npoints=n,
-    gfixed=2.5,
-    Ue4SQRfixed=0.05,
-)
-_ = run_scan_gfixed_Ue4SQRfixed(
-    kwargs_std,
-    "MH_decay_gfixed_2.5_Ue4SQRfixed_0.01",
-    Npoints=n,
-    gfixed=2.5,
-    Ue4SQRfixed=0.01,
-)
+    _ = run_scan_gfixed_Ue4SQRfixed_2D(
+        kwargs_std,
+        "MH_decay_gfixed_2.5_Ue4SQRfixed_0.05_2D_{n}",
+        Npoints=n,
+        gfixed=2.5,
+        Ue4SQRfixed=0.05,
+    )
+    _ = run_scan_gfixed_Ue4SQRfixed_2D(
+        kwargs_std,
+        "MH_decay_gfixed_2.5_Ue4SQRfixed_0.01_2D_{n}",
+        Npoints=n,
+        gfixed=2.5,
+        Ue4SQRfixed=0.01,
+    )
 
+    _ = run_scan_gfixed_Ue4SQRfixed_2D(
+        kwargs_std,
+        f"MH_decay_gfixed_1_Ue4SQRfixed_0.10_2D_{n}",
+        Npoints=n,
+        gfixed=1,
+        Ue4SQRfixed=0.10,
+    )
 
-_ = run_scan_gfixed_Ue4SQRfixed(
-    kwargs_std,
-    "MH_decay_gfixed_1_Ue4SQRfixed_0.10",
-    Npoints=n,
-    gfixed=1,
-    Ue4SQRfixed=0.10,
-)
-
-_ = run_scan_gfixed_Ue4SQRfixed(
-    kwargs_std,
-    "MH_decay_gfixed_1_Ue4SQRfixed_0.05",
-    Npoints=n,
-    gfixed=1,
-    Ue4SQRfixed=0.05,
-)
-_ = run_scan_gfixed_Ue4SQRfixed(
-    kwargs_std,
-    "MH_decay_gfixed_1_Ue4SQRfixed_0.01",
-    Npoints=n,
-    gfixed=1,
-    Ue4SQRfixed=0.01,
-)
+    _ = run_scan_gfixed_Ue4SQRfixed_2D(
+        kwargs_std,
+        f"MH_decay_gfixed_1_Ue4SQRfixed_0.05_2D_{n}",
+        Npoints=n,
+        gfixed=1,
+        Ue4SQRfixed=0.05,
+    )
+    _ = run_scan_gfixed_Ue4SQRfixed_2D(
+        kwargs_std,
+        f"MH_decay_gfixed_1_Ue4SQRfixed_0.01_2D_{n}",
+        Npoints=n,
+        gfixed=1,
+        Ue4SQRfixed=0.01,
+    )
