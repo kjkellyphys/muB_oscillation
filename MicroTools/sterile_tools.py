@@ -14,7 +14,13 @@ local_dir = Path(__file__).parent
 # --------------------------------------------------------------------------------
 class Sterile:
     def __init__(
-        self, theta, oscillations=True, decay=True, decouple_decay=False, CP=1
+        self,
+        theta,
+        oscillations=True,
+        decay=True,
+        decouple_decay=False,
+        CP=1,
+        helicity="conserving",
     ):
         """__init__ Sterile neutrino class
 
@@ -52,6 +58,10 @@ class Sterile:
             CP = -1 antineutrinos
             NOTE: So far, makes no difference
 
+        helicity: str, optional
+            conserving: Ed/Ep
+            flipping: 1 - Ed/Ep
+
         """
         self.g = 1
         self.m4 = 1
@@ -86,6 +96,15 @@ class Sterile:
         self.eff_data = np.loadtxt(self.pathdata)
         self.eff_bin_edges = self.eff_data[:, 0] / 1000  # GeV
         self.eff = self.eff_data[:, 1]
+
+        self.CP = CP
+        self.helicity = helicity
+        if self.helicity == "conserving":
+            self.dPdecaydX = self.dPdecaydX_conserving
+        elif self.helicity == "flipping":
+            self.dPdecaydX = self.dPdecaydX_flipping
+        else:
+            raise ValueError('helicity must be "conserving" or "flipping"')
 
     def GammaRestFrame(self):
         """Decay rate in GeV, Etrue -- GeV"""
@@ -143,7 +162,7 @@ class Sterile:
 
     def Fdecay(self, E4, Edaughter, Length):
         """Decay probability function, E4 -- GeV, Length -- Kilometers"""
-        return Sterile._Fdec(Length, self.Ldec(E4)) * Sterile.dPdecaydX(E4, Edaughter)
+        return Sterile._Fdec(Length, self.Ldec(E4)) * self.dPdecaydX(E4, Edaughter)
 
     def FdecayAvg(self, Emin, Emax, Length):
         """dPdecaydX --> 1"""
@@ -324,7 +343,7 @@ class Sterile:
         return (
             self.Um4Sq
             * (1 - np.exp(-Length / (2 * self.Ldec(E4))))
-            * Sterile.dPdecaydX(E4, Edaughter)
+            * self.dPdecaydX(E4, Edaughter)
         )
 
     def PmmAvg_deGouvea(self, Emin, Emax, Length):
@@ -348,6 +367,7 @@ class Sterile:
         pdecay = (
             self.Um4Sq
             * self.FdecAvg_analytical(Emin, Emax, Length)
+            * (1 - ((Eintmax**2 - Eintmin**2) / ((Emax - E0) * (Emax + E0))))
             * DegradationCorrection(
                 (Eintmin + Eintmax) / 2,
                 (Emin + Emax) / 2,
@@ -380,7 +400,7 @@ class Sterile:
         pdecay = (
             self.Ue4Sq
             * self.FdecAvg_analytical(Emin, Emax, Length)
-            * ((Eintmax**2 - Eintmin**2) / ((Emax - E0) * (Emax + E0)))
+            * (1 - ((Eintmax**2 - Eintmin**2) / ((Emax - E0) * (Emax + E0))))
             * DegradationCorrection(
                 (Eintmin + Eintmax) / 2,
                 (Emin + Emax) / 2,
@@ -443,14 +463,25 @@ class Sterile:
 
     @staticmethod
     @numba.jit(nopython=True, cache=True)
-    def dPdecaydX(Eparent, Edaughter):
+    def dPdecaydX_flipping(Eparent, Edaughter):
+        """The probability of daughter neutrino energy
+
+        1/Gamma * (dGamma/dEdaughter) = 2 * (1 - dEdaughter/dEparent)
+
+        NOTE: factor of 2 is to ensure the above is normalized to 1.
+        """
+        return 2 * (1 - Edaughter / Eparent)
+
+    @staticmethod
+    @numba.jit(nopython=True, cache=True)
+    def dPdecaydX_conserving(Eparent, Edaughter):
         """The probability of daughter neutrino energy
 
         1/Gamma * (dGamma/dEdaughter) = 2 * (dEdaughter/dEparent)
 
         NOTE: factor of 2 is to ensure the above is normalized to 1.
         """
-        return 2 * Edaughter / Eparent
+        return 2 * (Edaughter / Eparent)
 
     def EnergyDegradation(
         self, R_in_Enutrue, Etrue_bins_edge, which_channel, which_experiment

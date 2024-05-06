@@ -402,6 +402,9 @@ def get_nue_rates(
     include_antineutrinos: bool, optional
         Whether to include antineutrino events in the analysis.
         Defaults to False.
+    helicity: str, optional
+        conserving: Ed/Ep
+        flipping: 1 - Ed/Ep
     Returns
       -------
       Dict[str, np.ndarray]
@@ -418,6 +421,7 @@ def get_nue_rates(
         decay=decay,
         decouple_decay=decouple_decay,
         CP=+1,
+        helicity=helicity,
     )
 
     # Replicating events for multiple daughter neutrino energies
@@ -447,6 +451,7 @@ def get_nue_rates(
             decay=decay,
             decouple_decay=decouple_decay,
             CP=-1,
+            helicity=helicity,
         )
         Etrue_nuebar_parent, Etrue_nuebar_daughter = create_Etrue_and_Weight_int(
             etrue=Etrue_nuebar,
@@ -770,6 +775,7 @@ def DecayReturnMicroBooNEChi2(
     undo_numu_normalization=False,
     n_replications=10,
     include_antineutrinos=False,
+    helicity="conserving",
 ):
 
     rates_dic = get_nue_rates(
@@ -783,6 +789,7 @@ def DecayReturnMicroBooNEChi2(
         undo_numu_normalization=undo_numu_normalization,
         n_replications=n_replications,
         include_antineutrinos=include_antineutrinos,
+        helicity=helicity,
     )
 
     if disappearance:
