@@ -100,9 +100,11 @@ class Sterile:
         self.CP = CP
         self.helicity = helicity
         if self.helicity == "conserving":
-            self.dPdecaydX = self.dPdecaydX_conserving
+            self.dPdecaydX = Sterile.dPdecaydX_conserving
+            self.dPdecaydX_Avg = Sterile.dPdecaydX_Avg_conserving
         elif self.helicity == "flipping":
-            self.dPdecaydX = self.dPdecaydX_flipping
+            self.dPdecaydX = Sterile.dPdecaydX_flipping
+            self.dPdecaydX_Avg = Sterile.dPdecaydX_Avg_flipping
         else:
             raise ValueError('helicity must be "conserving" or "flipping"')
 
@@ -367,7 +369,7 @@ class Sterile:
         pdecay = (
             self.Um4Sq
             * self.FdecAvg_analytical(Emin, Emax, Length)
-            * (1 - ((Eintmax**2 - Eintmin**2) / ((Emax - E0) * (Emax + E0))))
+            * self.dPdecaydX_Avg(E0, Emin, Emax, Eintmin, Eintmax)
             * DegradationCorrection(
                 (Eintmin + Eintmax) / 2,
                 (Emin + Emax) / 2,
@@ -400,7 +402,7 @@ class Sterile:
         pdecay = (
             self.Ue4Sq
             * self.FdecAvg_analytical(Emin, Emax, Length)
-            * (1 - ((Eintmax**2 - Eintmin**2) / ((Emax - E0) * (Emax + E0))))
+            * self.dPdecaydX_Avg(E0, Emin, Emax, Eintmin, Eintmax)
             * DegradationCorrection(
                 (Eintmin + Eintmax) / 2,
                 (Emin + Emax) / 2,
@@ -408,7 +410,6 @@ class Sterile:
                 noffset=noffset,
             )
         )
-        # ((Eintmax**2 - Eintmin**2)/(Emax*Emin)) factor is to account for the decay rate scaling with Eint/E4
         # It gives the fraction of events in this bin
         if not self.decouple_decay:
             # overlap of daughter with nu_e state
@@ -483,6 +484,27 @@ class Sterile:
         """
         return 2 * (Edaughter / Eparent)
 
+    @staticmethod
+    @numba.jit(nopython=True, cache=True)
+    def dPdecaydX_Avg_conserving(E0, Emin, Emax, Eintmin, Eintmax):
+        if Emin == E0 or Emax == E0:
+            return 1
+        else:
+            return (Eintmax**2 - Eintmin**2) / ((Emax - E0) * (Emin + E0))
+
+    @staticmethod
+    @numba.jit(nopython=True, cache=True)
+    def dPdecaydX_Avg_flipping(E0, Emin, Emax, Eintmin, Eintmax):
+        if Emin == E0 or Emax == E0:
+            return 1
+        else:
+            return (
+                ((Emax + Emin) - (Eintmax + Eintmin))
+                * (Eintmax - Eintmin)
+                / (Emax - E0)
+                / (Emin - E0)
+            )
+
     def EnergyDegradation(
         self, R_in_Enutrue, Etrue_bins_edge, which_channel, which_experiment
     ):
@@ -510,7 +532,7 @@ class Sterile:
 
                 R_deg[k][i] = (
                     Pdecay * R_in_Enutrue[k]
-                )  # k indexes true energy, i indexes degraded energy
+                )  # k indexes parent energy, i indexes daughter energy
 
         R_sum = np.sum(R_deg, axis=0)
 
@@ -601,7 +623,6 @@ f_sigma = np.load(
 
 def Xsec(E):
     """Cross section in cm^2, E -- GeV"""
-    # polyfit = -129.16 * E**4 + 146.38 * E**3 - 40.046 * E**2 + 4.5652 * E + 0.0358
     return f_sigma(E)
 
 
@@ -611,10 +632,10 @@ def DegradationCorrection(Edaughter, E4, exp, noffset=0):
         return Xsec(Edaughter) / Xsec(E4) * MiniEff(Edaughter) / MiniEff(E4)
     elif exp == "microboone":
 
-        if Edaughter < 1:  # Should this be Emax or Edaughtermax? We should discuss.
-            n = 2 + noffset
-        else:
+        if Edaughter < 1:
             n = 1 + noffset
+        else:
+            n = 0 + noffset
 
         xsec_nu4 = Xsec(E4)
         return (

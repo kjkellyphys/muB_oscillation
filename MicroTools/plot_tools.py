@@ -736,7 +736,9 @@ def make_numu_rate_plot(rates, params, name="3+1_osc"):
 MuBchi2_null_hyp = 93
 
 
-def make_micro_rate_plot(rates, params, name="micro_3+1_osc", PC=False):
+def make_micro_rate_plot(
+    rates, params, name="micro_3+1_osc", PC=False, helicity="conserving"
+):
     fig, ax1 = std_fig(figsize=(3.3 * 1.2, 2 * 1.2))
 
     bins = np.array([0.0 + 0.1 * j for j in range(26)] + [10.0])
@@ -783,6 +785,7 @@ def make_micro_rate_plot(rates, params, name="micro_3+1_osc", PC=False):
         decouple_decay=False,
         disappearance=True,
         energy_degradation=True,
+        helicity=helicity,
     )
 
     # \nu_mu disappearance signal replacement
@@ -794,6 +797,7 @@ def make_micro_rate_plot(rates, params, name="micro_3+1_osc", PC=False):
         decouple_decay=False,
         disappearance=True,
         energy_degradation=True,
+        helicity=helicity,
     )
 
     # MicroBooNE
@@ -808,6 +812,7 @@ def make_micro_rate_plot(rates, params, name="micro_3+1_osc", PC=False):
         decouple_decay=False,
         disappearance=True,
         energy_degradation=True,
+        helicity=helicity,
     )
 
     ######################################

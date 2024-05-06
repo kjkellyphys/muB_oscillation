@@ -369,6 +369,7 @@ def get_nue_rates(
     undo_numu_normalization=False,
     n_replications=10,
     include_antineutrinos=False,
+    helicity="conserving",
 ):
     """
     Returns the neutrino event rates for the MicroBooNE analysis.
@@ -874,6 +875,7 @@ def DecayReturnMicroBooNEChi2(
         decouple_decay=decouple_decay,
         disappearance=disappearance,
         energy_degradation=energy_degradation,
+        helicity=helicity,
     )
     # \nu_e disappearance signal replacement
     NuEReps = DecayMuBNuEDis(
@@ -883,6 +885,7 @@ def DecayReturnMicroBooNEChi2(
         decouple_decay=decouple_decay,
         disappearance=disappearance,
         energy_degradation=energy_degradation,
+        helicity=helicity,
     )
     # MicroBooNE
     MuB_chi2 = Decay_muB_OscChi2(

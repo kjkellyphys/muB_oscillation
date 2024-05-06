@@ -498,6 +498,7 @@ def Decay_muB_OscChi2(
     decouple_decay=False,
     disappearance=True,
     energy_degradation=True,
+    helicity="conserving",
 ):
     """Calculates the chi-squared from the full covariance matrix,
     allowing for oscillated backgrounds (oscillating as a function of *reconstructed* neutrino energy)
@@ -531,12 +532,19 @@ def Decay_muB_OscChi2(
     energy_degradation: bool, optional
         whether to include energy degradation in disappearance channel, by default True.
         If False, return to usual disappearance probability
+
+    helicity: str, optional
+        whether to include conserving or flipping helicity, by default "conserving".
     """
     CVStat = np.zeros(np.shape(FCov))
     CVSyst = np.zeros(np.shape(FCov))
     # Load the Sterile class from param_scan
     sterile = Sterile(
-        theta, oscillations=oscillations, decay=decay, decouple_decay=decouple_decay
+        theta,
+        oscillations=oscillations,
+        decay=decay,
+        decouple_decay=decouple_decay,
+        helicity=helicity,
     )
     if sigReps is not None:
         if len(sigReps) != 7:
@@ -682,12 +690,17 @@ def DecayMuBNuEDis(
     decouple_decay=False,
     disappearance=True,
     energy_degradation=True,
+    helicity="conserving",
 ):
     """Function for reweighting MicroBooNE nu_e spectra in terms of true energy instead of reconstructed energy"""
 
     # Load the Sterile class from param_scan
     sterile = Sterile(
-        theta, oscillations=oscillations, decay=decay, decouple_decay=decouple_decay
+        theta,
+        oscillations=oscillations,
+        decay=decay,
+        decouple_decay=decouple_decay,
+        helicity=helicity,
     )
     PeeRW = []
     # MCT is MiniBooNE truth level distribution from 2018. That's why it needs to be rescaled when unfolding
@@ -732,12 +745,17 @@ def DecayMuBNuMuDis(
     decouple_decay=False,
     disappearance=True,
     energy_degradation=True,
+    helicity="conserving",
 ):
     """Function for reweighting MicroBooNE nu_mu spectra in terms of true energy instead of reconstructed energy"""
 
     # Load the Sterile class from param_scan
     sterile = Sterile(
-        theta, oscillations=oscillations, decay=decay, decouple_decay=decouple_decay
+        theta,
+        oscillations=oscillations,
+        decay=decay,
+        decouple_decay=decouple_decay,
+        helicity=helicity,
     )
     PmmRW_FC = []
     PmmRW_PC = []
