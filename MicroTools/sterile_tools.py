@@ -7,7 +7,6 @@ from . import L_micro, L_mini
 
 
 from pathlib import Path
-
 local_dir = Path(__file__).parent
 
 
@@ -136,12 +135,12 @@ class Sterile:
         return self.Losc_0 * (E4 / self.m4_in_GeV)
 
     @staticmethod
-    @numba.jit(nopython=True, cache=True)
+    #@numba.jit(nopython=True, cache=False)
     def _Fosc_crossterm(Length, Losc, Ldec):
         return 1 - np.exp(-Length / Ldec / 2) * np.cos(np.pi * Length / Losc)
 
     @staticmethod
-    @numba.jit(nopython=True, cache=True)
+    #@numba.jit(nopython=True, cache=False)
     def _Fosc(Length, Losc, Ldec):
         return (
             1
@@ -158,7 +157,7 @@ class Sterile:
         return Sterile._Fosc(Length, self.Losc(E4), self.Ldec(E4))
 
     @staticmethod
-    @numba.jit(nopython=True, cache=True)
+    #@numba.jit(nopython=True, cache=False)
     def _Fdec(Length, Ldec):
         return 1 - np.exp(-Length / Ldec)
 
@@ -463,7 +462,7 @@ class Sterile:
         return pdecay + posc
 
     @staticmethod
-    @numba.jit(nopython=True, cache=True)
+    #@numba.jit(nopython=True, cache=False)
     def dPdecaydX_flipping(Eparent, Edaughter):
         """The probability of daughter neutrino energy
 
@@ -474,7 +473,7 @@ class Sterile:
         return 2 * (1 - Edaughter / Eparent)
 
     @staticmethod
-    @numba.jit(nopython=True, cache=True)
+    #@numba.jit(nopython=True, cache=False)
     def dPdecaydX_conserving(Eparent, Edaughter):
         """The probability of daughter neutrino energy
 
@@ -485,7 +484,7 @@ class Sterile:
         return 2 * (Edaughter / Eparent)
 
     @staticmethod
-    @numba.jit(nopython=True, cache=True)
+    #@numba.jit(nopython=True, cache=False)
     def dPdecaydX_Avg_conserving(E0, Emin, Emax, Eintmin, Eintmax):
         if Emin == E0 or Emax == E0:
             return 1
@@ -493,7 +492,7 @@ class Sterile:
             return (Eintmax**2 - Eintmin**2) / ((Emax - E0) * (Emin + E0))
 
     @staticmethod
-    @numba.jit(nopython=True, cache=True)
+    #@numba.jit(nopython=True, cache=False)
     def dPdecaydX_Avg_flipping(E0, Emin, Emax, Eintmin, Eintmax):
         if Emin == E0 or Emax == E0:
             return 1
@@ -586,7 +585,7 @@ class Sterile:
     """
 
 
-@numba.jit(nopython=True, cache=True)
+# #@numba.jit(nopython=True, cache=False)
 def MiniEff(x):
     # conditions = (
     #     [x < 0.15]
@@ -629,7 +628,8 @@ def MiniEff(x):
 #     local_dir.joinpath("InclusiveTools/f_sigma.npy"),
 #     allow_pickle=True,
 # ).item()
-@numba.jit(nopython=True, cache=True)
+
+# #@numba.jit(nopython=True, cache=False)
 def Xsec(E):
     """Cross section in 1e-38 cm^2, E -- GeV"""
     return (
@@ -640,13 +640,13 @@ def Xsec(E):
         - 3.94338749 * E**2
         + 1.01718591 * E**2.5
     )
+    # return f_sigma(E)
 
-
-@numba.jit(nopython=True, cache=True)
+# @numba.jit(nopython=True, cache=True)
 def DegradationCorrection(Edaughter, E4, exp, noffset=0):
 
     if exp == "miniboone":
-        return Xsec(Edaughter) / Xsec(E4) * MiniEff(Edaughter) / MiniEff(E4)
+        return Xsec(Edaughter) / Xsec(E4) * (MiniEff(Edaughter) / (MiniEff(E4)+1e-10))
     elif exp == "microboone":
 
         if Edaughter < 1:
@@ -655,6 +655,6 @@ def DegradationCorrection(Edaughter, E4, exp, noffset=0):
             n = 0 + noffset
 
         xsec_nu4 = Xsec(E4)
-        return Xsec(Edaughter) / xsec_nu4 * (Edaughter / E4) ** n
+        return Xsec(Edaughter) / xsec_nu4 * (Edaughter / (E4+1e-10)) ** n
     else:
         raise ValueError(f"Experiment {exp} not recognized.")

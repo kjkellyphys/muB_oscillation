@@ -136,7 +136,7 @@ if __name__ == "__main__":
     # 2D scans
     _ = run_scan_gfixed_Ue4SQRfixed_2D(
         kwargs_std,
-        "MH_decay_gfixed_2.5_Ue4SQRfixed_0.10_2D_{n}",
+        f"MH_decay_gfixed_2.5_Ue4SQRfixed_0.10_2D_{n}",
         Npoints=n,
         gfixed=2.5,
         Ue4SQRfixed=0.10,
@@ -144,14 +144,14 @@ if __name__ == "__main__":
 
     _ = run_scan_gfixed_Ue4SQRfixed_2D(
         kwargs_std,
-        "MH_decay_gfixed_2.5_Ue4SQRfixed_0.05_2D_{n}",
+        f"MH_decay_gfixed_2.5_Ue4SQRfixed_0.05_2D_{n}",
         Npoints=n,
         gfixed=2.5,
         Ue4SQRfixed=0.05,
     )
     _ = run_scan_gfixed_Ue4SQRfixed_2D(
         kwargs_std,
-        "MH_decay_gfixed_2.5_Ue4SQRfixed_0.01_2D_{n}",
+        f"MH_decay_gfixed_2.5_Ue4SQRfixed_0.01_2D_{n}",
         Npoints=n,
         gfixed=2.5,
         Ue4SQRfixed=0.01,

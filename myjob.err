@@ -1,0 +1,2 @@
+  0%|          | 0/48 [00:00<?, ?it/s]slurmstepd: error: *** JOB 31422354 ON holy7c16508 CANCELLED AT 2024-05-06T23:49:10 ***
+slurmstepd: error: Detected 30 oom_kill events in StepId=31422354.batch. Some of the step tasks have been OOM Killed.
