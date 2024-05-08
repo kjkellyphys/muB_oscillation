@@ -869,7 +869,7 @@ def make_micro_rate_plot(
     ax1.hist(
         bins[:-1],
         bins=bins,
-        weights=(uB_signal + NuEReps[1 if PC else 0]) * units,
+        weights=(other_bkg + uB_signal + NuEReps[1 if PC else 0]) * units,
         edgecolor="black",
         facecolor="lightblue",
         lw=0.5,

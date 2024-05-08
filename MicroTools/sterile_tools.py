@@ -7,6 +7,7 @@ from . import L_micro, L_mini
 
 
 from pathlib import Path
+
 local_dir = Path(__file__).parent
 
 
@@ -135,12 +136,12 @@ class Sterile:
         return self.Losc_0 * (E4 / self.m4_in_GeV)
 
     @staticmethod
-    #@numba.jit(nopython=True, cache=False)
+    # @numba.jit(nopython=True, cache=False)
     def _Fosc_crossterm(Length, Losc, Ldec):
         return 1 - np.exp(-Length / Ldec / 2) * np.cos(np.pi * Length / Losc)
 
     @staticmethod
-    #@numba.jit(nopython=True, cache=False)
+    # @numba.jit(nopython=True, cache=False)
     def _Fosc(Length, Losc, Ldec):
         return (
             1
@@ -157,7 +158,7 @@ class Sterile:
         return Sterile._Fosc(Length, self.Losc(E4), self.Ldec(E4))
 
     @staticmethod
-    #@numba.jit(nopython=True, cache=False)
+    # @numba.jit(nopython=True, cache=False)
     def _Fdec(Length, Ldec):
         return 1 - np.exp(-Length / Ldec)
 
@@ -268,7 +269,7 @@ class Sterile:
             pdecay *= self.Us4Sq * self.Ue4Sq / (1 - self.Us4Sq)
 
         # Oscillation term
-        posc = self.Um4Sq * self.Ue4Sq * self.Fosc(E4, Length)
+        posc = self.Pmeosc(E4, Length)
         return pdecay + posc
 
     def Pmedecay(self, E4, Edaughter, Length, exp="miniboone"):
@@ -319,15 +320,17 @@ class Sterile:
         # Decay term
         # pdecay = self.Um4Sq * self.Fdecay(E4, Edaughter, Length)
         # degradation * xsec * efficiency
-        pdecay = (
-            self.Um4Sq
-            * self.Fdecay(E4, Edaughter, Length)
-            * DegradationCorrection(Edaughter, E4, exp)
-        )
-        if not self.decouple_decay:
+        if self.decouple_decay:
+            return 0  # all decays go to nu_e's, not nu_mu's
+        else:
             # overlap of daughter with nu_e state
+            pdecay = (
+                self.Um4Sq
+                * self.Fdecay(E4, Edaughter, Length)
+                * DegradationCorrection(Edaughter, E4, exp, noeffcorrection=True)
+            )
             pdecay *= self.Us4Sq * self.Um4Sq / (1 - self.Us4Sq)
-        return pdecay
+            return pdecay
 
     def Pmmosc(self, E4, Length):
         # Oscillation term
@@ -361,26 +364,30 @@ class Sterile:
     def PmmdecayAvg(
         self, Ebins, e4_index, eint_index, Length, which_experiment, noffset=0
     ):
-        Eintmin, Eintmax = Ebins[eint_index], Ebins[eint_index + 1]
-        Emin, Emax = Ebins[e4_index], Ebins[e4_index + 1]
-        E0 = Ebins[0]
-        # decay term in Pee, Emin and Emax are E4 bin edges
-        pdecay = (
-            self.Um4Sq
-            * self.FdecAvg_analytical(Emin, Emax, Length)
-            * self.dPdecaydX_Avg(E0, Emin, Emax, Eintmin, Eintmax)
-            * DegradationCorrection(
-                (Eintmin + Eintmax) / 2,
-                (Emin + Emax) / 2,
-                which_experiment,
-                noffset=noffset,
+
+        if self.decouple_decay:
+            return 0  # all decays go to nu_e's, not nu_mu's
+        else:
+            Eintmin, Eintmax = Ebins[eint_index], Ebins[eint_index + 1]
+            Emin, Emax = Ebins[e4_index], Ebins[e4_index + 1]
+            E0 = Ebins[0]
+            # decay term in Pee, Emin and Emax are E4 bin edges
+            pdecay = (
+                self.Um4Sq
+                * self.FdecAvg_analytical(Emin, Emax, Length)
+                * self.dPdecaydX_Avg(E0, Emin, Emax, Eintmin, Eintmax)
+                * DegradationCorrection(
+                    (Eintmin + Eintmax) / 2,
+                    (Emin + Emax) / 2,
+                    which_experiment,
+                    noffset=noffset,
+                    noeffcorrection=True,
+                )
             )
-        )
-        # ((Eintmax**2 - Eintmin**2)/(Emax*Emin)) factor is to account for the decay rate scaling with Eint/E4
-        # It gives the fraction of events in this bin
-        if not self.decouple_decay:
-            # overlap of daughter with nu_e state
+            # ((Eintmax**2 - Eintmin**2)/(Emax*Emin)) factor is to account for the decay rate scaling with Eint/E4
+            # It gives the fraction of events in this bin
             pdecay *= self.Us4Sq * self.Um4Sq / (1 - self.Us4Sq)
+
         return pdecay
 
     def PmmoscAvg(self, Emin, Emax, Length):
@@ -437,13 +444,17 @@ class Sterile:
         E4 and Edaughter are approximated to be equal, since the discrepancy is suppressed by mixing squared
         """
         # Decay term
-        pdecay = self.Um4Sq * self.FdecAvg_analytical(Emin, Emax, Length)
-        if not self.decouple_decay:
+        if self.decouple_decay:
+            # all decays go to nu_e's, not nu_mu's
+            pdecay = 0
+        else:
             # overlap of daughter with nu_e state
+            pdecay = self.Um4Sq * self.FdecAvg_analytical(Emin, Emax, Length)
             pdecay *= self.Us4Sq * self.Um4Sq / (1 - self.Us4Sq)
 
         # Oscillation term
         posc = self.PmmoscAvg(Emin, Emax, Length)
+
         return pdecay + posc
 
     def PeeAvg(self, Emin, Emax, Length):
@@ -462,7 +473,7 @@ class Sterile:
         return pdecay + posc
 
     @staticmethod
-    #@numba.jit(nopython=True, cache=False)
+    # @numba.jit(nopython=True, cache=False)
     def dPdecaydX_flipping(Eparent, Edaughter):
         """The probability of daughter neutrino energy
 
@@ -473,7 +484,7 @@ class Sterile:
         return 2 * (1 - Edaughter / Eparent)
 
     @staticmethod
-    #@numba.jit(nopython=True, cache=False)
+    # @numba.jit(nopython=True, cache=False)
     def dPdecaydX_conserving(Eparent, Edaughter):
         """The probability of daughter neutrino energy
 
@@ -484,7 +495,7 @@ class Sterile:
         return 2 * (Edaughter / Eparent)
 
     @staticmethod
-    #@numba.jit(nopython=True, cache=False)
+    # @numba.jit(nopython=True, cache=False)
     def dPdecaydX_Avg_conserving(E0, Emin, Emax, Eintmin, Eintmax):
         if Emin == E0 or Emax == E0:
             return 1
@@ -492,7 +503,7 @@ class Sterile:
             return (Eintmax**2 - Eintmin**2) / ((Emax - E0) * (Emin + E0))
 
     @staticmethod
-    #@numba.jit(nopython=True, cache=False)
+    # @numba.jit(nopython=True, cache=False)
     def dPdecaydX_Avg_flipping(E0, Emin, Emax, Eintmin, Eintmax):
         if Emin == E0 or Emax == E0:
             return 1
@@ -629,6 +640,7 @@ def MiniEff(x):
 #     allow_pickle=True,
 # ).item()
 
+
 # #@numba.jit(nopython=True, cache=False)
 def Xsec(E):
     """Cross section in 1e-38 cm^2, E -- GeV"""
@@ -642,11 +654,19 @@ def Xsec(E):
     )
     # return f_sigma(E)
 
+
 # @numba.jit(nopython=True, cache=True)
-def DegradationCorrection(Edaughter, E4, exp, noffset=0):
+def DegradationCorrection(Edaughter, E4, exp, noffset=0, noeffcorrection=False):
 
     if exp == "miniboone":
-        return Xsec(Edaughter) / Xsec(E4) * (MiniEff(Edaughter) / (MiniEff(E4)+1e-10))
+        if noeffcorrection:
+            return Xsec(Edaughter) / Xsec(E4)
+        else:
+            return (
+                Xsec(Edaughter)
+                / Xsec(E4)
+                * (MiniEff(Edaughter) / (MiniEff(E4) + 1e-10))
+            )
     elif exp == "microboone":
 
         if Edaughter < 1:
@@ -655,6 +675,6 @@ def DegradationCorrection(Edaughter, E4, exp, noffset=0):
             n = 0 + noffset
 
         xsec_nu4 = Xsec(E4)
-        return Xsec(Edaughter) / xsec_nu4 * (Edaughter / (E4+1e-10)) ** n
+        return Xsec(Edaughter) / xsec_nu4 * (Edaughter / (E4 + 1e-10)) ** n
     else:
         raise ValueError(f"Experiment {exp} not recognized.")

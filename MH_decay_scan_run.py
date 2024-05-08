@@ -70,11 +70,13 @@ def run_scan_gfixed_Ue4SQRfixed_2D(
     Ue4SQRfixed=0.05,
     Npoints=10,
     path_results="fit_data/",
+    dmSq_range=(1e-1, 1e5),
+    Umu4Sq_range=(1e-4, 0.5),
 ):
 
     # Range of mixings scanned
-    dm_Vec = np.geomspace(np.sqrt(1e-1), np.sqrt(1e5), Npoints)
-    Umu4Sq = np.geomspace(1e-4, 0.5, Npoints)
+    dm_Vec = np.geomspace(np.sqrt(dmSq_range[0]), np.sqrt(dmSq_range[1]), Npoints)
+    Umu4Sq = np.geomspace(Umu4Sq_range[0], Umu4Sq_range[1], Npoints)
 
     # Cartesian product of grid -- already imposes unitarity and pertubatirbity of g
     paramlist = param_scan.create_grid_of_params(
