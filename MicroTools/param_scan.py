@@ -229,9 +229,13 @@ def get_best_fit_point(dic):
     return dic_best_fit
 
 
-def get_best_fit_point_pval(dic, ndof=20):
+def get_best_fit_point_MBpval(dic, ndof=20):
     chi2min = np.min(dic["MiniApp_chi2"])
     return chi2.sf(chi2min, ndof)
+
+
+def get_best_fit_point_DeltaMicroChi2(dic):
+    return dic["MicroApp_deltachi2"][np.argmin(dic["MiniApp_chi2"])]
 
 
 def MiniBooNEChi2_deGouvea(

@@ -68,6 +68,10 @@ def get_chi2vals_w_nsigmas(n_sigmas, ndof):
     return [chi2.ppf(get_CL_from_sigma(i), ndof) for i in range(n_sigmas + 1)]
 
 
+def get_chi2vals_w_sigma(sigma, ndof):
+    return chi2.ppf(get_CL_from_sigma(sigma), ndof)
+
+
 def get_chi2vals_w_CL(CLs, ndof):
     return [chi2.ppf(cl, ndof) for cl in CLs]
 
