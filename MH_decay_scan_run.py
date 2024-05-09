@@ -71,7 +71,7 @@ def run_scan_gfixed_Ue4SQRfixed_2D(
     Npoints=10,
     path_results="fit_data/",
     dmSq_range=(0.5e-1, 2e4),
-    Umu4Sq_range=(1e-4, 0.5),
+    Umu4Sq_range=(2e-4, 0.25),
 ):
 
     # Range of mixings scanned
