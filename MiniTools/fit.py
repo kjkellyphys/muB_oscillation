@@ -35,30 +35,64 @@ def StackCovarianceMatrix(big_covariance, n_signal, n_numu):
     return covariance
 
 
-def MassageCovarianceMatrix(big_covariance, n_signal, n_numu):
-    n_total = n_signal + n_numu
-    n_total_big = n_signal * 2 + n_numu
+def MassageCovarianceMatrix(big_covariance, n_signal, n_numu, remove_HE=False):
 
-    covariance = np.zeros([n_total * 2, n_total * 2])
+    if remove_HE:
+        n_total = n_signal + n_numu - 2
+        n_total_big = n_signal * 2 + n_numu - 4
 
-    covariance[0:n_total, 0:n_total] = StackCovarianceMatrix(
-        big_covariance[0:n_total_big, 0:n_total_big], n_signal, n_numu
-    )
-    covariance[n_total : (2 * n_total), 0:n_total] = StackCovarianceMatrix(
-        big_covariance[n_total_big : (2 * n_total_big), 0:n_total_big], n_signal, n_numu
-    )
-    covariance[0:n_total, n_total : (2 * n_total)] = StackCovarianceMatrix(
-        big_covariance[0:n_total_big, n_total_big : (2 * n_total_big)], n_signal, n_numu
-    )
-    covariance[n_total : (2 * n_total), n_total : (2 * n_total)] = (
-        StackCovarianceMatrix(
-            big_covariance[
-                n_total_big : (2 * n_total_big), n_total_big : (2 * n_total_big)
-            ],
+        covariance = np.zeros([n_total * 2, n_total * 2])
+
+        covariance[0:n_total, 0:n_total] = StackCovarianceMatrix(
+            big_covariance[0:n_total_big, 0:n_total_big], n_signal, n_numu
+        )
+        covariance[n_total : (2 * n_total), 0:n_total] = StackCovarianceMatrix(
+            big_covariance[n_total_big : (2 * n_total_big), 0:n_total_big],
             n_signal,
             n_numu,
         )
-    )
+        covariance[0:n_total, n_total : (2 * n_total)] = StackCovarianceMatrix(
+            big_covariance[0:n_total_big, n_total_big : (2 * n_total_big)],
+            n_signal,
+            n_numu,
+        )
+        covariance[n_total : (2 * n_total), n_total : (2 * n_total)] = (
+            StackCovarianceMatrix(
+                big_covariance[
+                    n_total_big : (2 * n_total_big), n_total_big : (2 * n_total_big)
+                ],
+                n_signal,
+                n_numu,
+            )
+        )
+    else:
+        n_total = n_signal + n_numu
+        n_total_big = n_signal * 2 + n_numu
+
+        covariance = np.zeros([n_total * 2, n_total * 2])
+
+        covariance[0:n_total, 0:n_total] = StackCovarianceMatrix(
+            big_covariance[0:n_total_big, 0:n_total_big], n_signal, n_numu
+        )
+        covariance[n_total : (2 * n_total), 0:n_total] = StackCovarianceMatrix(
+            big_covariance[n_total_big : (2 * n_total_big), 0:n_total_big],
+            n_signal,
+            n_numu,
+        )
+        covariance[0:n_total, n_total : (2 * n_total)] = StackCovarianceMatrix(
+            big_covariance[0:n_total_big, n_total_big : (2 * n_total_big)],
+            n_signal,
+            n_numu,
+        )
+        covariance[n_total : (2 * n_total), n_total : (2 * n_total)] = (
+            StackCovarianceMatrix(
+                big_covariance[
+                    n_total_big : (2 * n_total_big), n_total_big : (2 * n_total_big)
+                ],
+                n_signal,
+                n_numu,
+            )
+        )
     # assert np.abs(np.sum(covariance) - np.sum(big_covariance)) < 1.0e-3
     return covariance
 

@@ -234,6 +234,37 @@ def get_best_fit_point_MBpval(dic, ndof=20):
     return chi2.sf(chi2min, ndof)
 
 
+def get_bf_point_definition(dic, ndof=20):
+    i_bf = np.argmin(dic["MiniApp_chi2"])
+    i_null = np.argmin(dic["dm4SQR"] * dic["Ue4SQR"])
+    s = (
+        (f'g = {dic["g"][i_bf]:.3g}\n')
+        + (f'dm4SQR = {dic["dm4SQR"][i_bf]:.2g} eV^2\n')
+        + (f'Ue4SQR = {dic["Ue4SQR"][i_bf]:.2g}\n')
+        + (f'Umu4SQR = {dic["Umu4SQR"][i_bf]:.2g}\n')
+        + (f'MB chi2 = {dic["MiniApp_chi2"][i_bf]:.2g}\n')
+        + (f'MB pval = {chi2.sf(dic["MiniApp_chi2"][i_bf], ndof)*100:.2g}%\n')
+        + (
+            f'Micro deltachi2 = {dic["MicroApp_chi2"][i_bf] - dic["MicroApp_chi2"][i_null]:.2g}'
+        )
+    )
+    return s
+
+
+def get_null_point_definition(dic, ndof=20):
+    i_bf = np.argmin(dic["dm4SQR"] * dic["Ue4SQR"])
+    s = (
+        (f'g = {dic["g"][i_bf]:.3g}\n')
+        + (f'dm4SQR = {dic["dm4SQR"][i_bf]:.2g} eV^2\n')
+        + (f'Ue4SQR = {dic["Ue4SQR"][i_bf]:.2g}\n')
+        + (f'Umu4SQR = {dic["Umu4SQR"][i_bf]:.2g}\n')
+        + (f'MB chi2 = {dic["MiniApp_chi2"][i_bf]:.2g}\n')
+        + (f'MB pval = {chi2.sf(dic["MiniApp_chi2"][i_bf], ndof)*100:.2g}%\n')
+        + (f'Micro deltachi2 = {dic["MicroApp_deltachi2"][i_bf]:.2g}')
+    )
+    return s
+
+
 def get_best_fit_point_DeltaMicroChi2(dic):
     return dic["MicroApp_deltachi2"][np.argmin(dic["MiniApp_chi2"])]
 
