@@ -157,16 +157,103 @@ def create_grid_of_params_sin2theta(g, m4, sin2thetaSq, Um4Sq):
     return np.array(paramlist)
 
 
-def profile_in_plane(x, y, chi2):
+def get_subgrid(dic, var, var_range):
+    mask = (dic[var] < var_range[1]) & (dic[var] > var_range[0])
+    for key in dic.keys():
+        dic[key] = dic[key][mask]
+    return dic
+
+
+def profile_in_plane(
+    x, y, chi2, profile_over_diff_chi2=None, x_max=np.inf, y_max=np.inf
+):
     # Create a list of tuples for the unique pairs of Ue4SQR and Umu4SQR
     unique_pairs = np.array(list(set(zip(x, y))))
 
     # Find the minimum chi2 for each unique pair of Ue4SQR and Umu4SQR
-    profiled_chi2 = np.array(
-        [np.min(chi2[(x == pair[0]) & (y == pair[1])]) for pair in unique_pairs]
-    )
+    if profile_over_diff_chi2 is not None:
+        profiled_chi2 = np.array(
+            [
+                (
+                    chi2[(x == pair[0]) & (y == pair[1])][
+                        np.argmin(
+                            profile_over_diff_chi2[(x == pair[0]) & (y == pair[1])]
+                        )
+                    ]
+                    if pair[0] < x_max and pair[1] < y_max
+                    else np.nan
+                )
+                for pair in unique_pairs
+            ]
+        )
+    else:
+        profiled_chi2 = np.array(
+            [
+                (
+                    np.min(chi2[(x == pair[0]) & (y == pair[1])])
+                    if pair[0] < x_max and pair[1] < y_max
+                    else np.nan
+                )
+                for pair in unique_pairs
+            ]
+        )
 
     return unique_pairs[:, 0], unique_pairs[:, 1], profiled_chi2
+
+
+def profile_for_sin2theta(data_dic):
+    dic_prof = {}
+    # Profile each chi2
+    dic_prof["sin2theta"], dic_prof["dm4SQR"], dic_prof["MiniApp_chi2"] = (
+        profile_in_plane(
+            data_dic["sin2theta"], data_dic["dm4SQR"], data_dic["MiniApp_chi2"]
+        )
+    )
+    dic_prof["sin2theta"], dic_prof["dm4SQR"], dic_prof["MicroApp_chi2"] = (
+        profile_in_plane(
+            data_dic["sin2theta"], data_dic["dm4SQR"], data_dic["MicroApp_chi2"]
+        )
+    )
+    dic_prof["sin2theta"], dic_prof["dm4SQR"], dic_prof["MicroApp_Asimov_chi2"] = (
+        profile_in_plane(
+            data_dic["sin2theta"], data_dic["dm4SQR"], data_dic["MicroApp_Asimov_chi2"]
+        )
+    )
+    return dic_prof
+
+
+def profile_x_y(
+    data_dic, xlabel, ylabel, profile_over_diff_chi2=None, x_max=np.inf, y_max=np.inf
+):
+    dic_prof = {}
+    # Profile each chi2
+    dic_prof[xlabel], dic_prof[ylabel], dic_prof["MiniApp_chi2"] = profile_in_plane(
+        data_dic[xlabel],
+        data_dic[ylabel],
+        data_dic["MiniApp_chi2"],
+        profile_over_diff_chi2=data_dic[profile_over_diff_chi2],
+        x_max=x_max,
+        y_max=y_max,
+    )
+    dic_prof[xlabel], dic_prof[ylabel], dic_prof["MicroApp_chi2"] = profile_in_plane(
+        data_dic[xlabel],
+        data_dic[ylabel],
+        data_dic["MicroApp_chi2"],
+        profile_over_diff_chi2=data_dic[profile_over_diff_chi2],
+        x_max=x_max,
+        y_max=y_max,
+    )
+    dic_prof[xlabel], dic_prof[ylabel], dic_prof["MicroApp_Asimov_chi2"] = (
+        profile_in_plane(
+            data_dic[xlabel],
+            data_dic[ylabel],
+            data_dic["MicroApp_Asimov_chi2"],
+            profile_over_diff_chi2=data_dic[profile_over_diff_chi2],
+            x_max=x_max,
+            y_max=y_max,
+        )
+    )
+    return dic_prof
 
 
 def write_pickle(filename, data):
@@ -215,8 +302,13 @@ def load_scan_data(filename, wi=None, w_fixed=None, w2i=None, w2_fixed=None):
     return data_dic
 
 
-def get_best_fit_point(dic):
-    argmin = np.argmin(dic["MiniApp_chi2"])
+def get_best_fit_point(dic, Umu4SQRmax=1, Ue4SQRmax=1, dm4SQRmin=1e-2):
+    mask = (
+        (dic["Umu4SQR"] < Umu4SQRmax)
+        & (dic["Ue4SQR"] < Ue4SQRmax)
+        & (dic["dm4SQR"] > dm4SQRmin)
+    )
+    argmin = np.argmin(dic["MiniApp_chi2"][mask])
     dic_best_fit = {}
     for key in dic.keys():
         if key == "Ue4SQR":
@@ -225,27 +317,38 @@ def get_best_fit_point(dic):
             new_key = "Um4Sq"
         else:
             new_key = key
-        dic_best_fit[new_key] = dic[key][argmin]
+        dic_best_fit[new_key] = dic[key][mask][argmin]
     return dic_best_fit
 
 
-def get_best_fit_point_MBpval(dic, ndof=20):
-    chi2min = np.min(dic["MiniApp_chi2"])
+def get_best_fit_point_MBpval(dic, ndof=20, UmuSQR4max=1, UeSQR4max=1):
+    mask = (dic["Umu4SQR"] < UmuSQR4max) & (dic["Ue4SQR"] < UeSQR4max)
+    chi2min = np.min(dic["MiniApp_chi2"][mask])
     return chi2.sf(chi2min, ndof)
 
 
-def get_bf_point_definition(dic, ndof=20):
-    i_bf = np.argmin(dic["MiniApp_chi2"])
-    i_null = np.argmin(dic["dm4SQR"] * dic["Ue4SQR"])
+def get_best_fit_point_MBchi2(dic, UmuSQR4max=1, UeSQR4max=1):
+    mask = (dic["Umu4SQR"] < UmuSQR4max) & (dic["Ue4SQR"] < UeSQR4max)
+    i_null = np.argmin(dic["Umu4SQR"][mask] + dic["Ue4SQR"][mask])
+    i_bf = np.argmin(dic["MiniApp_chi2"][mask])
+    return (
+        dic["MiniApp_chi2"][mask][i_bf] - 69.059266748669
+    )  # dic["MiniApp_chi2"][i_null]
+
+
+def get_bf_point_definition(dic, ndof=20, Ue4SQRmax=1, Umu4SQRmax=1):
+    mask = (dic["Ue4SQR"] < Ue4SQRmax) & (dic["Umu4SQR"] < Umu4SQRmax)
+    i_bf = np.argmin(dic["MiniApp_chi2"][mask])
+    i_null = np.argmin(dic["Umu4SQR"][mask] + dic["Ue4SQR"][mask])
     s = (
-        (f'g = {dic["g"][i_bf]:.3g}\n')
-        + (f'dm4SQR = {dic["dm4SQR"][i_bf]:.2g} eV^2\n')
-        + (f'Ue4SQR = {dic["Ue4SQR"][i_bf]:.2g}\n')
-        + (f'Umu4SQR = {dic["Umu4SQR"][i_bf]:.2g}\n')
-        + (f'MB chi2 = {dic["MiniApp_chi2"][i_bf]:.2g}\n')
-        + (f'MB pval = {chi2.sf(dic["MiniApp_chi2"][i_bf], ndof)*100:.2g}%\n')
+        (f'g = {dic["g"][mask][i_bf]:.3g}\n')
+        + (f'dm4SQR = {dic["dm4SQR"][mask][i_bf]:.2g} eV^2\n')
+        + (f'Ue4SQR = {dic["Ue4SQR"][mask][i_bf]:.2g}\n')
+        + (f'Umu4SQR = {dic["Umu4SQR"][mask][i_bf]:.2g}\n')
+        + (f'MB chi2 = {dic["MiniApp_chi2"][mask][i_bf]- 69.059:.2g}\n')
+        + (f'MB pval = {chi2.sf(dic["MiniApp_chi2"][mask][i_bf], ndof)*100:.2g}%\n')
         + (
-            f'Micro deltachi2 = {dic["MicroApp_chi2"][i_bf] - dic["MicroApp_chi2"][i_null]:.2g}'
+            f'Micro deltachi2 = {dic["MicroApp_chi2"][mask][i_bf] - dic["MicroApp_chi2"][mask][i_null]:.2g}\n'
         )
     )
     return s

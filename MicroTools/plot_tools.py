@@ -593,8 +593,8 @@ def make_rate_plot(rates, params, name="3+1_osc"):
     )
 
     ax1.legend(fontsize=8, markerfirst=False, ncol=1)
-    pval = r"$p_{\rm val}$"
-    pval_str = rf"{pval} $\,= {sci_notation(mini.fit.get_pval(rates, 38-5)*100, sig_digits=2, optional_sci=2, notex=True)}\%$"
+    # pval = r"$p_{\rm val}$"
+    # pval_str = rf"{pval} $\,= {sci_notation(mini.fit.get_pval(rates, 38-5)*100, sig_digits=2, optional_sci=2, notex=True)}\%$"
     # ax1.annotate(text=r'MiniBooNE FHC 2020 -- '+ pval_str, xy=(0.0,1.025), xycoords='axes fraction', fontsize=9)
     ax1.annotate(
         text=r"MiniBooNE FHC 2020",
@@ -603,10 +603,12 @@ def make_rate_plot(rates, params, name="3+1_osc"):
         fontsize=9,
     )
     ax1.annotate(
-        text=rf'\noindent $g_\varphi = {params["g"]:.1f}$\\$m_4 = {params["m4"]:.1f}$ eV\\$|U_{{e4}}|^2 = {params["Ue4Sq"]:.2f}$\\$|U_{{\mu 4}}|^2 = {params["Um4Sq"]:.3f}$',
-        xy=(0.72, 0.45),
+        text=rf'\noindent $g_\varphi = {sci_notation(params["g"], sig_digits=1, optional_sci=2, notex=True)}$\\$m_4 = {sci_notation(params["m4"], sig_digits=1, optional_sci=3, notex=True)}$ eV\\$|U_{{e4}}|^2 = {sci_notation(params["Ue4Sq"], sig_digits=1, optional_sci=3, notex=True)}$\\$|U_{{\mu 4}}|^2 = {sci_notation(params["Um4Sq"], sig_digits=1, optional_sci=3, notex=True)}$',
+        xy=(0.96, 0.2),
         xycoords="axes fraction",
         fontsize=8.5,
+        ha="right",
+        va="bottom",
         bbox=dict(
             facecolor="none",
             edgecolor="black",
@@ -708,10 +710,12 @@ def make_numu_rate_plot(rates, params, name="3+1_osc"):
         fontsize=9,
     )
     ax1.annotate(
-        text=rf'\noindent $g_\varphi = {params["g"]:.1f}$\\$m_4 = {params["m4"]:.0f}$ eV\\$|U_{{e4}}|^2 = {params["Ue4Sq"]:.2f}$\\$|U_{{\mu 4}}|^2 = {params["Um4Sq"]:.3f}$',
-        xy=(0.72, 0.6),
+        text=rf'\noindent $g_\varphi = {sci_notation(params["g"], sig_digits=1, optional_sci=2, notex=True)}$\\$m_4 = {sci_notation(params["m4"], sig_digits=1, optional_sci=3, notex=True)}$ eV\\$|U_{{e4}}|^2 = {sci_notation(params["Ue4Sq"], sig_digits=1, optional_sci=3, notex=True)}$\\$|U_{{\mu 4}}|^2 = {sci_notation(params["Um4Sq"], sig_digits=1, optional_sci=3, notex=True)}$',
+        xy=(0.96, 0.34),
         xycoords="axes fraction",
         fontsize=8.5,
+        ha="right",
+        va="bottom",
         bbox=dict(
             facecolor="none",
             edgecolor="black",

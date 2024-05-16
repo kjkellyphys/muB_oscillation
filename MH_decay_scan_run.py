@@ -37,13 +37,23 @@ def run_scan_gfixed_3D(
     filename,
     gfixed=2.5,
     Npoints=10,
+    dmSq_range=(1e-1, 1e5),
+    Ue4Sq_range=(1e-3, 0.25),
+    Umu4Sq_range=(2e-4, 0.25),
     path_results="fit_data/",
 ):
 
     # Range of mixings scanned
-    dm_Vec = np.geomspace(np.sqrt(1e-1), np.sqrt(1e5), Npoints)
-    Ue4Sq = np.geomspace(1e-3, 0.5, Npoints)
-    Umu4Sq = np.geomspace(1e-4, 0.5, Npoints)
+    if len(Npoints) == 1:
+        dm_Vec = np.geomspace(np.sqrt(dmSq_range[0]), np.sqrt(dmSq_range[1]), Npoints)
+        Ue4Sq = np.geomspace(Ue4Sq_range[0], Ue4Sq_range[1], Npoints)
+        Umu4Sq = np.geomspace(Umu4Sq_range[0], Umu4Sq_range[1], Npoints)
+    else:
+        dm_Vec = np.geomspace(
+            np.sqrt(dmSq_range[0]), np.sqrt(dmSq_range[1]), Npoints[0]
+        )
+        Ue4Sq = np.geomspace(Ue4Sq_range[0], Ue4Sq_range[1], Npoints[1])
+        Umu4Sq = np.geomspace(Umu4Sq_range[0], Umu4Sq_range[1], Npoints[2])
     g_Vec = gfixed
 
     # Cartesian product of grid -- already imposes unitarity and pertubatirbity of g
@@ -81,6 +91,39 @@ def run_scan_gfixed_Ue4SQRfixed_2D(
     # Cartesian product of grid -- already imposes unitarity and pertubatirbity of g
     paramlist = param_scan.create_grid_of_params(
         g=gfixed, m4=dm_Vec, Ue4Sq=Ue4SQRfixed, Um4Sq=Umu4Sq
+    )
+
+    # Pure oscillation method
+    func_scan = partial(param_scan.DecayReturnMicroBooNEChi2, **kwargs)
+
+    with Pool() as pool:
+        # res = np.array(list(pool.map(func_scan, paramlist)))
+        res = np.array(
+            list(tqdm(pool.imap(func_scan, paramlist), total=len(paramlist)))
+        )
+
+    param_scan.write_pickle(f"{path_results}/{filename}", res)
+    return res
+
+
+def run_scan_gfixed_dmfixed_2D(
+    kwargs,
+    filename,
+    gfixed=2.5,
+    dmSq_fixed=1e8,
+    Npoints=10,
+    path_results="fit_data/",
+    Ue4Sq_range=(1e-3, 0.25),
+    Umu4Sq_range=(2e-4, 0.25),
+):
+
+    # Range of mixings scanned
+    Ue4Sq = np.geomspace(Ue4Sq_range[0], Ue4Sq_range[1], Npoints)
+    Umu4Sq = np.geomspace(Umu4Sq_range[0], Umu4Sq_range[1], Npoints)
+
+    # Cartesian product of grid -- already imposes unitarity and pertubatirbity of g
+    paramlist = param_scan.create_grid_of_params(
+        g=gfixed, m4=np.sqrt(dmSq_fixed), Ue4Sq=Ue4Sq, Um4Sq=Umu4Sq
     )
 
     # Pure oscillation method
