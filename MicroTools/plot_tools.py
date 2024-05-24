@@ -364,7 +364,7 @@ def interp_grid(
 
     elif method == "interpolate":
         Zi = scipy.interpolate.griddata(
-            (x, y), z, (xi[None, :], yi[:, None]), method="cubic", rescale=True
+            (x, y), z, (xi[None, :], yi[:, None]), method="linear", rescale=True
         )
     else:
         print(f"Method {method} not implemented.")

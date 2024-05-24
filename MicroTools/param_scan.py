@@ -158,7 +158,11 @@ def create_grid_of_params_sin2theta(g, m4, sin2thetaSq, Um4Sq):
 
 
 def get_subgrid(dic, var, var_range):
-    mask = (dic[var] < var_range[1]) & (dic[var] > var_range[0])
+    if len(var_range) > 1:
+        mask = (dic[var] < var_range[1]) & (dic[var] > var_range[0])
+    else:
+        mask = dic[var] == dic[var][np.argmin(np.abs(dic[var] - var_range))]
+        print(f"Point found: {dic[var][np.argmin(np.abs(dic[var] - var_range))]}")
     for key in dic.keys():
         dic[key] = dic[key][mask]
     return dic
@@ -226,33 +230,36 @@ def profile_x_y(
     data_dic, xlabel, ylabel, profile_over_diff_chi2=None, x_max=np.inf, y_max=np.inf
 ):
     dic_prof = {}
+    kwargs = {
+        "x_max": x_max,
+        "y_max": y_max,
+    }
+    if profile_over_diff_chi2 is not None:
+        if profile_over_diff_chi2 == "combined":
+            kwargs["profile_over_diff_chi2"] = (
+                data_dic["MicroApp_chi2"] + data_dic["MiniApp_chi2"]
+            )
+        else:
+            kwargs["profile_over_diff_chi2"] = data_dic[profile_over_diff_chi2]
+    else:
+        kwargs["profile_over_diff_chi2"] = None
+
     # Profile each chi2
     dic_prof[xlabel], dic_prof[ylabel], dic_prof["MiniApp_chi2"] = profile_in_plane(
-        data_dic[xlabel],
-        data_dic[ylabel],
-        data_dic["MiniApp_chi2"],
-        profile_over_diff_chi2=data_dic[profile_over_diff_chi2],
-        x_max=x_max,
-        y_max=y_max,
+        data_dic[xlabel], data_dic[ylabel], data_dic["MiniApp_chi2"], **kwargs
     )
     dic_prof[xlabel], dic_prof[ylabel], dic_prof["MicroApp_chi2"] = profile_in_plane(
-        data_dic[xlabel],
-        data_dic[ylabel],
-        data_dic["MicroApp_chi2"],
-        profile_over_diff_chi2=data_dic[profile_over_diff_chi2],
-        x_max=x_max,
-        y_max=y_max,
+        data_dic[xlabel], data_dic[ylabel], data_dic["MicroApp_chi2"], **kwargs
     )
     dic_prof[xlabel], dic_prof[ylabel], dic_prof["MicroApp_Asimov_chi2"] = (
         profile_in_plane(
             data_dic[xlabel],
             data_dic[ylabel],
             data_dic["MicroApp_Asimov_chi2"],
-            profile_over_diff_chi2=data_dic[profile_over_diff_chi2],
-            x_max=x_max,
-            y_max=y_max,
+            **kwargs,
         )
     )
+
     return dic_prof
 
 

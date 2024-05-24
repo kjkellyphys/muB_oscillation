@@ -161,66 +161,79 @@ kwargs_std = {
 if __name__ == "__main__":
 
     ###################
-    MOCK_SCAN = True
-    N_MOCK = 3
+    MOCK_SCAN = False
+    N_MOCK = 5
 
-    # 4D scans
-    n = 30 if not MOCK_SCAN else N_MOCK
-    _ = run_scan_4D(kwargs_std, f"MH_decay_4D_{n}", Npoints=n)
+    # # 4D scans
+    # n = 30 if not MOCK_SCAN else N_MOCK
+    # _ = run_scan_4D(kwargs_std, f"MH_decay_4D_{n}", Npoints=n)
 
-    n = 40 if not MOCK_SCAN else N_MOCK
-    # 3D scans
-    _ = run_scan_gfixed_3D(
-        kwargs_std, f"MH_decay_gfixed_2.5_3D_{n}", Npoints=n, gfixed=2.5
-    )
-    _ = run_scan_gfixed_3D(
-        kwargs_std, f"MH_decay_gfixed_1.0_3D_{n}", Npoints=n, gfixed=1.0
-    )
+    # n = 40 if not MOCK_SCAN else N_MOCK
+    # # 3D scans
+    # _ = run_scan_gfixed_3D(
+    #     kwargs_std, f"MH_decay_gfixed_2.5_3D_{n}", Npoints=n, gfixed=2.5
+    # )
+    # _ = run_scan_gfixed_3D(
+    #     kwargs_std, f"MH_decay_gfixed_1.0_3D_{n}", Npoints=n, gfixed=1.0
+    # )
 
     n = 60 if not MOCK_SCAN else N_MOCK
+    # kwargs_std["helicity"] = "flipping"
+    # _ = run_scan_gfixed_Ue4SQRfixed_2D(
+    #     kwargs_std,
+    #     f"MH_decay_gfixed_2.5_Ue4SQRfixed_0.05_2D_{n}_flipping",
+    #     Npoints=n,
+    #     gfixed=2.5,
+    #     Ue4SQRfixed=0.05,
+    # )
+
+    UE4SQR_IceCube = 0.05
+    g2_over_pi_values = np.linspace(0, 4, 9, endpoint=True)
     # 2D scans
-    _ = run_scan_gfixed_Ue4SQRfixed_2D(
-        kwargs_std,
-        f"MH_decay_gfixed_2.5_Ue4SQRfixed_0.10_2D_{n}",
-        Npoints=n,
-        gfixed=2.5,
-        Ue4SQRfixed=0.10,
-    )
+    for g2op in g2_over_pi_values:
+        if g2op > 0:
+            _ = run_scan_gfixed_Ue4SQRfixed_2D(
+                kwargs_std,
+                f"MH_decay_goverpi_{g2op:.2f}_Ue4SQRfixed_{UE4SQR_IceCube:.3f}_2D_{n}",
+                Npoints=n,
+                gfixed=np.sqrt(g2op * np.pi),
+                Ue4SQRfixed=UE4SQR_IceCube,
+            )
 
-    _ = run_scan_gfixed_Ue4SQRfixed_2D(
-        kwargs_std,
-        f"MH_decay_gfixed_2.5_Ue4SQRfixed_0.05_2D_{n}",
-        Npoints=n,
-        gfixed=2.5,
-        Ue4SQRfixed=0.05,
-    )
-    _ = run_scan_gfixed_Ue4SQRfixed_2D(
-        kwargs_std,
-        f"MH_decay_gfixed_2.5_Ue4SQRfixed_0.01_2D_{n}",
-        Npoints=n,
-        gfixed=2.5,
-        Ue4SQRfixed=0.01,
-    )
+    # _ = run_scan_gfixed_Ue4SQRfixed_2D(
+    #     kwargs_std,
+    #     f"MH_decay_gfixed_2.5_Ue4SQRfixed_0.05_2D_{n}",
+    #     Npoints=n,
+    #     gfixed=2.5,
+    #     Ue4SQRfixed=0.05,
+    # )
+    # _ = run_scan_gfixed_Ue4SQRfixed_2D(
+    #     kwargs_std,
+    #     f"MH_decay_gfixed_2.5_Ue4SQRfixed_0.01_2D_{n}",
+    #     Npoints=n,
+    #     gfixed=2.5,
+    #     Ue4SQRfixed=0.01,
+    # )
 
-    _ = run_scan_gfixed_Ue4SQRfixed_2D(
-        kwargs_std,
-        f"MH_decay_gfixed_1_Ue4SQRfixed_0.10_2D_{n}",
-        Npoints=n,
-        gfixed=1,
-        Ue4SQRfixed=0.10,
-    )
+    # _ = run_scan_gfixed_Ue4SQRfixed_2D(
+    #     kwargs_std,
+    #     f"MH_decay_gfixed_1_Ue4SQRfixed_0.10_2D_{n}",
+    #     Npoints=n,
+    #     gfixed=1,
+    #     Ue4SQRfixed=0.10,
+    # )
 
-    _ = run_scan_gfixed_Ue4SQRfixed_2D(
-        kwargs_std,
-        f"MH_decay_gfixed_1_Ue4SQRfixed_0.05_2D_{n}",
-        Npoints=n,
-        gfixed=1,
-        Ue4SQRfixed=0.05,
-    )
-    _ = run_scan_gfixed_Ue4SQRfixed_2D(
-        kwargs_std,
-        f"MH_decay_gfixed_1_Ue4SQRfixed_0.01_2D_{n}",
-        Npoints=n,
-        gfixed=1,
-        Ue4SQRfixed=0.01,
-    )
+    # _ = run_scan_gfixed_Ue4SQRfixed_2D(
+    #     kwargs_std,
+    #     f"MH_decay_gfixed_1_Ue4SQRfixed_0.05_2D_{n}",
+    #     Npoints=n,
+    #     gfixed=1,
+    #     Ue4SQRfixed=0.05,
+    # )
+    # _ = run_scan_gfixed_Ue4SQRfixed_2D(
+    #     kwargs_std,
+    #     f"MH_decay_gfixed_1_Ue4SQRfixed_0.01_2D_{n}",
+    #     Npoints=n,
+    #     gfixed=1,
+    #     Ue4SQRfixed=0.01,
+    # )

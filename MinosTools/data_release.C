@@ -23,6 +23,7 @@
 #include "TGraphSmooth.h"
 #include "TMath.h"
 
+#include "helpers.C"
 
 using namespace std;
 
@@ -1245,7 +1246,7 @@ void dataRelease_chi2Calc_compile(string path = "dataRelease.root",
 }
 
 
-//begin main function
+//begin simplified main function
 Double_t Simple_dataRelease_chi2Calc(string path = "dataRelease.root",
 					double Dm232 = 2.43005123913581740e-03,
 					double Dm221 = 0.0000754,
@@ -1338,65 +1339,6 @@ Double_t Simple_dataRelease_chi2Calc(string path = "dataRelease.root",
     return chi2;
 }
 
-template<typename T>
-std::vector<double> linspace(T start_in, T end_in, int num_in)
-{
-
-  std::vector<double> linspaced;
-
-  double start = static_cast<double>(start_in);
-  double end = static_cast<double>(end_in);
-  double num = static_cast<double>(num_in);
-
-  if (num == 0) { return linspaced; }
-  if (num == 1) 
-    {
-      linspaced.push_back(start);
-      return linspaced;
-    }
-
-  double delta = (end - start) / (num - 1);
-
-  for(int i=0; i < num-1; ++i)
-    {
-      linspaced.push_back(start + delta * i);
-    }
-  linspaced.push_back(end); // I want to ensure that start and end
-                            // are exactly the same as the input
-  return linspaced;
-}
-template<typename T>
-std::vector<double> geomspace(T start_in, T end_in, int num_in)
-{
-    std::vector<double> geospaced;
-
-    double start = static_cast<double>(start_in);
-    double end = static_cast<double>(end_in);
-    double num = static_cast<double>(num_in);
-
-    if (num == 0) { return geospaced; }
-    if (num == 1) 
-    {
-        geospaced.push_back(start);
-        return geospaced;
-    }
-
-    double ratio = std::pow(end / start, 1.0 / (num - 1));
-
-    for(int i = 0; i < num; ++i)
-    {
-        double value = start * std::pow(ratio, i);
-        geospaced.push_back(value);
-    }
-
-    return geospaced;
-}
-
-
-
-// Assuming dataRelease_chi2Calc_compile has been modified to accept th24 and return chi2 values
-#include <fstream>
-
 void printChi2ForTh24(std::vector<double> th24Values, std::vector<double> dm241Values, double g_decay, const std::string& fileName) {
     std::ofstream outputFile(fileName);
     if (!outputFile.is_open()) {
@@ -1431,6 +1373,91 @@ void printChi2ForTh24(std::vector<double> th24Values, std::vector<double> dm241V
     }
 
     outputFile.close();
+}
+
+void calculateAndPrintChi2(double th34, double th24, double dm232, double dm241, double g_decay, int& currentIteration, int totalIterations, std::ofstream& outputFile) {
+  // Call the modified dataRelease_chi2Calc_compile function with each th24 value
+  Double_t chi2Results = Simple_dataRelease_chi2Calc(
+    "dataRelease.root",
+    dm232,    // Dm232 = 2.43005123913581740e-03,
+    0.0000754,  // Dm221 = 0.0000754,
+    9.28598228704929918e-01,    // th23  = 9.28598228704929918e-01,
+    0.59,       // th12  = 0.5540758073,
+    0.149116,   // th13  = 0.149116,
+    0.0,    // deltaCP = 0.0,
+    dm241,  // Dm241 = 2.32492426050590582e-03,
+    th24,   // th24  = 1.05321302928372360e-02,
+    th34,    // th34  = 8.35186824552614469e-03,
+    0.0,    // th14  = 0.0,
+    0.0,    // delta24 = 0.0
+    g_decay // fixed g_decay
+  );
+
+  outputFile << g_decay << " " << th34 << " " << th24 << " " << dm232 << " " << dm241 << " " << chi2Results << std::endl;
+
+  // Update progress bar
+  currentIteration++;
+  float progress = static_cast<float>(currentIteration) / totalIterations;
+  int barWidth = 70;
+  std::cout << "[";
+  int pos = barWidth * progress;
+  for (int i = 0; i < barWidth; ++i) {
+    if (i < pos) std::cout << "=";
+    else if (i == pos) std::cout << ">";
+    else std::cout << " ";
+  }
+  std::cout << "] " << std::setw(3) << static_cast<int>(progress * 100.0) << "%\r";
+  std::cout.flush();
+}
+
+
+void Chi2_3D(std::vector<double> th34Values, std::vector<double> th24Values, std::vector<double> dm241Values, double g_decay, const std::string& fileName) {
+  std::ofstream outputFile(fileName);
+  if (!outputFile.is_open()) {
+    std::cerr << "Error opening file: " << fileName << std::endl;
+    return;
+  }
+  else {
+    outputFile << "# g_decay th34 th24 dm2_41/eV^2 chi2_total" << std::endl;
+  }
+
+  int totalIterations = th34Values.size() * th24Values.size() * dm241Values.size();
+  int currentIteration = 0;
+
+  for (double th34 : th34Values) {
+    for (double th24 : th24Values) {
+      for (double dm241 : dm241Values) {
+          calculateAndPrintChi2(th34, th24, 2.5e-03, dm241, g_decay, currentIteration, totalIterations, outputFile);
+      }
+    }
+  }
+  std::cout << std::endl;
+  outputFile.close();
+}
+void Chi2_4D(std::vector<double> th34Values, std::vector<double> th24Values, std::vector<double> dm232Values, std::vector<double> dm241Values, double g_decay, const std::string& fileName) {
+  std::ofstream outputFile(fileName);
+  if (!outputFile.is_open()) {
+    std::cerr << "Error opening file: " << fileName << std::endl;
+    return;
+  }
+  else {
+    outputFile << "# g_decay th34 th24 dm2_32/eV^2 dm2_41/eV^2 chi2_total" << std::endl;
+  }
+
+  int totalIterations = th34Values.size() * th24Values.size() * dm241Values.size() * dm232Values.size();
+  int currentIteration = 0;
+
+  for (double th34 : th34Values) {
+    for (double th24 : th24Values) {
+      for (double dm232 : dm232Values) {
+        for (double dm241 : dm241Values) {
+          calculateAndPrintChi2(th34, th24, dm232, dm241, g_decay, currentIteration, totalIterations, outputFile);
+        }
+      }
+    }
+  }
+  std::cout << std::endl;
+  outputFile.close();
 }
 
 // double Dm232 = 2.43005123913581740e-03,
