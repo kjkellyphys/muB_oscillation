@@ -149,12 +149,29 @@ kwargs_common = {
     "n_replications": 10,
 }
 
+kwargs_osconly = {
+    "oscillations": True,
+    "decay": False,
+    "decouple_decay": False,
+    "energy_degradation": False,
+    "include_antineutrinos": True,
+    "n_replications": 1,
+}
+
 # Full and Standard case
 kwargs_std = {
     "disappearance": True,
     "use_numu_MC": True,
     "undo_numu_normalization": False,
     **kwargs_common,
+}
+
+# Full and Standard case
+kwargs_std_osconly = {
+    "disappearance": True,
+    "use_numu_MC": True,
+    "undo_numu_normalization": False,
+    **kwargs_osconly,
 }
 
 
@@ -188,17 +205,25 @@ if __name__ == "__main__":
     # )
 
     UE4SQR_IceCube = 0.05
-    g2_over_pi_values = np.linspace(0, 4, 9, endpoint=True)
+    # g2_over_pi_values = np.linspace(0, 4, 9, endpoint=True)
     # 2D scans
-    for g2op in g2_over_pi_values:
-        if g2op > 0:
-            _ = run_scan_gfixed_Ue4SQRfixed_2D(
-                kwargs_std,
-                f"MH_decay_goverpi_{g2op:.2f}_Ue4SQRfixed_{UE4SQR_IceCube:.3f}_2D_{n}",
-                Npoints=n,
-                gfixed=np.sqrt(g2op * np.pi),
-                Ue4SQRfixed=UE4SQR_IceCube,
-            )
+    # for g2op in g2_over_pi_values:
+    #     if g2op > 0:
+    #         _ = run_scan_gfixed_Ue4SQRfixed_2D(
+    #             kwargs_std,
+    #             f"MH_decay_goverpi_{g2op:.2f}_Ue4SQRfixed_{UE4SQR_IceCube:.3f}_2D_{n}",
+    #             Npoints=n,
+    #             gfixed=np.sqrt(g2op * np.pi),
+    #             Ue4SQRfixed=UE4SQR_IceCube,
+    #         )
+
+    _ = run_scan_gfixed_Ue4SQRfixed_2D(
+        kwargs_std_osconly,
+        f"MH_decay_goverpi_0_Ue4SQRfixed_{UE4SQR_IceCube:.3f}_2D_{n}",
+        Npoints=n,
+        gfixed=0,
+        Ue4SQRfixed=UE4SQR_IceCube,
+    )
 
     # _ = run_scan_gfixed_Ue4SQRfixed_2D(
     #     kwargs_std,

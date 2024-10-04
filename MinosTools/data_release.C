@@ -1247,7 +1247,8 @@ void dataRelease_chi2Calc_compile(string path = "dataRelease.root",
 
 
 //begin simplified main function
-Double_t Simple_dataRelease_chi2Calc(string path = "dataRelease.root",
+Double_t Simple_dataRelease_chi2Calc(
+          TFile* f,
 					double Dm232 = 2.43005123913581740e-03,
 					double Dm221 = 0.0000754,
 					double th23  = 9.28598228704929918e-01,
@@ -1262,12 +1263,6 @@ Double_t Simple_dataRelease_chi2Calc(string path = "dataRelease.root",
 					double g_decay = 0.0
 				       )
 {
-  
-  TString fileName = path;
-  
-  TFile *f  = new TFile(fileName);
-
-  Zombie(f); 
 
   params my_pars;
   my_pars.Dm232   = Dm232;
@@ -1335,65 +1330,73 @@ Double_t Simple_dataRelease_chi2Calc(string path = "dataRelease.root",
 				      CoVarNC_inverted,
 				      my_pars.Dm232);
 
-//////////////////////////End Calculation//////////////////////////////////////
-    return chi2;
+  // f->Close(); // Close the file
+  // delete f; // Delete the TFile object to release memory
+//////////////////////////End Calulation//////////////////////////////////////
+  return chi2;
 }
 
-void printChi2ForTh24(std::vector<double> th24Values, std::vector<double> dm241Values, double g_decay, const std::string& fileName) {
-    std::ofstream outputFile(fileName);
-    if (!outputFile.is_open()) {
-        std::cerr << "Error opening file: " << fileName << std::endl;
-        return;
-    }
-    else{
-        outputFile << "# g_decay th24 dm2_41/eV^2 chi2_total" << std::endl;
-    }
+// void printChi2ForTh24(std::vector<double> th24Values, std::vector<double> dm241Values, double g_decay, const std::string& fileName) {
+//     std::ofstream outputFile(fileName);
+//     if (!outputFile.is_open()) {
+//         std::cerr << "Error opening file: " << fileName << std::endl;
+//         return;
+//     }
+//     else{
+//         outputFile << "# g_decay th24 dm2_41/eV^2 chi2_total" << std::endl;
+//     }
 
-    for (double th24 : th24Values) {
-        for (double dm241 : dm241Values){
-            // Call the modified dataRelease_chi2Calc_compile function with each th24 value
-            Double_t chi2Results = Simple_dataRelease_chi2Calc(
-            "dataRelease.root", 
-            2.43005123913581740e-03,    // Dm232 = 2.43005123913581740e-03,
-            0.0000754,  // Dm221 = 0.0000754,
-            9.28598228704929918e-01,    // th23  = 9.28598228704929918e-01,
-            0.5540758073,   // th12  = 0.5540758073,
-            0.149116,   // th13  = 0.149116,
-            0.0,    // deltaCP = 0.0,
-            dm241,  // Dm241 = 2.32492426050590582e-03,
-            th24,   // th24  = 1.05321302928372360e-02,
-            8.35186824552614469e-03,    // th34  = 8.35186824552614469e-03,
-            0.3,    // th14  = 0.0,
-            0.0,    // delta24 = 0.0
-            g_decay
-            );
-            // Print the chi2 values for the current th24 to the file
-            outputFile << g_decay << " " << th24 << " " << dm241 << " " << chi2Results  << std::endl;
-        }    
-    }
+//     TString fileName = "dataRelease.root";
+//     // TFile *f  = new TFile(fileName, "READONLY");
+//     TFile *f  = new TFile(fileName);
+//     Zombie(f); 
 
-    outputFile.close();
-}
+//     for (double th24 : th24Values) {
+//         for (double dm241 : dm241Values){
+//             // Call the modified dataRelease_chi2Calc_compile function with each th24 value
+//             Double_t chi2Results = Simple_dataRelease_chi2Calc(
+//             f, 
+//             2.43005123913581740e-03,    // Dm232 = 2.43005123913581740e-03,
+//             0.0000754,  // Dm221 = 0.0000754,
+//             9.28598228704929918e-01,    // th23  = 9.28598228704929918e-01,
+//             0.5540758073,   // th12  = 0.5540758073,
+//             0.149116,   // th13  = 0.149116,
+//             0.0,    // deltaCP = 0.0,
+//             dm241,  // Dm241 = 2.32492426050590582e-03,
+//             th24,   // th24  = 1.05321302928372360e-02,
+//             8.35186824552614469e-03,    // th34  = 8.35186824552614469e-03,
+//             0.3,    // th14  = 0.0,
+//             0.0,    // delta24 = 0.0
+//             g_decay
+//             );
+//             // Print the chi2 values for the current th24 to the file
+//             outputFile << g_decay << " " << th24 << " " << dm241 << " " << chi2Results  << std::endl;
+//         }    
+//     }
 
-void calculateAndPrintChi2(double th34, double th24, double dm232, double dm241, double g_decay, int& currentIteration, int totalIterations, std::ofstream& outputFile) {
+//     outputFile.close();
+//     f->Close();
+// }
+
+void calculateAndPrintChi2(TFile* f, double th23, double th24, double dm232, double dm241, double g_decay, int& currentIteration, int totalIterations, std::ofstream& outputFile) {
   // Call the modified dataRelease_chi2Calc_compile function with each th24 value
   Double_t chi2Results = Simple_dataRelease_chi2Calc(
-    "dataRelease.root",
+    f,
     dm232,    // Dm232 = 2.43005123913581740e-03,
     0.0000754,  // Dm221 = 0.0000754,
-    9.28598228704929918e-01,    // th23  = 9.28598228704929918e-01,
-    0.59,       // th12  = 0.5540758073,
+    th23,    // th23  = 9.28598228704929918e-01,
+    0.5540758073, // th12  = 0.5540758073,
     0.149116,   // th13  = 0.149116,
     0.0,    // deltaCP = 0.0,
     dm241,  // Dm241 = 2.32492426050590582e-03,
     th24,   // th24  = 1.05321302928372360e-02,
-    th34,    // th34  = 8.35186824552614469e-03,
+    0.0,    // th34  = 8.35186824552614469e-03,
     0.0,    // th14  = 0.0,
     0.0,    // delta24 = 0.0
     g_decay // fixed g_decay
   );
 
-  outputFile << g_decay << " " << th34 << " " << th24 << " " << dm232 << " " << dm241 << " " << chi2Results << std::endl;
+  outputFile << g_decay << " " << th23 << " " << th24 << " " << dm232 << " " << dm241 << " " << chi2Results << std::endl;
 
   // Update progress bar
   currentIteration++;
@@ -1411,53 +1414,78 @@ void calculateAndPrintChi2(double th34, double th24, double dm232, double dm241,
 }
 
 
-void Chi2_3D(std::vector<double> th34Values, std::vector<double> th24Values, std::vector<double> dm241Values, double g_decay, const std::string& fileName) {
+void Chi2_3D(std::vector<double> th23Values, std::vector<double> th24Values, std::vector<double> dm241Values, double g_decay, const std::string& fileName) {
   std::ofstream outputFile(fileName);
   if (!outputFile.is_open()) {
     std::cerr << "Error opening file: " << fileName << std::endl;
     return;
   }
   else {
-    outputFile << "# g_decay th34 th24 dm2_41/eV^2 chi2_total" << std::endl;
+    outputFile << "# g_decay th23 th24 dm2_41/eV^2 chi2_total" << std::endl;
   }
 
-  int totalIterations = th34Values.size() * th24Values.size() * dm241Values.size();
+  TString datafile = "dataRelease.root";
+  // TFile *f  = new TFile(datafile, "READONLY");
+  TFile *f  = new TFile(datafile);
+  Zombie(f); 
+
+
+  int totalIterations = th23Values.size() * th24Values.size() * dm241Values.size();
   int currentIteration = 0;
 
-  for (double th34 : th34Values) {
+  for (double th23 : th23Values) {
     for (double th24 : th24Values) {
       for (double dm241 : dm241Values) {
-          calculateAndPrintChi2(th34, th24, 2.5e-03, dm241, g_decay, currentIteration, totalIterations, outputFile);
+          calculateAndPrintChi2(f, th23, th24, 2.5e-03, dm241, g_decay, currentIteration, totalIterations, outputFile);
       }
     }
   }
+  
   std::cout << std::endl;
   outputFile.close();
+  // f->Close();
+  // delete f;
+
 }
-void Chi2_4D(std::vector<double> th34Values, std::vector<double> th24Values, std::vector<double> dm232Values, std::vector<double> dm241Values, double g_decay, const std::string& fileName) {
-  std::ofstream outputFile(fileName);
-  if (!outputFile.is_open()) {
-    std::cerr << "Error opening file: " << fileName << std::endl;
-    return;
-  }
-  else {
-    outputFile << "# g_decay th34 th24 dm2_32/eV^2 dm2_41/eV^2 chi2_total" << std::endl;
-  }
 
-  int totalIterations = th34Values.size() * th24Values.size() * dm241Values.size() * dm232Values.size();
-  int currentIteration = 0;
+// void Chi2_4D(std::vector<double> th34Values, std::vector<double> th24Values, std::vector<double> dm232Values, std::vector<double> dm241Values, double g_decay, const std::string& fileName) {
+//   std::ofstream outputFile(fileName);
+//   if (!outputFile.is_open()) {
+//     std::cerr << "Error opening file: " << fileName << std::endl;
+//     return;
+//   }
+//   else {
+//     outputFile << "# g_decay th34 th24 dm2_32/eV^2 dm2_41/eV^2 chi2_total" << std::endl;
+//   }
 
-  for (double th34 : th34Values) {
-    for (double th24 : th24Values) {
-      for (double dm232 : dm232Values) {
-        for (double dm241 : dm241Values) {
-          calculateAndPrintChi2(th34, th24, dm232, dm241, g_decay, currentIteration, totalIterations, outputFile);
-        }
-      }
-    }
+//   TString datafile = "dataRelease.root";
+//   // TFile *f  = new TFile(datafile, "READONLY");
+//   TFile *f  = new TFile(datafile);
+//   Zombie(f); 
+
+//   int totalIterations = th34Values.size() * th24Values.size() * dm241Values.size() * dm232Values.size();
+//   int currentIteration = 0;
+
+//   for (double th34 : th34Values) {
+//     for (double th24 : th24Values) {
+//       for (double dm232 : dm232Values) {
+//         for (double dm241 : dm241Values) {
+//           calculateAndPrintChi2(f, th34, th24, dm232, dm241, g_decay, currentIteration, totalIterations, outputFile);
+//         }
+//       }
+//     }
+//   }
+//   std::cout << std::endl;
+//   outputFile.close();
+//   // f->Close();
+//   // delete f;
+// }
+
+
+void scan_3D() {
+  for (double gcoupl : linspace(0, 4.0, 9)) {
+    Chi2_3D(linspace(0.5, 1.0, 10), geomspace(0.01, 0.2, 40), geomspace(1e-2, 1e4, 40),  gcoupl*M_PI,  "test_chi2_sterile_g_decay_"+to_string(gcoupl)+"Pi_custom_3D.dat");
   }
-  std::cout << std::endl;
-  outputFile.close();
 }
 
 // double Dm232 = 2.43005123913581740e-03,

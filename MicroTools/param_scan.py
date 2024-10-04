@@ -361,6 +361,33 @@ def get_bf_point_definition(dic, ndof=20, Ue4SQRmax=1, Umu4SQRmax=1):
     return s
 
 
+def get_micro_bf_point_definition(
+    dic, ndof=20, Ue4SQRmin=0, Umu4SQRmin=0, Ue4SQRmax=1, Umu4SQRmax=1
+):
+    mask = (
+        (dic["Ue4SQR"] < Ue4SQRmax)
+        & (dic["Umu4SQR"] < Umu4SQRmax)
+        & (dic["Ue4SQR"] > Ue4SQRmin)
+        & (dic["Umu4SQR"] > Umu4SQRmin)
+    )
+    i_bf = np.argmin(dic["MicroApp_chi2"][mask])
+    i_null = np.argmin(dic["Umu4SQR"][mask] + dic["Ue4SQR"][mask])
+    s = (
+        (f'g = {dic["g"][mask][i_bf]:.3g}\n')
+        + (f'dm4SQR = {dic["dm4SQR"][mask][i_bf]:.2g} eV^2\n')
+        + (f'Ue4SQR = {dic["Ue4SQR"][mask][i_bf]:.2g}\n')
+        + (f'Umu4SQR = {dic["Umu4SQR"][mask][i_bf]:.2g}\n')
+        + (f'MB chi2 = {dic["MiniApp_chi2"][mask][i_bf]- 69.059:.2g}\n')
+        + (f'MB pval = {chi2.sf(dic["MiniApp_chi2"][mask][i_bf], ndof)*100:.2g}%\n')
+        + (
+            f'Micro deltachi2 (bf - null) = {dic["MicroApp_chi2"][mask][i_bf] - dic["MicroApp_chi2"][mask][i_null]:.2g}\n'
+        )
+        + (f'Micro deltachi2 (null) = {dic["MicroApp_chi2"][mask][i_null]:.2g}\n')
+        + (f'Micro deltachi2 (bf) = {dic["MicroApp_chi2"][mask][i_bf]:.2g}\n')
+    )
+    return s
+
+
 def get_null_point_definition(dic, ndof=20):
     i_bf = np.argmin(dic["dm4SQR"] * dic["Ue4SQR"])
     s = (
