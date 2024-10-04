@@ -1,4 +1,4 @@
-# MicroBooNE-analysis-2021
+# MicroBooNE decay study 2024
 
 This code is an extension of the one used in [2111.10359](https://arxiv.org/abs/2111.10359) to include decaying-sterile neutrinos. It also inherits some functionality from the antineutrino analysis in [2301.12573](https://arxiv.org/abs/2301.12573).
 
