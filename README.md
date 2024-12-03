@@ -20,3 +20,18 @@ All other data files are obtained by digitizing plots available in the correspon
 ---
 
 The MINOS files come from data release and are run using ROOT.
+
+
+# MH explanations
+
+Each experiment has its own folder (BestTools, MicroTools, InclusiveTools...).
+Magic happens in param_scan.py
+You can turn off decays so it is only oscillations.
+MiniBooNE is inside MicroTools, functions return both chi2 (check DecayReturnMicroBooNEChi2).
+
+This is how it works. ``theta'' are physical parameters
+1. Computes the rates (dict has several flags for how to do the fit)
+2. nue_app_for_unfolding is used to get the template which then is passed to uB (miniTomicro would become miniToSBND ...)
+3. We need to re-write NuMuReps, NueReps, etc.
+
+MH_decay_scans.ipynb has working examples
