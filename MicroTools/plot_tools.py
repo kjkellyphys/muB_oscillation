@@ -68,8 +68,8 @@ def get_CL_from_sigma(sigma):
     return erf(sigma / np.sqrt(2))
 
 
-def get_chi2vals_w_nsigmas(n_sigmas, ndof):
-    return [chi2.ppf(get_CL_from_sigma(i), ndof) for i in range(n_sigmas + 1)]
+def get_chi2vals_w_nsigmas(n_sigmas, ndof, sigma_min=1):
+    return [chi2.ppf(get_CL_from_sigma(i + sigma_min), ndof) for i in range(n_sigmas)]
 
 
 def get_chi2vals_w_sigma(sigma, ndof):
