@@ -12,8 +12,8 @@ import MicroTools as micro
 from MicroTools import unfolder
 
 RHE = False
-GBPC = unfolder.MBtomuB(analysis="1eX_PC", remove_high_energy=RHE, unfold=True)
-GBFC = unfolder.MBtomuB(analysis="1eX", remove_high_energy=RHE, unfold=True)
+GBPC = unfolder.MBtoLAr(analysis="1eX_PC", remove_high_energy=RHE, unfold=True)
+GBFC = unfolder.MBtoLAr(analysis="1eX", remove_high_energy=RHE, unfold=True)
 from Inclusive_Analysis import muB_NoBkgOsc_Chi2
 
 
@@ -33,11 +33,11 @@ for k0 in range(len(MiniBooNE_Signal_PANM)):
     Pairs.append([dm41, ssq2thmue])
     MBSig = (MiniBooNE_Signal_PANM[k0])[2:]
 
-    uBFC = GBFC.miniToMicro(MBSig)
+    uBFC = GBFC.unfold(MBSig)
     uBFC = np.insert(uBFC, 0, [0.0])
     uBFC = np.append(uBFC, 0.0)
 
-    uBPC = GBPC.miniToMicro(MBSig)
+    uBPC = GBPC.unfold(MBSig)
     uBPC = np.insert(uBPC, 0, [0.0])
     uBPC = np.append(uBPC, 0.0)
 

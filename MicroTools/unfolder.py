@@ -5,7 +5,7 @@ import MicroTools as micro
 from MicroTools import antinu_tools
 
 
-class MBtomuB:
+class MBtoLAr:
     def __init__(
         self,
         analysis="1eX",
@@ -21,26 +21,26 @@ class MBtomuB:
                                 '1eX_PC' [inclusive, partially contained], 'CCQE' [1e1p quasielastic]
         remove_high_energy ---- The official MicroBooNE analysis removes all excess with neutrino energy greater than
                                 800 MeV. If this option is set to True, this will also be enforced. Default: False
-        unfold             ---- Perform unfolding? If True, the input to miniToMicro must be the number of events
+        unfold             ---- Perform unfolding? If True, the input to unfold must be the number of events
                                 *as a function of reconstructed neutrino energy*. If False, the input must be the
                                 number of events *as a function of true neutrino energy*
         effNoUnfold        ---- ***Only relevant if unfold=False***
-                                Does the input include MiniBooNE efficiencies? If True, the input to miniToMicro
+                                Does the input include MiniBooNE efficiencies? If True, the input to unfold
                                 must be the number of events after MiniBooNE efficiencies. If False, the input
                                 must be the number of events before MiniBooNE efficiencies.
         which_template     ---- MiniBooNE template to unfold, which corresponds to different POT. Default: 2020
         """
-        if analysis not in ["1eX", "1eX_PC", "CCQE"]:
+        if analysis not in ["1eX", "1eX_PC", "CCQE", "SBND", "ICARUS"]:
             raise NotImplementedError(
                 "The analysis "
                 + analysis
-                + " is not among the implemented analyses: [1eX, 1eX_PC, CCQE]"
+                + " is not among the implemented analyses: [1eX, 1eX_PC, CCQE, SBND, ICARUS]"
             )
         self._remove_high_energy = remove_high_energy
         self._unfold = unfold
         self._effnounfold = effNoUnfold
 
-        ## Set up data needed for unfolding ##
+        # Set up data needed for unfolding ##
         self._migration = np.loadtxt(
             f"{micro.path_unfolding_data}MiniBooNE_migration_matrix_paper_bins.dat"
         )  # MiniBooNE migration matrix
@@ -62,9 +62,6 @@ class MBtomuB:
             self._bin_edges_true[1:] + self._bin_edges_true[:-1]
         ) / 2
 
-        ## Set up MicroBooNE parameters ##
-        self._relative_targets = 85 / 818  # 85 ton [MicroBooNE] vs 818 ton [MiniBooNE]
-
         # Efficiency, energy bins, energy resolution, and fudge efficiency
         if analysis == "CCQE":
             if which_template == "2012":
@@ -77,6 +74,10 @@ class MBtomuB:
             # 6.46e20 POT [MiniBooNE 2012]
             # 12.84e20 POT [MiniBooNE 2018]
             # 18.75e20 POT [MiniBooNE 2020]
+
+            # 85 ton [MicroBooNE] vs 818 ton [MiniBooNE]
+            self._relative_targets = 85 / 818
+
             # Efficiency as obtained by comparing Fig. 1 in arXiv:2110.13978 with their MC binned in true energy
             self._efficiency = np.array(
                 [
@@ -131,11 +132,14 @@ class MBtomuB:
                 self._relative_exposure = 6.369 / 18.75
             elif which_template == "MicroBooNE_Only":
                 self._relative_exposure = 1.0
-                # self._relative_targets = 1.0
             # 6.369 POT [MicroBooNE]
             # 6.46e20 POT [MiniBooNE 2012]
             # 12.84e20 POT [MiniBooNE 2018]
             # 18.75e20 POT [MiniBooNE 2020]
+
+            # 85 ton [MicroBooNE] vs 818 ton [MiniBooNE]
+            self._relative_targets = 85 / 818
+
             # Efficiency as obtained by comparing Fig. 1 in arXiv:2110.13978 with their migration matrix binned in true energy
             self._efficiency = np.array(
                 [
@@ -196,11 +200,14 @@ class MBtomuB:
                 self._relative_exposure = 6.369 / 18.75
             elif which_template == "MicroBooNE_Only":
                 self._relative_exposure = 1.0
-                # self._relative_targets = 1.0
             # 6.369 POT [MicroBooNE]
             # 6.46e20 POT [MiniBooNE 2012]
             # 12.84e20 POT [MiniBooNE 2018]
             # 18.75e20 POT [MiniBooNE 2020]
+
+            # 85 ton [MicroBooNE] vs 818 ton [MiniBooNE]
+            self._relative_targets = 85 / 818
+
             # Efficiency as obtained by comparing Fig. 1 in arXiv:2110.13978 with their migration matrix binned in true energy
             self._efficiency = np.array(
                 [
@@ -251,8 +258,67 @@ class MBtomuB:
             self._smearing_matrix_microB = np.loadtxt(
                 f"{micro.path_unfolding_data}Migration_1eX_PC.dat"
             )
+        elif analysis == "SBND" or analysis == "ICARUS":
 
-    def miniToMicro(self, mini_nue):
+            # SBND/MB
+            self._relative_exposure = 1
+            self._relative_targets = micro.rescale_mini_to_SBN(analysis, which_template)
+
+            if not self._unfold:
+                self._relative_targets *= (micro.L_micro / micro.L_mini) ** 2
+
+            self._efficiency = np.array(
+                [
+                    0.50314466,
+                    0.54882715,
+                    0.64019214,
+                    0.72976845,
+                    0.81755608,
+                    0.90826832,
+                    1.04872359,
+                    1.15368084,
+                    1.22829937,
+                    1.21671845,
+                    1.18336647,
+                    1.03151614,
+                    0.90760706,
+                ]
+            )
+
+            self._bin_edges_rec_microB = np.linspace(100, 2500, 25)
+            self._fudge = np.array(
+                [
+                    0.24356887,
+                    0.24804412,
+                    0.25286889,
+                    0.25622915,
+                    0.26522795,
+                    0.28182341,
+                    0.28308206,
+                    0.27329645,
+                    0.27794804,
+                    0.28826545,
+                    0.29780453,
+                    0.29065536,
+                    0.29850116,
+                    0.29434252,
+                    0.29046458,
+                    0.29612374,
+                    0.28790173,
+                    0.28431594,
+                    0.27852108,
+                    0.27849889,
+                    0.26675044,
+                    0.25958135,
+                    0.2632961,
+                    0.25717796,
+                ]
+            )
+            self._smearing_matrix_microB = np.loadtxt(
+                f"{micro.path_unfolding_data}Migration_1eX.dat"
+            )
+
+    def unfold(self, mini_nue):
         """Convert excess in MiniBooNE 2018 to the corresponding signal in MicroBooNE
         If unfold was set to True:
             The input is the number of excess events in each MiniBooNE bin.
@@ -282,7 +348,6 @@ class MBtomuB:
             if self._effnounfold:
                 u /= self.MB_eff
 
-        ## Transform to MicroBooNE ##
         # Set to 0 everything above 800 MeV?
         if self._remove_high_energy:
             u[8:] = 0
@@ -299,7 +364,7 @@ class MBtomuB:
         return u
 
 
-# class MBtomuB:
+# class MBtoLAr:
 #     def __init__(
 #         self,
 #         analysis="1eX",
@@ -317,11 +382,11 @@ class MBtomuB:
 #                                 '1eX_PC' [inclusive, partially contained], 'CCQE' [1e1p quasielastic]
 #         remove_high_energy ---- The official MicroBooNE analysis removes all excess with neutrino energy greater than
 #                                 800 MeV. If this option is set to True, this will also be enforced. Default: False
-#         unfold             ---- Perform unfolding? If True, the input to miniToMicro must be the number of events
+#         unfold             ---- Perform unfolding? If True, the input to unfold must be the number of events
 #                                 *as a function of reconstructed neutrino energy*. If False, the input must be the
 #                                 number of events *as a function of true neutrino energy*
 #         effNoUnfold        ---- ***Only relevant if unfold=False***
-#                                 Does the input include MiniBooNE efficiencies? If True, the input to miniToMicro
+#                                 Does the input include MiniBooNE efficiencies? If True, the input to unfold
 #                                 must be the number of events after MiniBooNE efficiencies. If False, the input
 #                                 must be the number of events before MiniBooNE efficiencies.
 #         nubar_fraction    ----  unfold assuming that the MiniBooNE excess has a fraction `nubar_fraction` of
@@ -684,7 +749,7 @@ class MBtomuB:
 
 #         return u
 
-#     def miniToMicro(self, mini_nue):
+#     def unfold(self, mini_nue):
 #         """Convert excess in MiniBooNE 2018 to the corresponding signal in MicroBooNE
 #         If unfold was set to True:
 #             The input is the number of excess events in each MiniBooNE bin.

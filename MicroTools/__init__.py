@@ -85,3 +85,40 @@ path_osc_nuedis = f"{path_osc_data}/nue_dis/"
 
 L_micro = 0.4685  # MicroBooNE Baseline length in kilometers
 L_mini = 0.545  # MiniBooNE Baseline length in kilometers
+L_SBND = 0.110  # MicroBooNE Baseline length in kilometers
+L_ICARUS = 0.600  # MiniBooNE Baseline length in kilometers
+
+Mass_mini = 818
+Mass_micro = 85
+Mass_ICARUS = 476
+Mass_SBND = 112
+
+# MiniBooNE POTs in 1e20 units
+mini_POTs = {"2012": 6.46, "2018": 12.84, "2020": 18.75}
+
+
+# 2021 MicroBooNE --> SBN
+def rescale_micro_to_SBN(detector):
+    if detector == "SBND":
+        return 6.6 / 6.369 * Mass_SBND / Mass_micro * (L_micro / L_SBND) ** 2
+    elif detector == "ICARUS":
+        return 6.6 / 6.369 * Mass_ICARUS / Mass_micro * (L_micro / L_ICARUS) ** 2
+    else:
+        raise ValueError(f"Detector {detector} not recognized")
+
+
+def rescale_mini_to_SBN(detector, mini_year):
+    if detector == "SBND":
+        return (
+            6.6 / mini_POTs[mini_year] * Mass_SBND / Mass_mini * (L_mini / L_SBND) ** 2
+        )
+    elif detector == "ICARUS":
+        return (
+            6.6
+            / mini_POTs[mini_year]
+            * Mass_ICARUS
+            / Mass_mini
+            * (L_mini / L_ICARUS) ** 2
+        )
+    else:
+        raise ValueError(f"Detector {detector} not recognized")

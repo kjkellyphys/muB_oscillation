@@ -7,10 +7,10 @@ import MicroTools as micro
 
 RHE = False
 UFMB = False
-GBPC = unfolder.MBtomuB(
+GBPC = unfolder.MBtoLAr(
     analysis="1eX_PC", remove_high_energy=RHE, unfold=UFMB, effNoUnfold=True
 )
-GBFC = unfolder.MBtomuB(
+GBFC = unfolder.MBtoLAr(
     analysis="1eX", remove_high_energy=RHE, unfold=UFMB, effNoUnfold=True
 )
 
@@ -37,7 +37,7 @@ MB_True_Bins = [
     2.500,
     3.000,
 ]
-LMBT = 0.4685  # Baseline length in kilometers
+L_micro = 0.4685  # Baseline length in kilometers
 
 lock = Lock()
 number = Value("i", 0)
@@ -85,15 +85,15 @@ def ReturnMicroBooNEChi2(theta):
             4.0
             * Ue4Sq
             * Um4Sq
-            / PmmAvg(MB_True_Bins[k], MB_True_Bins[k + 1], LMBT, dm41, Um4Sq)
+            / PmmAvg(MB_True_Bins[k], MB_True_Bins[k + 1], L_micro, dm41, Um4Sq)
         )
         MBSig.append(MBSig0[k] * RWFact)
 
-    uBFC = GBFC.miniToMicro(MBSig)
+    uBFC = GBFC.unfold(MBSig)
     uBFC = np.insert(uBFC, 0, [0.0])
     uBFC = np.append(uBFC, 0.0)
 
-    uBPC = GBPC.miniToMicro(MBSig)
+    uBPC = GBPC.unfold(MBSig)
     uBPC = np.insert(uBPC, 0, [0.0])
     uBPC = np.append(uBPC, 0.0)
 

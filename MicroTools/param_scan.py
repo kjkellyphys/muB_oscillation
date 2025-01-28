@@ -15,15 +15,30 @@ from . import bin_edges, bin_edges_reco, bin_edges_numu, L_micro, L_mini
 
 RHE = False
 UFMB = True
-GBPC = unfolder.MBtomuB(
+GBPC = unfolder.MBtoLAr(
     analysis="1eX_PC",
     remove_high_energy=RHE,
     unfold=UFMB,
     effNoUnfold=True,
     which_template="2020",
 )
-GBFC = unfolder.MBtomuB(
+GBFC = unfolder.MBtoLAr(
     analysis="1eX",
+    remove_high_energy=RHE,
+    unfold=UFMB,
+    effNoUnfold=True,
+    which_template="2020",
+)
+
+SBND_unfolder = unfolder.MBtoLAr(
+    analysis="SBND",
+    remove_high_energy=RHE,
+    unfold=UFMB,
+    effNoUnfold=True,
+    which_template="2020",
+)
+ICARUS_unfolder = unfolder.MBtoLAr(
+    analysis="ICARUS",
     remove_high_energy=RHE,
     unfold=UFMB,
     effNoUnfold=True,
@@ -1026,14 +1041,14 @@ def DecayReturnMicroBooNEChi2(
     ############################################################################################################
 
     # MicroBooNE fully inclusive signal by unfolding MiniBooNE Signal
-    uBFC = GBFC.miniToMicro(rates_dic["MC_nue_app_for_unfolding"])
+    uBFC = GBFC.unfold(rates_dic["MC_nue_app_for_unfolding"])
     uBFC = np.insert(uBFC, 0, [0.0])
     uBFC = np.append(uBFC, 0.0)
 
     # NOTE: copying is probably not needed, but who knows...
     MC_nue_app_for_unfolding2 = copy.deepcopy(rates_dic["MC_nue_app_for_unfolding"])
     # MicroBooNE partially inclusive signal by unfolding MiniBooNE Signal
-    uBPC = GBPC.miniToMicro(MC_nue_app_for_unfolding2)
+    uBPC = GBPC.unfold(MC_nue_app_for_unfolding2)
     uBPC = np.insert(uBPC, 0, [0.0])
     uBPC = np.append(uBPC, 0.0)
 

@@ -13,17 +13,21 @@ from matplotlib import colors as mpl_colors
 from matplotlib.collections import PatchCollection
 
 import scipy
-from scipy.interpolate import splprep, splev
 from importlib.resources import open_text
 
 from MicroTools.InclusiveTools.inclusive_osc_tools import (
     Decay_muB_OscChi2,
     DecayMuBNuMuDis,
     DecayMuBNuEDis,
+    SBN_OscChi2,
+    DecaySBNNuEDis,
+    DecaySBNNuMuDis,
 )
 import MiniTools as mini
 from . import muB_inclusive_datarelease_path, bin_width
 from MicroTools import param_scan
+import MicroTools as micro
+
 
 ###########################
 # Matheus
@@ -55,7 +59,7 @@ STACKED = False
 PLOT_FAMILY = False
 PATH_PLOTS = "plots/event_rates/"
 
-PAPER_TAG = r"HKZ\,2024"
+PAPER_TAG = r"Dream Team\,2025"
 
 
 ##########################
@@ -745,7 +749,7 @@ MuBchi2_null_hyp = 93
 
 
 def make_micro_rate_plot(
-    rates, params, name="micro_3+1_osc", PC=False, helicity="conserving"
+    rates, params, name="micro_3+1_osc", PC=False, helicity="conserving", osc_only=False
 ):
     fig, ax1 = std_fig(figsize=(3.3 * 1.2, 2 * 1.2))
 
@@ -754,20 +758,20 @@ def make_micro_rate_plot(
     bin_c = bins[:-1] + bin_w / 2
 
     # MicroBooNE fully inclusive signal by unfolding MiniBooNE Signal
-    uBFC = param_scan.GBFC.miniToMicro(rates["MC_nue_app_for_unfolding"])
+    uBFC = param_scan.GBFC.unfold(rates["MC_nue_app_for_unfolding"])
     uBFC = np.insert(uBFC, 0, [0.0])
     uBFC = np.append(uBFC, 0.0)
 
     # MicroBooNE partially inclusive signal by unfolding MiniBooNE Signal
     MC_nue_app_for_unfolding2 = copy.deepcopy(rates["MC_nue_app_for_unfolding"])
-    uBPC = param_scan.GBPC.miniToMicro(MC_nue_app_for_unfolding2)
+    uBPC = param_scan.GBPC.unfold(MC_nue_app_for_unfolding2)
     uBPC = np.insert(uBPC, 0, [0.0])
     uBPC = np.append(uBPC, 0.0)
 
     uBtemp = np.concatenate([uBFC, uBPC, np.zeros(85)])
 
     uB_signal = uBPC if PC else uBFC
-    #     unfolding = unfolder.MBtomuB(
+    #     unfolding = unfolder.MBtoLAr(
     #     analysis="1eX_PC" if PC else "1eX",
     #     remove_high_energy=False,
     #     unfold=True,
@@ -776,7 +780,7 @@ def make_micro_rate_plot(
     #     )
 
     # MicroBooNE fully inclusive signal by unfolding MiniBooNE Signal
-    #     uB_signal = unfolding.miniToMicro(rates["MC_nue_app_for_unfolding"])
+    #     uB_signal = unfolding.unfold(rates["MC_nue_app_for_unfolding"])
     #     uB_signal = np.insert(uB_signal, 0, [0.0])
     #     uB_signal = np.append(uB_signal, 0.0)
 
@@ -893,8 +897,12 @@ def make_micro_rate_plot(
         xycoords="axes fraction",
         fontsize=9,
     )
+    if osc_only:
+        text_box = rf'\noindent $\Delta m_{{41}}^2 = {params["m4"]**2:.1f}$ eV$^2$\\$|U_{{e4}}|^2 = {params["Ue4Sq"]:.2f}\\|U_{{\mu 4}}|^2 = {params["Um4Sq"]:.3f}$'
+    else:
+        text_box = rf'\noindent $g_\varphi = {params["g"]:.1f},\, m_4 = {params["m4"]:.0f}$ eV\\$|U_{{e4}}|^2 = {params["Ue4Sq"]:.2f}\\|U_{{\mu 4}}|^2 = {params["Um4Sq"]:.3f}$'
     ax1.annotate(
-        text=rf'\noindent $g_\varphi = {params["g"]:.1f},\, m_4 = {params["m4"]:.0f}$ eV\\$|U_{{e4}}|^2 = {params["Ue4Sq"]:.2f}\\|U_{{\mu 4}}|^2 = {params["Um4Sq"]:.3f}$',
+        text=text_box,
         xy=(0.025, 0.91),
         xycoords="axes fraction",
         fontsize=8.5,
@@ -921,4 +929,193 @@ def make_micro_rate_plot(
 
     #     fig.savefig(f"{PATH_PLOTS}/Micro_{name}_{'PC' if PC else 'FC'}.png", dpi=400)
     fig.savefig(f"{PATH_PLOTS}/Micro_{name}_{'PC' if PC else 'FC'}.pdf", dpi=400)
+    return fig, ax1
+
+
+def make_SBN_rate_plot(
+    rates,
+    params,
+    name="SBN_3+1_osc",
+    detector="SBND",
+    helicity="conserving",
+    osc_only=False,
+):
+    fig, ax1 = std_fig(figsize=(3.3 * 1.2, 2 * 1.2))
+
+    bins = np.array([0.0 + 0.1 * j for j in range(26)] + [10.0])
+    bin_w = np.diff(bins)
+    bin_c = bins[:-1] + bin_w / 2
+
+    # MicroBooNE fully inclusive signal by unfolding MiniBooNE Signal
+    SBN = param_scan.SBND_unfolder.unfold(rates["MC_nue_app_for_unfolding"])
+    SBN = np.insert(SBN, 0, [0.0])
+    SBN = np.append(SBN, 0.0)
+
+    # MicroBooNE partially inclusive signal by unfolding MiniBooNE Signal
+    MC_nue_app_for_unfolding2 = copy.deepcopy(rates["MC_nue_app_for_unfolding"])
+    ICARUS = param_scan.ICARUS_unfolder.unfold(MC_nue_app_for_unfolding2)
+    ICARUS = np.insert(ICARUS, 0, [0.0])
+    ICARUS = np.append(ICARUS, 0.0)
+
+    SAMPLE = "FC"
+    other_bkg = np.load(muB_inclusive_datarelease_path + f"nueCC_{SAMPLE}_Bkg.npy")
+    intrinsic_bkg = np.load(muB_inclusive_datarelease_path + f"nueCC_{SAMPLE}_Sig.npy")
+    # data = np.load(muB_inclusive_datarelease_path + f"nueCC_{SAMPLE}_Obs.npy")
+
+    # \nu_e disappearance signal replacement
+    NuEReps = DecaySBNNuEDis(
+        params,
+        oscillations=True,
+        decay=False if osc_only else True,
+        decouple_decay=False,
+        disappearance=True,
+        energy_degradation=True,
+        helicity=helicity,
+    )
+
+    other_bkg = other_bkg * micro.rescale_micro_to_SBN(detector)
+    intrinsic_bkg = intrinsic_bkg * micro.rescale_micro_to_SBN(detector)
+
+    if detector == "SBND":
+        signal = SBN
+        nue_bkg = NuEReps[0]
+    elif detector == "ICARUS":
+        signal = ICARUS
+        nue_bkg = NuEReps[1]
+    else:
+        raise ValueError(f"Detector {detector} not recognized.")
+
+    # \nu_mu disappearance signal replacement
+    NuMuReps = DecaySBNNuMuDis(
+        params,
+        oscillations=True,
+        decay=True,
+        decouple_decay=False,
+        disappearance=True,
+        energy_degradation=True,
+        helicity=helicity,
+    )
+
+    # MicroBooNE
+    # MuB_chi2 = SBN_OscChi2(
+    #     params,
+    #     uBtemp,
+    #     constrained=False,
+    #     sigReps=[NuEReps[0], NuEReps[1], NuMuReps[0], NuMuReps[1]],
+    #     RemoveOverflow=True,
+    #     oscillations=True,
+    #     decay=True,
+    #     decouple_decay=False,
+    #     disappearance=True,
+    #     energy_degradation=True,
+    #     helicity=helicity,
+    # )
+
+    ######################################
+    if TOTAL_RATE:
+        units = 1
+        ax1.set_ylabel(r"Events")
+    else:
+        units = 1 / bin_w / 1e3
+        ax1.set_ylabel(r"Events/MeV")
+
+    # plot data
+    # Asimov
+    # data_plot(
+    #     ax1,
+    #     X=bin_c,
+    #     Y=(other_bkg + intrinsic_bkg) * units,
+    #     xerr=bin_w / 2,
+    #     yerr=np.sqrt(data) * units,
+    #     zorder=3,
+    # )
+
+    ax1.hist(
+        bins[:-1],
+        bins=bins,
+        weights=(other_bkg + intrinsic_bkg) * units,
+        edgecolor="black",
+        lw=0.5,
+        ls=(1, (2, 1)),
+        label=r"unoscillated total bkg",
+        histtype="step",
+        zorder=1.8,
+    )
+    ax1.hist(
+        bins[:-1],
+        bins=bins,
+        weights=other_bkg * units,
+        edgecolor="black",
+        facecolor="lightgrey",
+        lw=0.5,
+        label=r"Non-$\nu_e$ bkg",
+        histtype="stepfilled",
+        zorder=1.7,
+    )
+    ax1.hist(
+        bins[:-1],
+        bins=bins,
+        weights=(other_bkg + nue_bkg) * units,
+        edgecolor="black",
+        facecolor="peachpuff",
+        lw=0.5,
+        label=r"$\nu_e$ disappearance",
+        histtype="stepfilled",
+        zorder=1.6,
+    )
+    ax1.hist(
+        bins[:-1],
+        bins=bins,
+        weights=(other_bkg + signal + nue_bkg) * units,
+        edgecolor="black",
+        facecolor="lightblue",
+        lw=0.5,
+        label=r"$\nu_e$ appearance",
+        histtype="stepfilled",
+        zorder=1.4,
+    )
+
+    ax1.legend(loc="upper right", fontsize=8, markerfirst=False, ncol=1)
+    ax1.annotate(
+        text=rf"{detector} $6.6 \times 10^{{20}}$ $\vert$ $\Delta \chi^2 = {0:.0f}$",
+        xy=(0.0, 1.025),
+        xycoords="axes fraction",
+        fontsize=9,
+    )
+
+    if osc_only:
+        text_box = rf'\noindent $\Delta m_{{41}}^2 = {params["m4"]**2:.1f}$ eV$^2$\\$|U_{{e4}}|^2 = {params["Ue4Sq"]:.2f}\\|U_{{\mu 4}}|^2 = {params["Um4Sq"]:.3f}$'
+    else:
+        text_box = rf'\noindent $g_\varphi = {params["g"]:.1f},\, m_4 = {params["m4"]:.0f}$ eV\\$|U_{{e4}}|^2 = {params["Ue4Sq"]:.2f}\\|U_{{\mu 4}}|^2 = {params["Um4Sq"]:.3f}$'
+    ax1.annotate(
+        text=text_box,
+        xy=(0.025, 0.91),
+        xycoords="axes fraction",
+        fontsize=8.5,
+        bbox=dict(
+            facecolor="none",
+            edgecolor="black",
+            linewidth=0.5,
+            boxstyle="square,pad=0.3",
+        ),
+    )
+
+    ax1.set_xlabel(r"Reconstructed $E_\nu^{\rm QE}$ (GeV)", fontsize=9, labelpad=2.5)
+    ax1.set_xticks([0, 0.5, 1.0, 1.5, 2.0, 2.5])
+    ax1.set_xlim(0.0, 2.5)
+    if detector == "SBND":
+        ax1.set_ylim(0, 12)
+    elif detector == "ICARUS":
+        ax1.set_ylim(0, 1.6)
+
+    ax1.annotate(
+        text=PAPER_TAG,
+        xy=(1, 1.025),
+        xycoords="axes fraction",
+        fontsize=8.5,
+        ha="right",
+    )
+
+    #     fig.savefig(f"{PATH_PLOTS}/Micro_{name}_{'PC' if PC else 'FC'}.png", dpi=400)
+    fig.savefig(f"{PATH_PLOTS}/SBN_{name}_{detector}.pdf", dpi=400)
     return fig, ax1

@@ -3,20 +3,36 @@ from scipy.linalg import inv
 from scipy.special import sici, expi
 
 from MicroTools import unfolder
+import MicroTools as micro
 from MicroTools import muB_inclusive_datarelease_path, muB_inclusive_data_path
 from MicroTools.sterile_tools import Sterile
 
 import copy
 
-GBPC_NuE = unfolder.MBtomuB(
+GBPC_NuE = unfolder.MBtoLAr(
     analysis="1eX_PC",
     remove_high_energy=False,
     unfold=False,
     effNoUnfold=False,
     which_template="2018",
 )
-GBFC_NuE = unfolder.MBtomuB(
+GBFC_NuE = unfolder.MBtoLAr(
     analysis="1eX",
+    remove_high_energy=False,
+    unfold=False,
+    effNoUnfold=False,
+    which_template="2018",
+)
+
+SBND_NuE = unfolder.MBtoLAr(
+    analysis="SBND",
+    remove_high_energy=False,
+    unfold=False,
+    effNoUnfold=False,
+    which_template="2018",
+)
+ICARUS_NuE = unfolder.MBtoLAr(
+    analysis="ICARUS",
     remove_high_energy=False,
     unfold=False,
     effNoUnfold=False,
@@ -51,7 +67,6 @@ BEdges0.append(10.0)
 Pi0BEdges0 = [0.0 + 0.1 * j for j in range(11)]
 Pi0BEdges0.append(10.0)
 BEdges = [BEdges0, BEdges0, BEdges0, BEdges0, Pi0BEdges0, Pi0BEdges0, Pi0BEdges0]
-LMBT = 0.4685  # Baseline length in kilometers
 
 
 ###########
@@ -65,6 +80,21 @@ NuMuCC_MigMat_PC = np.loadtxt(f"{muB_inclusive_data_path}/MigMat_numuCC_PC.dat")
 NuMuCC_Eff_PC = np.loadtxt(f"{muB_inclusive_data_path}/Efficiency_numuCC_PC.dat")
 
 MuB_BinEdges_NuMu = [0.0 + 0.05 * j for j in range(61)]
+
+###########
+# Numu data (SBND and ICARUS)
+# Same rate as MicroBooNE but rescaled by POT and target mass
+SBND_NuMuCC_TrueEDist = NuMuCC_TrueEDist_FC * micro.rescale_micro_to_SBN("SBND")
+ICARUS_NuMuCC_TrueEDist = NuMuCC_TrueEDist_FC * micro.rescale_micro_to_SBN("ICARUS")
+
+NuMuCC_MigMat_SBND = NuMuCC_MigMat_FC
+NuMuCC_MigMat_ICARUS = NuMuCC_MigMat_FC
+
+NuMuCC_Eff_SBND = NuMuCC_Eff_FC
+NuMuCC_Eff_ICARUS = NuMuCC_Eff_FC
+
+SBND_BinEdges_NuMu = [0.0 + 0.05 * j for j in range(61)]
+ICARUS_BinEdges_NuMu = [0.0 + 0.05 * j for j in range(61)]
 
 
 # appearance probability averaged over energy bins for decay model from Eq (2.8) in 1911.01447
@@ -292,12 +322,12 @@ def muB_OscChi2(
 
             if ST == "nue":
                 RWVec = [
-                    PeeAvg(BE[kk], BE[kk + 1], LMBT, dm41, Ue4sq)
+                    PeeAvg(BE[kk], BE[kk + 1], micro.L_micro, dm41, Ue4sq)
                     for kk in range(len(BE) - 1)
                 ]
             elif ST == "numu":
                 RWVec = [
-                    PmmAvg(BE[kk], BE[kk + 1], LMBT, dm41, Um4sq)
+                    PmmAvg(BE[kk], BE[kk + 1], micro.L_micro, dm41, Um4sq)
                     for kk in range(len(BE) - 1)
                 ]
             elif ST == "NCPi0" or ST == "numuPi0":
@@ -361,6 +391,7 @@ def muB_OscChi2(
     return TS
 
 
+# MCT is MiniBooNE truth level distribution from 2018 provided by MicroBooNE
 MCT = np.load(f"{muB_inclusive_data_path}/MuB_NuE_True.npy")
 MuB_True_BinEdges = [
     0.200,
@@ -421,7 +452,7 @@ MuB_True_BinEdges = [
                 RWVec = [1.0 for kk in range(len(BE) - 1)]
             elif ST == "numu":
                 RWVec = [
-                    DecayPmmAvg(BE[kk], BE[kk + 1], LMBT, gm4, Um4sq)
+                    DecayPmmAvg(BE[kk], BE[kk + 1], micro.L_micro, gm4, Um4sq)
                     for kk in range(len(BE) - 1)
                 ]
             elif ST == "NCPi0" or ST == "numuPi0":
@@ -564,7 +595,7 @@ def Decay_muB_OscChi2(
                 RWVec = [1.0 for kk in range(len(BE) - 1)]
                 if disappearance:
                     RWVec = [
-                        sterile.PeeAvg(BE[kk], BE[kk + 1], LMBT)
+                        sterile.PeeAvg(BE[kk], BE[kk + 1], micro.L_micro)
                         for kk in range(len(BE) - 1)
                     ]
                     if energy_degradation:
@@ -579,14 +610,14 @@ def Decay_muB_OscChi2(
                         )
                     if not decay and oscillations:
                         RWVec = [
-                            sterile.PeeoscAvg(BE[kk], BE[kk + 1], LMBT)
+                            sterile.PeeoscAvg(BE[kk], BE[kk + 1], micro.L_micro)
                             for kk in range(len(BE) - 1)
                         ]
             elif ST == "numu":
                 RWVec = [1.0 for kk in range(len(BE) - 1)]
                 if disappearance:
                     RWVec = [
-                        sterile.PmmAvg(BE[kk], BE[kk + 1], LMBT)
+                        sterile.PmmAvg(BE[kk], BE[kk + 1], micro.L_micro)
                         for kk in range(len(BE) - 1)
                     ]
                     if energy_degradation:
@@ -601,7 +632,184 @@ def Decay_muB_OscChi2(
                         )
                     if not decay and oscillations:
                         RWVec = [
-                            sterile.PmmoscAvg(BE[kk], BE[kk + 1], LMBT)
+                            sterile.PmmoscAvg(BE[kk], BE[kk + 1], micro.L_micro)
+                            for kk in range(len(BE) - 1)
+                        ]
+            elif ST == "NCPi0" or ST == "numuPi0":
+                RWVec = [1.0 for kk in range(len(BE) - 1)]
+            SSRW.append(RWVec * SigSets[SI])
+        else:
+            SSRW.append(sigReps[SI])
+
+    SSRWF = np.concatenate(SSRW)
+    for ii in range(len(SigSetsF)):
+        CVStat[ii][ii] = CNPStat(ObsSetsF[ii], SSRWF[ii] + BkgSetsF[ii] + temp[ii])
+        for jj in range(len(SigSetsF)):
+            CVSyst[ii][jj] = (
+                FCov[ii][jj]
+                * (SSRWF[ii] + BkgSetsF[ii] + temp[ii] + 1.0e-2)
+                * (SSRWF[jj] + BkgSetsF[jj] + temp[jj] + 1.0e-2)
+            )
+    CV = CVSyst + CVStat
+    if constrained:
+        CVYY = CV[26:, 26:]
+        CVXY = CV[:26, 26:]
+        CVYX = CV[26:, :26]
+        CVXX = CV[:26, :26]
+
+        nY = ObsSetsF[26:]
+        muY = BkgSetsF[26:] + SSRWF[26:] + temp[26:]
+        muX = BkgSetsF[:26] + SSRWF[:26] + temp[:26]
+
+        muXC = muX + np.dot(np.dot(CVXY, inv(CVYY)), nY - muY)
+        CVXXc = CVXX - np.dot(np.dot(CVXY, inv(CVYY)), CVYX)
+
+        if Asimov:
+            nX = BkgSetsF[:26] + SigSetsF[:26]
+        else:
+            nX = ObsSetsF[:26]
+        TS = np.dot(
+            np.dot(nX[:25] - muXC[:25], inv(CVXXc[:25, :25])), nX[:25] - muXC[:25]
+        )
+    else:
+        if Asimov:
+            nXY = BkgSetsF + SigSetsF
+        else:
+            nXY = ObsSetsF
+        muXY = BkgSetsF + SSRWF + temp
+        XV = nXY - muXY
+        if RemoveOverflow:
+            XV[25], XV[51], XV[77], XV[103], XV[114], XV[125], XV[136] = (
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+            )
+
+        TS = np.dot(np.dot(XV, inv(CV)), XV)
+
+    return TS
+
+
+def SBN_OscChi2(
+    theta,
+    temp,
+    constrained=False,
+    RemoveOverflow=False,
+    sigReps=None,
+    Asimov=False,
+    oscillations=True,
+    decay=False,
+    decouple_decay=False,
+    disappearance=True,
+    energy_degradation=True,
+    helicity="conserving",
+):
+    """Calculates the chi-squared from the full covariance matrix,
+    allowing for oscillated backgrounds (oscillating as a function of *reconstructed* neutrino energy)
+
+    "constrained" is an option of whether to apply the Covariance-Matrix-Constraint method on the nu_e CC fully-contained sample
+    Default for our analyses will be "False"
+
+    "RemoveOverflow" allows for discarding the last (overflow) bin of each sample when calculating the test statistic
+
+    "Asimov" allows for determining the Asimov sensitivity expectation instead of the data-derived constraint
+
+    "sigReps" allows for replacement of the different signal samples (nu_e CC FC/PC, nu_mu CC FC/PC) instead of re-weighting the reconstructed-energy distributions
+    This allows for including oscillations as a function of *true* neutrino energy.
+
+    oscillations: bool, optional
+         whether to include oscillations in the flavor transition probability, by default True.
+         If False, then Losc goes to infinity.
+
+     decay: bool, optional
+         whether to include decay in the flavor transition probability, by default True.
+         If False, then Ldec goes to infinity.
+
+     decouple_decay : bool, optional
+         whether to decouple the decay rate like in deGouvea's model, by default False.
+         If True, then the decay rate is independent of the mixing angles and always into nu_e states.
+
+    disappearance: bool, optional
+        whether to include nu_e and nu_mu disappearance, by default True.
+        If False, Pmm = 1, Pee = 1
+
+    energy_degradation: bool, optional
+        whether to include energy degradation in disappearance channel, by default True.
+        If False, return to usual disappearance probability
+
+    helicity: str, optional
+        whether to include conserving or flipping helicity, by default "conserving".
+    """
+    CVStat = np.zeros(np.shape(FCov))
+    CVSyst = np.zeros(np.shape(FCov))
+    # Load the Sterile class from param_scan
+    sterile = Sterile(
+        theta,
+        oscillations=oscillations,
+        decay=decay,
+        decouple_decay=decouple_decay,
+        helicity=helicity,
+    )
+    if sigReps is not None:
+        if len(sigReps) != 7:
+            print("Signal Replacement Vector Needs to have 7 Elements!")
+            return 0
+    else:
+        sigReps = [None for k in range(7)]
+
+    SSRW = []
+    RWVec = []
+    for SI in range(len(Sets)):
+        if sigReps[SI] is None:
+            ST = SigTypes[SI]
+            BE = BEdges[SI]
+
+            if ST == "nue":
+                RWVec = [1.0 for kk in range(len(BE) - 1)]
+                if disappearance:
+                    RWVec = [
+                        sterile.PeeAvg(BE[kk], BE[kk + 1], micro.L_micro)
+                        for kk in range(len(BE) - 1)
+                    ]
+                    if energy_degradation:
+                        RWVec = (
+                            sterile.EnergyDegradation(
+                                SigSets[SI],
+                                BE,
+                                which_channel="Pee",
+                                which_experiment="microboone",
+                            )
+                            / SigSets[SI]
+                        )
+                    if not decay and oscillations:
+                        RWVec = [
+                            sterile.PeeoscAvg(BE[kk], BE[kk + 1], micro.L_micro)
+                            for kk in range(len(BE) - 1)
+                        ]
+            elif ST == "numu":
+                RWVec = [1.0 for kk in range(len(BE) - 1)]
+                if disappearance:
+                    RWVec = [
+                        sterile.PmmAvg(BE[kk], BE[kk + 1], micro.L_micro)
+                        for kk in range(len(BE) - 1)
+                    ]
+                    if energy_degradation:
+                        RWVec = (
+                            sterile.EnergyDegradation(
+                                SigSets[SI],
+                                BE,
+                                which_channel="Pmm",
+                                which_experiment="microboone",
+                            )
+                            / SigSets[SI]
+                        )
+                    if not decay and oscillations:
+                        RWVec = [
+                            sterile.PmmoscAvg(BE[kk], BE[kk + 1], micro.L_micro)
                             for kk in range(len(BE) - 1)
                         ]
             elif ST == "NCPi0" or ST == "numuPi0":
@@ -668,15 +876,15 @@ def MuBNuEDis(dm41, Ue4Sq):
     PeeRW = []
     for k in range(len(MCT)):
         RWFact = PeeAvg(
-            MuB_True_BinEdges[k], MuB_True_BinEdges[k + 1], LMBT, dm41, Ue4Sq
+            MuB_True_BinEdges[k], MuB_True_BinEdges[k + 1], micro.L_micro, dm41, Ue4Sq
         )
         PeeRW.append(MCT[k] * RWFact)
 
-    PCNuE = GBPC_NuE.miniToMicro(PeeRW)
+    PCNuE = GBPC_NuE.unfold(PeeRW)
     PCNuE = np.insert(PCNuE, 0, [0.0])
     PCNuE = np.append(PCNuE, 0.0)
 
-    FCNuE = GBFC_NuE.miniToMicro(PeeRW)
+    FCNuE = GBFC_NuE.unfold(PeeRW)
     FCNuE = np.insert(FCNuE, 0, [0.0])
     FCNuE = np.append(FCNuE, 0.0)
 
@@ -702,6 +910,7 @@ def DecayMuBNuEDis(
         decouple_decay=decouple_decay,
         helicity=helicity,
     )
+
     PeeRW = []
     # MCT is MiniBooNE truth level distribution from 2018. That's why it needs to be rescaled when unfolding
     for k in range(len(MCT)):
@@ -712,7 +921,9 @@ def DecayMuBNuEDis(
         for k in range(len(MCT)):
             PeeRW.append(
                 MCT[k]
-                * sterile.PeeAvg(MuB_True_BinEdges[k], MuB_True_BinEdges[k + 1], LMBT)
+                * sterile.PeeAvg(
+                    MuB_True_BinEdges[k], MuB_True_BinEdges[k + 1], micro.L_micro
+                )
             )
         if energy_degradation:
             PeeRW = sterile.EnergyDegradation(
@@ -724,14 +935,14 @@ def DecayMuBNuEDis(
         if not decay and oscillations:
             for k in range(len(MCT)):
                 PeeRW[k] = MCT[k] * sterile.PeeoscAvg(
-                    MuB_True_BinEdges[k], MuB_True_BinEdges[k + 1], LMBT
+                    MuB_True_BinEdges[k], MuB_True_BinEdges[k + 1], micro.L_micro
                 )
     PeeRW2 = copy.deepcopy(PeeRW)
-    PCNuE = GBPC_NuE.miniToMicro(PeeRW)
+    PCNuE = GBPC_NuE.unfold(PeeRW)
     PCNuE = np.insert(PCNuE, 0, [0.0])
     PCNuE = np.append(PCNuE, 0.0)
 
-    FCNuE = GBFC_NuE.miniToMicro(PeeRW2)
+    FCNuE = GBFC_NuE.unfold(PeeRW2)
     FCNuE = np.insert(FCNuE, 0, [0.0])
     FCNuE = np.append(FCNuE, 0.0)
 
@@ -769,11 +980,15 @@ def DecayMuBNuMuDis(
         for k in range(len(NuMuCC_TrueEDist_FC)):
             PmmRW_FC.append(
                 NuMuCC_TrueEDist_FC[k]
-                * sterile.PmmAvg(MuB_BinEdges_NuMu[k], MuB_BinEdges_NuMu[k + 1], LMBT)
+                * sterile.PmmAvg(
+                    MuB_BinEdges_NuMu[k], MuB_BinEdges_NuMu[k + 1], micro.L_micro
+                )
             )
             PmmRW_PC.append(
                 NuMuCC_TrueEDist_PC[k]
-                * sterile.PmmAvg(MuB_BinEdges_NuMu[k], MuB_BinEdges_NuMu[k + 1], LMBT)
+                * sterile.PmmAvg(
+                    MuB_BinEdges_NuMu[k], MuB_BinEdges_NuMu[k + 1], micro.L_micro
+                )
             )
         if energy_degradation:
             PmmRW_FC = sterile.EnergyDegradation(
@@ -791,10 +1006,10 @@ def DecayMuBNuMuDis(
         if not decay and oscillations:
             for k in range(len(NuMuCC_TrueEDist_FC)):
                 PmmRW_FC[k] = NuMuCC_TrueEDist_FC[k] * sterile.PmmoscAvg(
-                    MuB_BinEdges_NuMu[k], MuB_BinEdges_NuMu[k + 1], LMBT
+                    MuB_BinEdges_NuMu[k], MuB_BinEdges_NuMu[k + 1], micro.L_micro
                 )
                 PmmRW_PC[k] = NuMuCC_TrueEDist_PC[k] * sterile.PmmoscAvg(
-                    MuB_BinEdges_NuMu[k], MuB_BinEdges_NuMu[k + 1], LMBT
+                    MuB_BinEdges_NuMu[k], MuB_BinEdges_NuMu[k + 1], micro.L_micro
                 )
     RecoDist_FC_0 = np.dot(NuMuCC_MigMat_FC, PmmRW_FC)
     RecoDist_PC_0 = np.dot(NuMuCC_MigMat_PC, PmmRW_PC)
@@ -811,3 +1026,155 @@ def DecayMuBNuMuDis(
     PCEvts = [RecoDist_PC[kk] * NuMuCC_Eff_PC[kk] for kk in range(len(NuMuCC_Eff_PC))]
 
     return [FCEvts, PCEvts]
+
+
+###############
+
+
+def DecaySBNNuEDis(
+    theta,
+    oscillations=True,
+    decay=False,
+    decouple_decay=False,
+    disappearance=True,
+    energy_degradation=True,
+    helicity="conserving",
+):
+    """Function for reweighting SBND/ICARUS nu_e spectra in terms of true energy instead of reconstructed energy"""
+
+    if decay:
+        raise ValueError("Decay is not implemented for SBND/ICARUS yet!")
+
+    # Load the Sterile class from param_scan
+    sterile = Sterile(
+        theta,
+        oscillations=oscillations,
+        decay=False,
+        decouple_decay=False,
+        helicity=helicity,
+    )
+
+    Pee_SBND = []
+    Pee_ICARUS = []
+    # MCT is MiniBooNE truth level distribution from 2018. That's why it needs to be rescaled when unfolding
+    MB_true_nue_rate = MCT
+    for k in range(len(MB_true_nue_rate)):
+        Pee_SBND.append(MB_true_nue_rate[k])
+        Pee_ICARUS.append(MB_true_nue_rate[k])
+    if disappearance:
+        # reset PeeRW
+        Pee_SBND = []
+        Pee_ICARUS = []
+        for k in range(len(MB_true_nue_rate)):
+            Pee_SBND.append(
+                MB_true_nue_rate[k]
+                * sterile.PeeoscAvg(
+                    MuB_True_BinEdges[k], MuB_True_BinEdges[k + 1], micro.L_SBND
+                )
+            )
+            Pee_ICARUS.append(
+                MB_true_nue_rate[k]
+                * sterile.PeeoscAvg(
+                    MuB_True_BinEdges[k], MuB_True_BinEdges[k + 1], micro.L_ICARUS
+                )
+            )
+
+    PeeSBND_2 = copy.deepcopy(Pee_SBND)
+    PeeICARUS_2 = copy.deepcopy(Pee_ICARUS)
+    SBND_NuE_rates = SBND_NuE.unfold(PeeSBND_2)
+    SBND_NuE_rates = np.insert(SBND_NuE_rates, 0, [0.0])
+    SBND_NuE_rates = np.append(SBND_NuE_rates, 0.0)
+
+    ICARUS_NuE_rates = ICARUS_NuE.unfold(PeeICARUS_2)
+    ICARUS_NuE_rates = np.insert(ICARUS_NuE_rates, 0, [0.0])
+    ICARUS_NuE_rates = np.append(ICARUS_NuE_rates, 0.0)
+
+    return [SBND_NuE_rates, ICARUS_NuE_rates]
+
+
+def DecaySBNNuMuDis(
+    theta,
+    oscillations=True,
+    decay=False,
+    decouple_decay=False,
+    disappearance=True,
+    energy_degradation=True,
+    helicity="conserving",
+):
+    """Function for reweighting MicroBooNE nu_mu spectra in terms of true energy instead of reconstructed energy"""
+
+    # Load the Sterile class from param_scan
+    sterile = Sterile(
+        theta,
+        oscillations=oscillations,
+        decay=decay,
+        decouple_decay=decouple_decay,
+        helicity=helicity,
+    )
+    PmmRW_SBND = []
+    PmmRW_ICARUS = []
+    for k in range(len(SBND_NuMuCC_TrueEDist)):
+        PmmRW_SBND.append(SBND_NuMuCC_TrueEDist[k])
+        PmmRW_ICARUS.append(ICARUS_NuMuCC_TrueEDist[k])
+    if disappearance:
+        # reset PmmRW_SBND and PmmRW_ICARUS
+        PmmRW_SBND = []
+        PmmRW_ICARUS = []
+        for k in range(len(SBND_NuMuCC_TrueEDist)):
+            PmmRW_SBND.append(
+                SBND_NuMuCC_TrueEDist[k]
+                * sterile.PmmAvg(
+                    MuB_BinEdges_NuMu[k], MuB_BinEdges_NuMu[k + 1], micro.L_SBND
+                )
+            )
+            PmmRW_ICARUS.append(
+                ICARUS_NuMuCC_TrueEDist[k]
+                * sterile.PmmAvg(
+                    MuB_BinEdges_NuMu[k], MuB_BinEdges_NuMu[k + 1], micro.L_ICARUS
+                )
+            )
+        if energy_degradation:
+            PmmRW_SBND = sterile.EnergyDegradation(
+                SBND_NuMuCC_TrueEDist,
+                MuB_BinEdges_NuMu,
+                which_channel="Pmm",
+                which_experiment="microboone",
+            )
+            PmmRW_ICARUS = sterile.EnergyDegradation(
+                ICARUS_NuMuCC_TrueEDist,
+                MuB_BinEdges_NuMu,
+                which_channel="Pmm",
+                which_experiment="microboone",
+            )
+        if not decay and oscillations:
+            for k in range(len(SBND_NuMuCC_TrueEDist)):
+                PmmRW_SBND[k] = SBND_NuMuCC_TrueEDist[k] * sterile.PmmoscAvg(
+                    MuB_BinEdges_NuMu[k], MuB_BinEdges_NuMu[k + 1], micro.L_SBND
+                )
+                PmmRW_ICARUS[k] = ICARUS_NuMuCC_TrueEDist[k] * sterile.PmmoscAvg(
+                    MuB_BinEdges_NuMu[k], MuB_BinEdges_NuMu[k + 1], micro.L_ICARUS
+                )
+    RecoDist_SBND_0 = np.dot(NuMuCC_MigMat_SBND, PmmRW_SBND)
+    RecoDist_ICARUS_0 = np.dot(NuMuCC_MigMat_ICARUS, PmmRW_ICARUS)
+
+    RecoDist_SBND = []
+    RecoDist_ICARUS = []
+    for j in range(25):
+        RecoDist_SBND.append(
+            0.5 * (RecoDist_SBND_0[2 * j] + RecoDist_SBND_0[2 * j + 1])
+        )
+        RecoDist_ICARUS.append(
+            0.5 * (RecoDist_ICARUS_0[2 * j] + RecoDist_ICARUS_0[2 * j + 1])
+        )
+    RecoDist_SBND.append(np.sum(RecoDist_SBND_0[50:]))
+    RecoDist_ICARUS.append(np.sum(RecoDist_ICARUS_0[50:]))
+
+    SBND_Evts = [
+        RecoDist_SBND[kk] * NuMuCC_Eff_SBND[kk] for kk in range(len(NuMuCC_Eff_SBND))
+    ]
+    ICARUS_Evts = [
+        RecoDist_ICARUS[kk] * NuMuCC_Eff_ICARUS[kk]
+        for kk in range(len(NuMuCC_Eff_ICARUS))
+    ]
+
+    return [SBND_Evts, ICARUS_Evts]
