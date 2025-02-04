@@ -27,8 +27,8 @@ def run_scan_osc_only(
         )
 
     else:
-        Ue4Sq = np.geomspace(5e-3, 0.25, Npoints)
-        Umu4Sq = np.geomspace(5e-3, 0.25, Npoints)
+        Ue4Sq = np.geomspace(1e-3, 0.5, Npoints)
+        Umu4Sq = np.geomspace(1e-3, 0.5, Npoints)
         # Cartesian product of grid -- already imposes unitarity and pertubatirbity of g
         paramlist = param_scan.create_grid_of_params(
             g=1e-10, m4=dm_Vec, Ue4Sq=Ue4Sq, Um4Sq=Umu4Sq
