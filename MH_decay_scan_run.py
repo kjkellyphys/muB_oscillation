@@ -3,7 +3,7 @@ from multiprocessing import Pool
 from functools import partial
 from tqdm import tqdm
 
-import MicroTools.param_scan as param_scan
+import OscTools.param_scan as param_scan
 
 
 def run_scan_4D(

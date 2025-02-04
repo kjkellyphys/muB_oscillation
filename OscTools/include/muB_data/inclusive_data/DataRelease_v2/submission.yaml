@@ -1,0 +1,266 @@
+additional_resources:
+- {description: 'Example code for plotting unconstrained and constrained $\nu_e$CC FC', location: example_code.py}
+comment: Data release for the first results from MicroBooNE's inclusive $\nu_e$CC search using Wire-Cell reconstruction, corresponding
+  to information from arXiv:2110.13978. Attached is a python script which shows an example of how to use this data release to plot the unconstrained and constrained $\nu_e$CC FC data and predictions.
+---
+name: Constrained $\nu_e$CC FC
+data_file: constrained_nueCC_FC.yaml
+keywords:
+- name: reactions
+  values: [NUE CC]
+- name: phrases
+  values: [Neutrino LArTPC Interactions]
+description: Fully contained $\nu_e$CC data, signal, background, and LEE(x=1) predictions constrained by the $\nu_e$CC PC, $\nu_\mu$CC FC, $\nu_\mu$CC PC, $\nu_\mu$CC $\pi^0$ FC, $\nu_\mu$CC $\pi^0$ PC, and NC $\pi^0$ channels under a LEE(x=0) hypothesis. Note that here we show the sum of the constrained signal and constrained background; due to correlations between signal and background, this is not identical to constraining after summing signal and background, but the difference here is minimal. Note that the rightmost bin is an overflow bin, containing all events with reconstructed neutrino energy greater than 2.5 GeV. The background includes neutral current events, $\nu_\mu$CC events, events with a true neutrino vertex outside the fiducial volume (3 cm inside the TPC active volume), and cosmic ray backgrounds. The signal includes the remaining intrinsic $\nu_e$CC events. The LEE(x=1) includes the predicted excess from an unfolding of the MiniBooNE LEE under a $\nu_e$CC hypothesis.
+---
+name: Constrained $\nu_e$ CC FC Covariance Matrix, LEE(x=0)
+data_file: constrained_nueCC_FC_cov.yaml
+keywords:
+- name: phrases
+  values: [Neutrino LArTPC Interactions]
+description: $\nu_e$ CC FC covariance matrix showing correlations between bins due to flux uncertainties, cross-section uncertainties, hadron reinteraction uncertainties, detector systematic uncertainties, Monte-Carlo statistical uncertainties, and dirt (outside cryostat) uncertainties. For the data statistical uncertainty covariance matrix, (only diagonal elements, not included here), the Neyman, Pearson, or combined Neyman and Pearson (CNP) techniques can be used. This corresponds to LEE(x=0), the standard prediction with no low energy excess. This has been constrained by the $\nu_e$CC PC, $\nu_\mu$CC FC, $\nu_\mu$CC PC, $\nu_\mu$CC $\pi^0$ FC, $\nu_\mu$CC $\pi^0$ PC, and NC $\pi^0$ channels under a LEE(x=0) hypothesis. The 1-26th bins/rows/columns correspond to the 26 bins of reconstructed neutrino energy in the $\nu_e$CC FC channel.
+---
+name: $\nu_e$CC FC Efficiency
+data_file: nueCC_FC_eff.yaml
+keywords:
+- name: reactions
+  values: [NUE CC]
+- name: phrases
+  values: [Neutrino LArTPC Interactions]
+description: Fully contained $\nu_e$CC signal efficiency as a function of true neutrino energy. Each bin shows the fraction of true $\nu_e$ CC events with true vertex in the fiducial volume (3 cm inside the TPC active volume) which are selected in this channel.
+---
+name: $\nu_e$CC PC Efficiency
+data_file: nueCC_PC_eff.yaml
+keywords:
+- name: reactions
+  values: [NUE CC]
+- name: phrases
+  values: [Neutrino LArTPC Interactions]
+description: Partially contained $\nu_e$CC signal efficiency as a function of true neutrino energy. Each bin shows the fraction of true $\nu_e$ CC events with true vertex in the fiducial volume (3 cm inside the TPC active volume) which are selected in this channel.
+---
+name: $\nu_e$CC FC Energy Resolution
+data_file: nueCC_FC_energy_res.yaml
+keywords:
+- name: reactions
+  values: [NUE CC]
+- name: phrases
+  values: [Neutrino LArTPC Interactions]
+description: Fully contained $\nu_e$CC true neutrino energy vs reconstructed neutrino energy. Each bin shows the relative number of fully contained true $\nu_e$ CC events with true vertex in the fiducial volume (3 cm inside the TPC active volume) which have the corresponding true neutrino energy and reconstructed neutrino energy values. Each axis has 60 bins covering an energy range from 0 to 3 GeV, corresponding to 0.05 GeV per bin.
+---
+name: $\nu_e$CC PC Energy Resolution
+data_file: nueCC_PC_energy_res.yaml
+keywords:
+- name: reactions
+  values: [NUE CC]
+- name: phrases
+  values: [Neutrino LArTPC Interactions]
+description: Partially contained $\nu_e$CC true neutrino energy vs reconstructed neutrino energy. Each bin shows the relative number of partially contained true $\nu_e$ CC events with true vertex in the fiducial volume (3 cm inside the TPC active volume) which have the corresponding true neutrino energy and reconstructed neutrino energy values. Each axis has 60 bins covering an energy range from 0 to 3 GeV, corresponding to 0.05 GeV per bin.
+---
+name: $\nu_e$CC FC
+data_file: nueCC_FC.yaml
+keywords:
+- name: reactions
+  values: [NUE CC]
+- name: phrases
+  values: [Neutrino LArTPC Interactions]
+description: Fully contained $\nu_e$CC data, signal, background, and LEE(x=1) predictions. Note that the rightmost bin is an overflow bin, containing all events with reconstructed neutrino energy greater than 2.5 GeV. The background includes neutral current events, $\nu_\mu$CC events, events with a true neutrino vertex outside the fiducial volume (3 cm inside the TPC active volume), and cosmic ray backgrounds. The signal includes the remaining intrinsic $\nu_e$CC events. The LEE(x=1) includes the predicted excess from an unfolding of the MiniBooNE LEE under a $\nu_e$CC hypothesis.
+---
+name: $\nu_e$CC PC
+data_file: nueCC_PC.yaml
+keywords:
+- name: reactions
+  values: [NUE CC]
+- name: phrases
+  values: [Neutrino LArTPC Interactions]
+description: Partially contained $\nu_e$CC data, signal, background, and LEE(x=1) predictions. Note that the rightmost bin is an overflow bin, containing all events with reconstructed neutrino energy greater than 2.5 GeV. The background includes neutral current events, $\nu_\mu$CC events, events with a true neutrino vertex outside the fiducial volume (3 cm inside the TPC active volume), and cosmic ray backgrounds. The signal includes the remaining intrinsic $\nu_e$CC events. The LEE(x=1) includes the predicted excess from an unfolding of the MiniBooNE LEE under a $\nu_e$CC hypothesis.
+---
+name: $\nu_\mu$CC FC
+data_file: numuCC_FC.yaml
+keywords:
+- name: reactions
+  values: [NUMU CC]
+- name: phrases
+  values: [Neutrino LArTPC Interactions]
+description: Fully contained $\nu_\mu$CC data, signal, and background predictions. Events in the $\nu_e$CC or $\pi^0$ selections have been removed. Note that the rightmost bin is an overflow bin, containing all events with reconstructed neutrino energy greater than 2.5 GeV. The background includes neutral current events, $\nu_e$CC events, events with a true neutrino vertex outside the fiducial volume (3 cm inside the TPC active volume), and cosmic ray backgrounds. The signal includes the remaining $\nu_\mu$CC events.
+---
+name: $\nu_\mu$CC PC
+data_file: numuCC_PC.yaml
+keywords:
+- name: reactions
+  values: [NUMU CC]
+- name: phrases
+  values: [Neutrino LArTPC Interactions]
+description: Partially contained $\nu_\mu$CC data, signal, and background predictions. Events in the $\nu_e$CC or $\pi^0$ selections have been removed. Note that the rightmost bin is an overflow bin, containing all events with reconstructed neutrino energy greater than 2.5 GeV. The background includes neutral current events, $\nu_e$CC events, events with a true neutrino vertex outside the fiducial volume (3 cm inside the TPC active volume), and cosmic ray backgrounds. The signal includes the remaining $\nu_\mu$CC events.
+---
+name: $\nu_\mu$CC$\pi^0$ FC
+data_file: numuCCpi0_FC.yaml
+keywords:
+- name: reactions
+  values: [NUMU CC PI0]
+- name: phrases
+  values: [Neutrino LArTPC Interactions]
+description: Fully contained $\nu_\mu$CC$\pi^0$ data, signal, background predictions. Events in the $\nu_e$CC selection have been removed. Note that the rightmost bin is an overflow bin, containing all events with reconstructed $\pi^0$ kinetic energy greater than 1 GeV. The background includes neutral current events, $\nu_e$CC events, $\nu_\mu$CC events without a $\pi^0$, events with a true neutrino vertex outside the fiducial volume (3 cm inside the TPC active volume), and cosmic ray backgrounds. The signal includes the remaining $\nu_\mu$CC$\pi^0$ events.
+---
+name: $\nu_\mu$CC$\pi^0$ PC
+data_file: numuCCpi0_PC.yaml
+keywords:
+- name: reactions
+  values: [NUMU CC PI0]
+- name: phrases
+  values: [Neutrino LArTPC Interactions]
+description: Partially contained $\nu_\mu$CC$\pi^0$ data, signal, and background predictions. Events in the $\nu_e$CC selection have been removed. Note that the rightmost bin is an overflow bin, containing all events with reconstructed $\pi^0$ kinetic energy greater than 1 GeV. The background includes neutral current events, $\nu_e$CC events, $\nu_\mu$CC events without a $\pi^0$, events with a true neutrino vertex outside the fiducial volume (3 cm inside the TPC active volume), and cosmic ray backgrounds. The signal includes the remaining $\nu_\mu$CC$\pi^0$ events.
+---
+name: NC$\pi^0$
+data_file: NCpi0.yaml
+keywords:
+- name: reactions
+  values: [NC PI0]
+- name: phrases
+  values: [Neutrino LArTPC Interactions]
+description: NC$\pi^0$ data, signal, and background predictions. Events in the $\nu_e$CC selection have been removed. Note that the rightmost bin is an overflow bin, containing all events with reconstructed $\pi^0$ kinetic energy greater than 1 GeV. The background includes $\nu_e$CC events, $\nu_\mu$CC events, neutral current events without a $\pi^0$, events with a true neutrino vertex outside the fiducial volume (3 cm inside the TPC active volume), and cosmic ray backgrounds. The signal includes the remaining NC$\pi^0$ events.
+---
+name: 7 channel Covariance Matrix, LEE(x=0.0)
+data_file: cov_lee_x_00.yaml
+keywords:
+- name: phrases
+  values: [Neutrino LArTPC Interactions]
+description: 7 channel covariance matrix showing correlations between bins due to flux uncertainties, cross-section uncertainties, hadron reinteraction uncertainties, detector systematic uncertainties, Monte-Carlo statistical uncertainties, and dirt (outside cryostat) uncertainties. For the data statistical uncertainty covariance matrix, (only diagonal elements, not included here), the Neyman, Pearson, or combined Neyman and Pearson (CNP) techniques can be used. This corresponds to LEE(x=0.0), the standard prediction with no low energy excess. No constraints have been applied at this stage. The 1-26th bins/rows/columns correspond to the $\nu_e$CC FC channel. The 27-52nd bins/rows/columns correspond to the $\nu_e$CC PC channel. The 53-78th bins/rows/columns correspond to the $\nu_\mu$CC FC channel. The 79-104th bins/rows/columns correspond to the $\nu_\mu$CC PC channel. The 105-115th bins/rows/columns correspond to the CC$\pi^0$ FC channel. The 116-126th bins/rows/columns correspond to the CC$\pi^0$ PC channel. The 127-137th bins/rows/columns correspond to the NC$\pi^0$ channel.
+---
+name: 7 channel Covariance Matrix, LEE(x=0.1)
+data_file: cov_lee_x_01.yaml
+keywords:
+- name: phrases
+  values: [Neutrino LArTPC Interactions]
+description: 7 channel covariance matrix showing correlations between bins due to flux uncertainties, cross-section uncertainties, hadron reinteraction uncertainties, detector systematic uncertainties, Monte-Carlo statistical uncertainties, and dirt (outside cryostat) uncertainties. For the data statistical uncertainty covariance matrix, (only diagonal elements, not included here), the Neyman, Pearson, or combined Neyman and Pearson (CNP) techniques can be used. This corresponds to LEE(x=0.1). No constraints have been applied at this stage. The 1-26th bins/rows/columns correspond to the $\nu_e$CC FC channel. The 27-52nd bins/rows/columns correspond to the $\nu_e$CC PC channel. The 53-78th bins/rows/columns correspond to the $\nu_\mu$CC FC channel. The 79-104th bins/rows/columns correspond to the $\nu_\mu$CC PC channel. The 105-115th bins/rows/columns correspond to the CC$\pi^0$ FC channel. The 116-126th bins/rows/columns correspond to the CC$\pi^0$ PC channel. The 127-137th bins/rows/columns correspond to the NC$\pi^0$ channel.
+---
+name: 7 channel Covariance Matrix, LEE(x=0.2)
+data_file: cov_lee_x_02.yaml
+keywords:
+- name: phrases
+  values: [Neutrino LArTPC Interactions]
+description: 7 channel covariance matrix showing correlations between bins due to flux uncertainties, cross-section uncertainties, hadron reinteraction uncertainties, detector systematic uncertainties, Monte-Carlo statistical uncertainties, and dirt (outside cryostat) uncertainties. For the data statistical uncertainty covariance matrix, (only diagonal elements, not included here), the Neyman, Pearson, or combined Neyman and Pearson (CNP) techniques can be used. This corresponds to LEE(x=0.2). No constraints have been applied at this stage. The 1-26th bins/rows/columns correspond to the $\nu_e$CC FC channel. The 27-52nd bins/rows/columns correspond to the $\nu_e$CC PC channel. The 53-78th bins/rows/columns correspond to the $\nu_\mu$CC FC channel. The 79-104th bins/rows/columns correspond to the $\nu_\mu$CC PC channel. The 105-115th bins/rows/columns correspond to the CC$\pi^0$ FC channel. The 116-126th bins/rows/columns correspond to the CC$\pi^0$ PC channel. The 127-137th bins/rows/columns correspond to the NC$\pi^0$ channel.
+---
+name: 7 channel Covariance Matrix, LEE(x=0.3)
+data_file: cov_lee_x_03.yaml
+keywords:
+- name: phrases
+  values: [Neutrino LArTPC Interactions]
+description: 7 channel covariance matrix showing correlations between bins due to flux uncertainties, cross-section uncertainties, hadron reinteraction uncertainties, detector systematic uncertainties, Monte-Carlo statistical uncertainties, and dirt (outside cryostat) uncertainties. For the data statistical uncertainty covariance matrix, (only diagonal elements, not included here), the Neyman, Pearson, or combined Neyman and Pearson (CNP) techniques can be used. This corresponds to LEE(x=0.3). No constraints have been applied at this stage. The 1-26th bins/rows/columns correspond to the $\nu_e$CC FC channel. The 27-52nd bins/rows/columns correspond to the $\nu_e$CC PC channel. The 53-78th bins/rows/columns correspond to the $\nu_\mu$CC FC channel. The 79-104th bins/rows/columns correspond to the $\nu_\mu$CC PC channel. The 105-115th bins/rows/columns correspond to the CC$\pi^0$ FC channel. The 116-126th bins/rows/columns correspond to the CC$\pi^0$ PC channel. The 127-137th bins/rows/columns correspond to the NC$\pi^0$ channel.
+---
+name: 7 channel Covariance Matrix, LEE(x=0.4)
+data_file: cov_lee_x_04.yaml
+keywords:
+- name: phrases
+  values: [Neutrino LArTPC Interactions]
+description: 7 channel covariance matrix showing correlations between bins due to flux uncertainties, cross-section uncertainties, hadron reinteraction uncertainties, detector systematic uncertainties, Monte-Carlo statistical uncertainties, and dirt (outside cryostat) uncertainties. For the data statistical uncertainty covariance matrix, (only diagonal elements, not included here), the Neyman, Pearson, or combined Neyman and Pearson (CNP) techniques can be used. This corresponds to LEE(x=0.4). No constraints have been applied at this stage. The 1-26th bins/rows/columns correspond to the $\nu_e$CC FC channel. The 27-52nd bins/rows/columns correspond to the $\nu_e$CC PC channel. The 53-78th bins/rows/columns correspond to the $\nu_\mu$CC FC channel. The 79-104th bins/rows/columns correspond to the $\nu_\mu$CC PC channel. The 105-115th bins/rows/columns correspond to the CC$\pi^0$ FC channel. The 116-126th bins/rows/columns correspond to the CC$\pi^0$ PC channel. The 127-137th bins/rows/columns correspond to the NC$\pi^0$ channel.
+---
+name: 7 channel Covariance Matrix, LEE(x=0.5)
+data_file: cov_lee_x_05.yaml
+keywords:
+- name: phrases
+  values: [Neutrino LArTPC Interactions]
+description: 7 channel covariance matrix showing correlations between bins due to flux uncertainties, cross-section uncertainties, hadron reinteraction uncertainties, detector systematic uncertainties, Monte-Carlo statistical uncertainties, and dirt (outside cryostat) uncertainties. For the data statistical uncertainty covariance matrix, (only diagonal elements, not included here), the Neyman, Pearson, or combined Neyman and Pearson (CNP) techniques can be used. This corresponds to LEE(x=0.5). No constraints have been applied at this stage. The 1-26th bins/rows/columns correspond to the $\nu_e$CC FC channel. The 27-52nd bins/rows/columns correspond to the $\nu_e$CC PC channel. The 53-78th bins/rows/columns correspond to the $\nu_\mu$CC FC channel. The 79-104th bins/rows/columns correspond to the $\nu_\mu$CC PC channel. The 105-115th bins/rows/columns correspond to the CC$\pi^0$ FC channel. The 116-126th bins/rows/columns correspond to the CC$\pi^0$ PC channel. The 127-137th bins/rows/columns correspond to the NC$\pi^0$ channel.
+---
+name: 7 channel Covariance Matrix, LEE(x=0.6)
+data_file: cov_lee_x_06.yaml
+keywords:
+- name: phrases
+  values: [Neutrino LArTPC Interactions]
+description: 7 channel covariance matrix showing correlations between bins due to flux uncertainties, cross-section uncertainties, hadron reinteraction uncertainties, detector systematic uncertainties, Monte-Carlo statistical uncertainties, and dirt (outside cryostat) uncertainties. For the data statistical uncertainty covariance matrix, (only diagonal elements, not included here), the Neyman, Pearson, or combined Neyman and Pearson (CNP) techniques can be used. This corresponds to LEE(x=0.6). No constraints have been applied at this stage. The 1-26th bins/rows/columns correspond to the $\nu_e$CC FC channel. The 27-52nd bins/rows/columns correspond to the $\nu_e$CC PC channel. The 53-78th bins/rows/columns correspond to the $\nu_\mu$CC FC channel. The 79-104th bins/rows/columns correspond to the $\nu_\mu$CC PC channel. The 105-115th bins/rows/columns correspond to the CC$\pi^0$ FC channel. The 116-126th bins/rows/columns correspond to the CC$\pi^0$ PC channel. The 127-137th bins/rows/columns correspond to the NC$\pi^0$ channel.
+---
+name: 7 channel Covariance Matrix, LEE(x=0.7)
+data_file: cov_lee_x_07.yaml
+keywords:
+- name: phrases
+  values: [Neutrino LArTPC Interactions]
+description: 7 channel covariance matrix showing correlations between bins due to flux uncertainties, cross-section uncertainties, hadron reinteraction uncertainties, detector systematic uncertainties, Monte-Carlo statistical uncertainties, and dirt (outside cryostat) uncertainties. For the data statistical uncertainty covariance matrix, (only diagonal elements, not included here), the Neyman, Pearson, or combined Neyman and Pearson (CNP) techniques can be used. This corresponds to LEE(x=0.7). No constraints have been applied at this stage. The 1-26th bins/rows/columns correspond to the $\nu_e$CC FC channel. The 27-52nd bins/rows/columns correspond to the $\nu_e$CC PC channel. The 53-78th bins/rows/columns correspond to the $\nu_\mu$CC FC channel. The 79-104th bins/rows/columns correspond to the $\nu_\mu$CC PC channel. The 105-115th bins/rows/columns correspond to the CC$\pi^0$ FC channel. The 116-126th bins/rows/columns correspond to the CC$\pi^0$ PC channel. The 127-137th bins/rows/columns correspond to the NC$\pi^0$ channel.
+---
+name: 7 channel Covariance Matrix, LEE(x=0.8)
+data_file: cov_lee_x_08.yaml
+keywords:
+- name: phrases
+  values: [Neutrino LArTPC Interactions]
+description: 7 channel covariance matrix showing correlations between bins due to flux uncertainties, cross-section uncertainties, hadron reinteraction uncertainties, detector systematic uncertainties, Monte-Carlo statistical uncertainties, and dirt (outside cryostat) uncertainties. For the data statistical uncertainty covariance matrix, (only diagonal elements, not included here), the Neyman, Pearson, or combined Neyman and Pearson (CNP) techniques can be used. This corresponds to LEE(x=0.8). No constraints have been applied at this stage. The 1-26th bins/rows/columns correspond to the $\nu_e$CC FC channel. The 27-52nd bins/rows/columns correspond to the $\nu_e$CC PC channel. The 53-78th bins/rows/columns correspond to the $\nu_\mu$CC FC channel. The 79-104th bins/rows/columns correspond to the $\nu_\mu$CC PC channel. The 105-115th bins/rows/columns correspond to the CC$\pi^0$ FC channel. The 116-126th bins/rows/columns correspond to the CC$\pi^0$ PC channel. The 127-137th bins/rows/columns correspond to the NC$\pi^0$ channel.
+---
+name: 7 channel Covariance Matrix, LEE(x=0.9)
+data_file: cov_lee_x_09.yaml
+keywords:
+- name: phrases
+  values: [Neutrino LArTPC Interactions]
+description: 7 channel covariance matrix showing correlations between bins due to flux uncertainties, cross-section uncertainties, hadron reinteraction uncertainties, detector systematic uncertainties, Monte-Carlo statistical uncertainties, and dirt (outside cryostat) uncertainties. For the data statistical uncertainty covariance matrix, (only diagonal elements, not included here), the Neyman, Pearson, or combined Neyman and Pearson (CNP) techniques can be used. This corresponds to LEE(x=0.9). No constraints have been applied at this stage. The 1-26th bins/rows/columns correspond to the $\nu_e$CC FC channel. The 27-52nd bins/rows/columns correspond to the $\nu_e$CC PC channel. The 53-78th bins/rows/columns correspond to the $\nu_\mu$CC FC channel. The 79-104th bins/rows/columns correspond to the $\nu_\mu$CC PC channel. The 105-115th bins/rows/columns correspond to the CC$\pi^0$ FC channel. The 116-126th bins/rows/columns correspond to the CC$\pi^0$ PC channel. The 127-137th bins/rows/columns correspond to the NC$\pi^0$ channel.
+---
+name: 7 channel Covariance Matrix, LEE(x=1.0)
+data_file: cov_lee_x_10.yaml
+keywords:
+- name: phrases
+  values: [Neutrino LArTPC Interactions]
+description: 7 channel covariance matrix showing correlations between bins due to flux uncertainties, cross-section uncertainties, hadron reinteraction uncertainties, detector systematic uncertainties, Monte-Carlo statistical uncertainties, and dirt (outside cryostat) uncertainties. For the data statistical uncertainty covariance matrix, (only diagonal elements, not included here), the Neyman, Pearson, or combined Neyman and Pearson (CNP) techniques can be used. This corresponds to LEE(x=1.0), the median unfolded MiniBooNE LEE under a $\nu_e$CC hypothesis. No constraints have been applied at this stage. The 1-26th bins/rows/columns correspond to the $\nu_e$CC FC channel. The 27-52nd bins/rows/columns correspond to the $\nu_e$CC PC channel. The 53-78th bins/rows/columns correspond to the $\nu_\mu$CC FC channel. The 79-104th bins/rows/columns correspond to the $\nu_\mu$CC PC channel. The 105-115th bins/rows/columns correspond to the CC$\pi^0$ FC channel. The 116-126th bins/rows/columns correspond to the CC$\pi^0$ PC channel. The 127-137th bins/rows/columns correspond to the NC$\pi^0$ channel.
+---
+name: 7 channel Covariance Matrix, LEE(x=1.1)
+data_file: cov_lee_x_11.yaml
+keywords:
+- name: phrases
+  values: [Neutrino LArTPC Interactions]
+description: 7 channel covariance matrix showing correlations between bins due to flux uncertainties, cross-section uncertainties, hadron reinteraction uncertainties, detector systematic uncertainties, Monte-Carlo statistical uncertainties, and dirt (outside cryostat) uncertainties. For the data statistical uncertainty covariance matrix, (only diagonal elements, not included here), the Neyman, Pearson, or combined Neyman and Pearson (CNP) techniques can be used. This corresponds to LEE(x=1.1). No constraints have been applied at this stage. The 1-26th bins/rows/columns correspond to the $\nu_e$CC FC channel. The 27-52nd bins/rows/columns correspond to the $\nu_e$CC PC channel. The 53-78th bins/rows/columns correspond to the $\nu_\mu$CC FC channel. The 79-104th bins/rows/columns correspond to the $\nu_\mu$CC PC channel. The 105-115th bins/rows/columns correspond to the CC$\pi^0$ FC channel. The 116-126th bins/rows/columns correspond to the CC$\pi^0$ PC channel. The 127-137th bins/rows/columns correspond to the NC$\pi^0$ channel.
+---
+name: 7 channel Covariance Matrix, LEE(x=1.2)
+data_file: cov_lee_x_12.yaml
+keywords:
+- name: phrases
+  values: [Neutrino LArTPC Interactions]
+description: 7 channel covariance matrix showing correlations between bins due to flux uncertainties, cross-section uncertainties, hadron reinteraction uncertainties, detector systematic uncertainties, Monte-Carlo statistical uncertainties, and dirt (outside cryostat) uncertainties. For the data statistical uncertainty covariance matrix, (only diagonal elements, not included here), the Neyman, Pearson, or combined Neyman and Pearson (CNP) techniques can be used. This corresponds to LEE(x=1.2). No constraints have been applied at this stage. The 1-26th bins/rows/columns correspond to the $\nu_e$CC FC channel. The 27-52nd bins/rows/columns correspond to the $\nu_e$CC PC channel. The 53-78th bins/rows/columns correspond to the $\nu_\mu$CC FC channel. The 79-104th bins/rows/columns correspond to the $\nu_\mu$CC PC channel. The 105-115th bins/rows/columns correspond to the CC$\pi^0$ FC channel. The 116-126th bins/rows/columns correspond to the CC$\pi^0$ PC channel. The 127-137th bins/rows/columns correspond to the NC$\pi^0$ channel.
+---
+name: 7 channel Covariance Matrix, LEE(x=1.3)
+data_file: cov_lee_x_13.yaml
+keywords:
+- name: phrases
+  values: [Neutrino LArTPC Interactions]
+description: 7 channel covariance matrix showing correlations between bins due to flux uncertainties, cross-section uncertainties, hadron reinteraction uncertainties, detector systematic uncertainties, Monte-Carlo statistical uncertainties, and dirt (outside cryostat) uncertainties. For the data statistical uncertainty covariance matrix, (only diagonal elements, not included here), the Neyman, Pearson, or combined Neyman and Pearson (CNP) techniques can be used. This corresponds to LEE(x=1.3). No constraints have been applied at this stage. The 1-26th bins/rows/columns correspond to the $\nu_e$CC FC channel. The 27-52nd bins/rows/columns correspond to the $\nu_e$CC PC channel. The 53-78th bins/rows/columns correspond to the $\nu_\mu$CC FC channel. The 79-104th bins/rows/columns correspond to the $\nu_\mu$CC PC channel. The 105-115th bins/rows/columns correspond to the CC$\pi^0$ FC channel. The 116-126th bins/rows/columns correspond to the CC$\pi^0$ PC channel. The 127-137th bins/rows/columns correspond to the NC$\pi^0$ channel.
+---
+name: 7 channel Covariance Matrix, LEE(x=1.4)
+data_file: cov_lee_x_14.yaml
+keywords:
+- name: phrases
+  values: [Neutrino LArTPC Interactions]
+description: 7 channel covariance matrix showing correlations between bins due to flux uncertainties, cross-section uncertainties, hadron reinteraction uncertainties, detector systematic uncertainties, Monte-Carlo statistical uncertainties, and dirt (outside cryostat) uncertainties. For the data statistical uncertainty covariance matrix, (only diagonal elements, not included here), the Neyman, Pearson, or combined Neyman and Pearson (CNP) techniques can be used. This corresponds to LEE(x=1.4). No constraints have been applied at this stage. The 1-26th bins/rows/columns correspond to the $\nu_e$CC FC channel. The 27-52nd bins/rows/columns correspond to the $\nu_e$CC PC channel. The 53-78th bins/rows/columns correspond to the $\nu_\mu$CC FC channel. The 79-104th bins/rows/columns correspond to the $\nu_\mu$CC PC channel. The 105-115th bins/rows/columns correspond to the CC$\pi^0$ FC channel. The 116-126th bins/rows/columns correspond to the CC$\pi^0$ PC channel. The 127-137th bins/rows/columns correspond to the NC$\pi^0$ channel.
+---
+name: 7 channel Covariance Matrix, LEE(x=1.5)
+data_file: cov_lee_x_15.yaml
+keywords:
+- name: phrases
+  values: [Neutrino LArTPC Interactions]
+description: 7 channel covariance matrix showing correlations between bins due to flux uncertainties, cross-section uncertainties, hadron reinteraction uncertainties, detector systematic uncertainties, Monte-Carlo statistical uncertainties, and dirt (outside cryostat) uncertainties. For the data statistical uncertainty covariance matrix, (only diagonal elements, not included here), the Neyman, Pearson, or combined Neyman and Pearson (CNP) techniques can be used. This corresponds to LEE(x=1.5). No constraints have been applied at this stage. The 1-26th bins/rows/columns correspond to the $\nu_e$CC FC channel. The 27-52nd bins/rows/columns correspond to the $\nu_e$CC PC channel. The 53-78th bins/rows/columns correspond to the $\nu_\mu$CC FC channel. The 79-104th bins/rows/columns correspond to the $\nu_\mu$CC PC channel. The 105-115th bins/rows/columns correspond to the CC$\pi^0$ FC channel. The 116-126th bins/rows/columns correspond to the CC$\pi^0$ PC channel. The 127-137th bins/rows/columns correspond to the NC$\pi^0$ channel.
+---
+name: 7 channel Covariance Matrix, LEE(x=1.6)
+data_file: cov_lee_x_16.yaml
+keywords:
+- name: phrases
+  values: [Neutrino LArTPC Interactions]
+description: 7 channel covariance matrix showing correlations between bins due to flux uncertainties, cross-section uncertainties, hadron reinteraction uncertainties, detector systematic uncertainties, Monte-Carlo statistical uncertainties, and dirt (outside cryostat) uncertainties. For the data statistical uncertainty covariance matrix, (only diagonal elements, not included here), the Neyman, Pearson, or combined Neyman and Pearson (CNP) techniques can be used. This corresponds to LEE(x=1.6). No constraints have been applied at this stage. The 1-26th bins/rows/columns correspond to the $\nu_e$CC FC channel. The 27-52nd bins/rows/columns correspond to the $\nu_e$CC PC channel. The 53-78th bins/rows/columns correspond to the $\nu_\mu$CC FC channel. The 79-104th bins/rows/columns correspond to the $\nu_\mu$CC PC channel. The 105-115th bins/rows/columns correspond to the CC$\pi^0$ FC channel. The 116-126th bins/rows/columns correspond to the CC$\pi^0$ PC channel. The 127-137th bins/rows/columns correspond to the NC$\pi^0$ channel.
+---
+name: 7 channel Covariance Matrix, LEE(x=1.7)
+data_file: cov_lee_x_17.yaml
+keywords:
+- name: phrases
+  values: [Neutrino LArTPC Interactions]
+description: 7 channel covariance matrix showing correlations between bins due to flux uncertainties, cross-section uncertainties, hadron reinteraction uncertainties, detector systematic uncertainties, Monte-Carlo statistical uncertainties, and dirt (outside cryostat) uncertainties. For the data statistical uncertainty covariance matrix, (only diagonal elements, not included here), the Neyman, Pearson, or combined Neyman and Pearson (CNP) techniques can be used. This corresponds to LEE(x=1.7). No constraints have been applied at this stage. The 1-26th bins/rows/columns correspond to the $\nu_e$CC FC channel. The 27-52nd bins/rows/columns correspond to the $\nu_e$CC PC channel. The 53-78th bins/rows/columns correspond to the $\nu_\mu$CC FC channel. The 79-104th bins/rows/columns correspond to the $\nu_\mu$CC PC channel. The 105-115th bins/rows/columns correspond to the CC$\pi^0$ FC channel. The 116-126th bins/rows/columns correspond to the CC$\pi^0$ PC channel. The 127-137th bins/rows/columns correspond to the NC$\pi^0$ channel.
+---
+name: 7 channel Covariance Matrix, LEE(x=1.8)
+data_file: cov_lee_x_18.yaml
+keywords:
+- name: phrases
+  values: [Neutrino LArTPC Interactions]
+description: 7 channel covariance matrix showing correlations between bins due to flux uncertainties, cross-section uncertainties, hadron reinteraction uncertainties, detector systematic uncertainties, Monte-Carlo statistical uncertainties, and dirt (outside cryostat) uncertainties. For the data statistical uncertainty covariance matrix, (only diagonal elements, not included here), the Neyman, Pearson, or combined Neyman and Pearson (CNP) techniques can be used. This corresponds to LEE(x=1.8). No constraints have been applied at this stage. The 1-26th bins/rows/columns correspond to the $\nu_e$CC FC channel. The 27-52nd bins/rows/columns correspond to the $\nu_e$CC PC channel. The 53-78th bins/rows/columns correspond to the $\nu_\mu$CC FC channel. The 79-104th bins/rows/columns correspond to the $\nu_\mu$CC PC channel. The 105-115th bins/rows/columns correspond to the CC$\pi^0$ FC channel. The 116-126th bins/rows/columns correspond to the CC$\pi^0$ PC channel. The 127-137th bins/rows/columns correspond to the NC$\pi^0$ channel.
+---
+name: 7 channel Covariance Matrix, LEE(x=1.9)
+data_file: cov_lee_x_19.yaml
+keywords:
+- name: phrases
+  values: [Neutrino LArTPC Interactions]
+description: 7 channel covariance matrix showing correlations between bins due to flux uncertainties, cross-section uncertainties, hadron reinteraction uncertainties, detector systematic uncertainties, Monte-Carlo statistical uncertainties, and dirt (outside cryostat) uncertainties. For the data statistical uncertainty covariance matrix, (only diagonal elements, not included here), the Neyman, Pearson, or combined Neyman and Pearson (CNP) techniques can be used. This corresponds to LEE(x=1.9). No constraints have been applied at this stage. The 1-26th bins/rows/columns correspond to the $\nu_e$CC FC channel. The 27-52nd bins/rows/columns correspond to the $\nu_e$CC PC channel. The 53-78th bins/rows/columns correspond to the $\nu_\mu$CC FC channel. The 79-104th bins/rows/columns correspond to the $\nu_\mu$CC PC channel. The 105-115th bins/rows/columns correspond to the CC$\pi^0$ FC channel. The 116-126th bins/rows/columns correspond to the CC$\pi^0$ PC channel. The 127-137th bins/rows/columns correspond to the NC$\pi^0$ channel.
+---
+name: 7 channel Covariance Matrix, LEE(x=2.0)
+data_file: cov_lee_x_20.yaml
+keywords:
+- name: phrases
+  values: [Neutrino LArTPC Interactions]
+description: 7 channel covariance matrix showing correlations between bins due to flux uncertainties, cross-section uncertainties, hadron reinteraction uncertainties, detector systematic uncertainties, Monte-Carlo statistical uncertainties, and dirt (outside cryostat) uncertainties. For the data statistical uncertainty covariance matrix, (only diagonal elements, not included here), the Neyman, Pearson, or combined Neyman and Pearson (CNP) techniques can be used. This corresponds to LEE(x=2.0). No constraints have been applied at this stage. The 1-26th bins/rows/columns correspond to the $\nu_e$CC FC channel. The 27-52nd bins/rows/columns correspond to the $\nu_e$CC PC channel. The 53-78th bins/rows/columns correspond to the $\nu_\mu$CC FC channel. The 79-104th bins/rows/columns correspond to the $\nu_\mu$CC PC channel. The 105-115th bins/rows/columns correspond to the CC$\pi^0$ FC channel. The 116-126th bins/rows/columns correspond to the CC$\pi^0$ PC channel. The 127-137th bins/rows/columns correspond to the NC$\pi^0$ channel.

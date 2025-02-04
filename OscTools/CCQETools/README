@@ -1,0 +1,27 @@
+The files in this directory implement a fit to MicroBooNE's 2021
+CCQE \nu_e appearance data. They make heavy use of the GNU
+Scientific Library (https://www.gnu.org/software/gsl/), the GLoBES
+library (https://www.mpi-hd.mpg.de/personalhomes/globes/), and its
+sterile neutrino extension (included here in snu.c and snu.h).
+
+The functions in muboone.cc contain the code needed to compute
+MicroBooNE CCQE chi^2 values for a given parameter point, which
+should have been set using the GLoBES function glbSetOscillationParameters
+beforehand.
+
+For https://arxiv.org/abs/2111.10359, this code was embedded into a
+larger software framework which we cannot share in full here because it
+contains contributions by other authors which, even though unused in
+https://arxiv.org/abs/2111.10359, are nontrivial to remove.
+(Please ask the authors if you are interested in the full code, which
+has also been used in previous projects, for instance
+https://arxiv.org/abs/1803.10661, https://arxiv.org/abs/1709.04294,
+https://arxiv.org/abs/1303.3011.)
+
+We do, however, share the resulting MicroBooNE chi^2 tables:
+  CCQE_noBkgOsc_Chi2_Data.dat   - fit to actual data
+  CCQE_noBkgOsc_Chi2_Asimov.dat - fit to an Asimov data set
+
+For further questions, please contact Joachim Kopp (jkopp@cern.ch).
+
+

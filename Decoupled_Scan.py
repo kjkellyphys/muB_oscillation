@@ -1,22 +1,13 @@
 import numpy as np
-import matplotlib.pyplot as plt
-import matplotlib.patches as mpatches
-from scipy.interpolate import interp1d
 
 from multiprocessing import Pool
 from functools import partial
-
-import MicroTools as micro
-import MicroTools.plot_tools as pt
 
 import MiniTools.param_scan as param_scan
 from MiniTools.param_scan import fast_histogram
 from tqdm.notebook import tqdm  # Note the change here
 
 # from tqdm.auto import tqdm
-
-from ipywidgets import IntProgress
-from IPython.display import display
 
 
 def run_scan_osc_dec(kwargs, filename, Npoints=10, path_results="fit_data/"):

@@ -1,0 +1,87 @@
+dependent_variables:
+- header: {name: NC$\pi^0$ Data, units: counts per bin}
+  values:
+  - errors:
+    - asymerror: {minus: -49.21381919745713, plus: 49.21381919745713}
+      label: stat
+    value: 2422
+  - errors:
+    - asymerror: {minus: -37.080992435478315, plus: 37.080992435478315}
+      label: stat
+    value: 1375
+  - errors:
+    - asymerror: {minus: -28.19574435974337, plus: 28.19574435974337}
+      label: stat
+    value: 795
+  - errors:
+    - asymerror: {minus: -22.15851980616034, plus: 22.15851980616034}
+      label: stat
+    value: 491
+  - errors:
+    - asymerror: {minus: -18.439088914585774, plus: 18.439088914585774}
+      label: stat
+    value: 340
+  - errors:
+    - asymerror: {minus: -14.352700094407323, plus: 14.352700094407323}
+      label: stat
+    value: 206
+  - errors:
+    - asymerror: {minus: -11.135528725660043, plus: 11.135528725660043}
+      label: stat
+    value: 124
+  - errors:
+    - asymerror: {minus: -9.503600000000006, plus: 9.302099999999996}
+      label: stat
+    value: 88
+  - errors:
+    - asymerror: {minus: -7.809699999999999, plus: 7.6066}
+      label: stat
+    value: 59
+  - errors:
+    - asymerror: {minus: -6.138100000000001, plus: 5.931800000000003}
+      label: stat
+    value: 36
+  - errors:
+    - asymerror: {minus: -14.2828568570857, plus: 14.2828568570857}
+      label: stat
+    value: 204
+- header: {name: NC$\pi^0$ Unconstrained Background Prediction, units: counts per bin}
+  values:
+  - {value: 1451.54}
+  - {value: 720.02}
+  - {value: 452.24}
+  - {value: 301.57}
+  - {value: 229.03}
+  - {value: 144.64}
+  - {value: 88.6}
+  - {value: 56.93}
+  - {value: 38.1}
+  - {value: 35.64}
+  - {value: 169.83}
+- header: {name: NC$\pi^0$ Unconstrained Signal+Background Prediction, units: counts per bin}
+  values:
+  - {value: 2486.03}
+  - {value: 1434.92}
+  - {value: 938.72}
+  - {value: 571.91}
+  - {value: 387.93}
+  - {value: 222.43}
+  - {value: 140.65}
+  - {value: 82.44}
+  - {value: 53.29}
+  - {value: 49.93}
+  - {value: 229.95}
+independent_variables:
+- header: {name: Reconstructed Pi0 Kinetic Energy, units: GeV}
+  values:
+  - {low: 0.00, high: 0.10}
+  - {low: 0.10, high: 0.20}
+  - {low: 0.20, high: 0.30}
+  - {low: 0.30, high: 0.40}
+  - {low: 0.40, high: 0.50}
+  - {low: 0.50, high: 0.60}
+  - {low: 0.60, high: 0.70}
+  - {low: 0.70, high: 0.80}
+  - {low: 0.80, high: 0.90}
+  - {low: 0.90, high: 1.00}
+  - {low: 1.00, high: 1.10}

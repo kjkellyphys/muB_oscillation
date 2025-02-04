@@ -1,0 +1,220 @@
+dependent_variables:
+- header: {name: $\nu_e$CC FC Data, units: counts per bin}
+  values:
+  - errors:
+    - asymerror: {minus: 0, plus: 1.1478}
+      label: stat
+    value: 0
+  - errors:
+    - asymerror: {minus: -2.48995, plus: 2.2106399999999997}
+      label: stat
+    value: 5
+  - errors:
+    - asymerror: {minus: -2.67925, plus: 2.4185800000000004}
+      label: stat
+    value: 6
+  - errors:
+    - asymerror: {minus: -3.6402199999999993, plus: 3.4154999999999998}
+      label: stat
+    value: 12
+  - errors:
+    - asymerror: {minus: -4.5151, plus: 4.301100000000002}
+      label: stat
+    value: 19
+  - errors:
+    - asymerror: {minus: -3.9101999999999997, plus: 3.6898000000000017}
+      label: stat
+    value: 14
+  - errors:
+    - asymerror: {minus: -4.4008, plus: 4.1858}
+      label: stat
+    value: 18
+  - errors:
+    - asymerror: {minus: -5.047599999999999, plus: 4.837}
+      label: stat
+    value: 24
+  - errors:
+    - asymerror: {minus: -5.147400000000001, plus: 4.9374}
+      label: stat
+    value: 25
+  - errors:
+    - asymerror: {minus: -4.8416999999999994, plus: 4.629899999999999}
+      label: stat
+    value: 22
+  - errors:
+    - asymerror: {minus: -5.528500000000001, plus: 5.3200999999999965}
+      label: stat
+    value: 29
+  - errors:
+    - asymerror: {minus: -4.4008, plus: 4.1858}
+      label: stat
+    value: 18
+  - errors:
+    - asymerror: {minus: -4.162800000000001, plus: 3.9453999999999994}
+      label: stat
+    value: 16
+  - errors:
+    - asymerror: {minus: -4.4008, plus: 4.1858}
+      label: stat
+    value: 18
+  - errors:
+    - asymerror: {minus: -4.038500000000001, plus: 3.819700000000001}
+      label: stat
+    value: 15
+  - errors:
+    - asymerror: {minus: -4.6266, plus: 4.4133}
+      label: stat
+    value: 20
+  - errors:
+    - asymerror: {minus: -3.6402199999999993, plus: 3.4154999999999998}
+      label: stat
+    value: 12
+  - errors:
+    - asymerror: {minus: -3.7776300000000003, plus: 3.5551999999999992}
+      label: stat
+    value: 13
+  - errors:
+    - asymerror: {minus: -3.1935399999999996, plus: 2.9581999999999997}
+      label: stat
+    value: 9
+  - errors:
+    - asymerror: {minus: -2.48995, plus: 2.2106399999999997}
+      label: stat
+    value: 5
+  - errors:
+    - asymerror: {minus: -3.1935399999999996, plus: 2.9581999999999997}
+      label: stat
+    value: 9
+  - errors:
+    - asymerror: {minus: -3.3488300000000004, plus: 3.1179000000000006}
+      label: stat
+    value: 10
+  - errors:
+    - asymerror: {minus: -2.29683, plus: 1.9818600000000002}
+      label: stat
+    value: 4
+  - errors:
+    - asymerror: {minus: -2.85954, plus: 2.6105300000000007}
+      label: stat
+    value: 7
+  - errors:
+    - asymerror: {minus: -3.0307000000000004, plus: 2.7896}
+      label: stat
+    value: 8
+  - errors:
+    - asymerror: {minus: -5.619700000000002, plus: 5.411700000000003}
+      label: stat
+    value: 30
+- header: {name: $\nu_e$CC FC Constrained Background Prediction, units: counts per bin}
+  values:
+  - {value: 0.0}
+  - {value: 1.62}
+  - {value: 2.05}
+  - {value: 5.0}
+  - {value: 3.78}
+  - {value: 5.48}
+  - {value: 5.29}
+  - {value: 4.77}
+  - {value: 3.53}
+  - {value: 1.9}
+  - {value: 3.17}
+  - {value: 1.18}
+  - {value: 1.89}
+  - {value: 2.02}
+  - {value: 1.88}
+  - {value: 1.06}
+  - {value: 1.29}
+  - {value: 0.99}
+  - {value: 0.64}
+  - {value: 0.61}
+  - {value: 1.09}
+  - {value: 0.68}
+  - {value: 0.52}
+  - {value: 0.95}
+  - {value: 0.49}
+  - {value: 4.17}
+- header: {name: $\nu_e$CC FC Constrained Signal+Background Prediction, units: counts per bin}
+  values:
+  - {value: 0.02}
+  - {value: 2.56}
+  - {value: 6.69}
+  - {value: 14.6}
+  - {value: 19.63}
+  - {value: 25.92}
+  - {value: 29.54}
+  - {value: 29.04}
+  - {value: 28.36}
+  - {value: 25.62}
+  - {value: 27.67}
+  - {value: 22.64}
+  - {value: 21.92}
+  - {value: 19.6}
+  - {value: 17.88}
+  - {value: 15.27}
+  - {value: 13.63}
+  - {value: 13.06}
+  - {value: 10.03}
+  - {value: 9.11}
+  - {value: 8.31}
+  - {value: 7.48}
+  - {value: 5.31}
+  - {value: 5.99}
+  - {value: 5.08}
+  - {value: 25.27}
+- header: {name: $\nu_e$CC FC Constrained Signal+Background+LEE(x=1) Prediction, units: counts per bin}
+  values:
+  - {value: 0.02}
+  - {value: 6.28}
+  - {value: 17.36}
+  - {value: 23.51}
+  - {value: 26.44}
+  - {value: 30.38}
+  - {value: 32.1}
+  - {value: 30.14}
+  - {value: 28.67}
+  - {value: 25.7}
+  - {value: 27.73}
+  - {value: 22.65}
+  - {value: 21.93}
+  - {value: 19.6}
+  - {value: 17.88}
+  - {value: 15.27}
+  - {value: 13.63}
+  - {value: 13.06}
+  - {value: 10.03}
+  - {value: 9.11}
+  - {value: 8.31}
+  - {value: 7.48}
+  - {value: 5.31}
+  - {value: 5.99}
+  - {value: 5.08}
+  - {value: 25.27}
+independent_variables:
+- header: {name: Reconstructed Neutrino Energy, units: GeV}
+  values:
+  - {low: 0.00, high: 0.10}
+  - {low: 0.10, high: 0.20}
+  - {low: 0.20, high: 0.30}
+  - {low: 0.30, high: 0.40}
+  - {low: 0.40, high: 0.50}
+  - {low: 0.50, high: 0.60}
+  - {low: 0.60, high: 0.70}
+  - {low: 0.70, high: 0.80}
+  - {low: 0.80, high: 0.90}
+  - {low: 0.90, high: 1.00}
+  - {low: 1.00, high: 1.10}
+  - {low: 1.10, high: 1.20}
+  - {low: 1.20, high: 1.30}
+  - {low: 1.30, high: 1.40}
+  - {low: 1.40, high: 1.50}
+  - {low: 1.50, high: 1.60}
+  - {low: 1.60, high: 1.70}
+  - {low: 1.70, high: 1.80}
+  - {low: 1.80, high: 1.90}
+  - {low: 1.90, high: 2.00}
+  - {low: 2.00, high: 2.10}
+  - {low: 2.10, high: 2.20}
+  - {low: 2.20, high: 2.30}
+  - {low: 2.30, high: 2.40}
+  - {low: 2.40, high: 2.50}
+  - {low: 2.50, high: 2.60}

@@ -1,0 +1,192 @@
+dependent_variables:
+- header: {name: $\nu_\mu$CC FC Data, units: counts per bin}
+  values:
+  - errors:
+    - asymerror: {minus: -2.67925, plus: 2.4185800000000004}
+      label: stat
+    value: 6
+  - errors:
+    - asymerror: {minus: -4.6266, plus: 4.4133}
+      label: stat
+    value: 20
+  - errors:
+    - asymerror: {minus: -32.68026927673638, plus: 32.68026927673638}
+      label: stat
+    value: 1068
+  - errors:
+    - asymerror: {minus: -55.5517776493246, plus: 55.5517776493246}
+      label: stat
+    value: 3086
+  - errors:
+    - asymerror: {minus: -69.49820141557622, plus: 69.49820141557622}
+      label: stat
+    value: 4830
+  - errors:
+    - asymerror: {minus: -74.85318964479737, plus: 74.85318964479737}
+      label: stat
+    value: 5603
+  - errors:
+    - asymerror: {minus: -75.8485332752058, plus: 75.8485332752058}
+      label: stat
+    value: 5753
+  - errors:
+    - asymerror: {minus: -72.74613391789285, plus: 72.74613391789285}
+      label: stat
+    value: 5292
+  - errors:
+    - asymerror: {minus: -65.81033353509159, plus: 65.81033353509159}
+      label: stat
+    value: 4331
+  - errors:
+    - asymerror: {minus: -58.71967302361279, plus: 58.71967302361279}
+      label: stat
+    value: 3448
+  - errors:
+    - asymerror: {minus: -50.547007824400445, plus: 50.547007824400445}
+      label: stat
+    value: 2555
+  - errors:
+    - asymerror: {minus: -42.81354925721529, plus: 42.81354925721529}
+      label: stat
+    value: 1833
+  - errors:
+    - asymerror: {minus: -35.298725189445584, plus: 35.298725189445584}
+      label: stat
+    value: 1246
+  - errors:
+    - asymerror: {minus: -27.65863337187866, plus: 27.65863337187866}
+      label: stat
+    value: 765
+  - errors:
+    - asymerror: {minus: -23.108440016582687, plus: 23.108440016582687}
+      label: stat
+    value: 534
+  - errors:
+    - asymerror: {minus: -18.2208671582886, plus: 18.2208671582886}
+      label: stat
+    value: 332
+  - errors:
+    - asymerror: {minus: -14.0, plus: 14.0}
+      label: stat
+    value: 196
+  - errors:
+    - asymerror: {minus: -11.74734012447073, plus: 11.74734012447073}
+      label: stat
+    value: 138
+  - errors:
+    - asymerror: {minus: -9.556600000000003, plus: 9.355199999999996}
+      label: stat
+    value: 89
+  - errors:
+    - asymerror: {minus: -6.615499999999997, plus: 6.410400000000003}
+      label: stat
+    value: 42
+  - errors:
+    - asymerror: {minus: -6.220300000000002, plus: 6.014099999999999}
+      label: stat
+    value: 37
+  - errors:
+    - asymerror: {minus: -5.619700000000002, plus: 5.411700000000003}
+      label: stat
+    value: 30
+  - errors:
+    - asymerror: {minus: -5.619700000000002, plus: 5.411700000000003}
+      label: stat
+    value: 30
+  - errors:
+    - asymerror: {minus: -3.9101999999999997, plus: 3.6898000000000017}
+      label: stat
+    value: 14
+  - errors:
+    - asymerror: {minus: -3.6402199999999993, plus: 3.4154999999999998}
+      label: stat
+    value: 12
+  - errors:
+    - asymerror: {minus: -7.3419000000000025, plus: 7.138100000000001}
+      label: stat
+    value: 52
+- header: {name: $\nu_\mu$CC FC Unconstrained Background Prediction, units: counts per bin}
+  values:
+  - {value: 2.81}
+  - {value: 7.17}
+  - {value: 158.85}
+  - {value: 370.86}
+  - {value: 501.18}
+  - {value: 551.64}
+  - {value: 552.78}
+  - {value: 475.03}
+  - {value: 419.69}
+  - {value: 355.69}
+  - {value: 299.34}
+  - {value: 244.17}
+  - {value: 198.27}
+  - {value: 156.3}
+  - {value: 137.38}
+  - {value: 96.38}
+  - {value: 63.56}
+  - {value: 45.37}
+  - {value: 35.67}
+  - {value: 32.55}
+  - {value: 19.73}
+  - {value: 19.24}
+  - {value: 12.95}
+  - {value: 10.08}
+  - {value: 9.3}
+  - {value: 54.57}
+- header: {name: $\nu_\mu$CC FC Unconstrained Signal+Background Prediction, units: counts per bin}
+  values:
+  - {value: 3.9}
+  - {value: 17.4}
+  - {value: 942.7}
+  - {value: 2636.71}
+  - {value: 3981.45}
+  - {value: 4653.89}
+  - {value: 4937.7}
+  - {value: 4582.76}
+  - {value: 3908.48}
+  - {value: 3143.22}
+  - {value: 2435.78}
+  - {value: 1890.2}
+  - {value: 1324.93}
+  - {value: 898.08}
+  - {value: 656.85}
+  - {value: 472.01}
+  - {value: 283.56}
+  - {value: 183.24}
+  - {value: 150.25}
+  - {value: 104.86}
+  - {value: 60.26}
+  - {value: 42.56}
+  - {value: 29.15}
+  - {value: 25.0}
+  - {value: 16.69}
+  - {value: 88.83}
+independent_variables:
+- header: {name: Reconstructed Neutrino Energy, units: GeV}
+  values:
+  - {low: 0.00, high: 0.10}
+  - {low: 0.10, high: 0.20}
+  - {low: 0.20, high: 0.30}
+  - {low: 0.30, high: 0.40}
+  - {low: 0.40, high: 0.50}
+  - {low: 0.50, high: 0.60}
+  - {low: 0.60, high: 0.70}
+  - {low: 0.70, high: 0.80}
+  - {low: 0.80, high: 0.90}
+  - {low: 0.90, high: 1.00}
+  - {low: 1.00, high: 1.10}
+  - {low: 1.10, high: 1.20}
+  - {low: 1.20, high: 1.30}
+  - {low: 1.30, high: 1.40}
+  - {low: 1.40, high: 1.50}
+  - {low: 1.50, high: 1.60}
+  - {low: 1.60, high: 1.70}
+  - {low: 1.70, high: 1.80}
+  - {low: 1.80, high: 1.90}
+  - {low: 1.90, high: 2.00}
+  - {low: 2.00, high: 2.10}
+  - {low: 2.10, high: 2.20}
+  - {low: 2.20, high: 2.30}
+  - {low: 2.30, high: 2.40}
+  - {low: 2.40, high: 2.50}
+  - {low: 2.50, high: 2.60}
