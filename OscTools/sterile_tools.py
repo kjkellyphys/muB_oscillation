@@ -1,5 +1,4 @@
 import numpy as np
-import numba
 from scipy import integrate
 from scipy.special import expi
 from . import const
