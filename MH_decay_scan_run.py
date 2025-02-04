@@ -6,6 +6,93 @@ from tqdm import tqdm
 import OscTools.param_scan as param_scan
 
 
+def run_scan_osc_only(
+    kwargs,
+    filename,
+    Npoints=10,
+    path_results="fit_data/",
+    sin2theta_scan=False,
+    experiment="BooNEs",
+):
+
+    # Range of mixings scanned
+    dm_Vec = np.geomspace(np.sqrt(1e-1), np.sqrt(100), Npoints)
+
+    if sin2theta_scan:
+        s2thetaSq = np.geomspace(1e-5, 0.1, Npoints)
+        Umu4Sq = 0.5
+        # Cartesian product of grid -- already imposes unitarity and pertubatirbity of g
+        paramlist = param_scan.create_grid_of_params_sin2theta(
+            g=1e-10, m4=dm_Vec, sin2thetaSq=s2thetaSq, Um4Sq=Umu4Sq
+        )
+
+    else:
+        Ue4Sq = np.geomspace(5e-3, 0.25, Npoints)
+        Umu4Sq = np.geomspace(5e-3, 0.25, Npoints)
+        # Cartesian product of grid -- already imposes unitarity and pertubatirbity of g
+        paramlist = param_scan.create_grid_of_params(
+            g=1e-10, m4=dm_Vec, Ue4Sq=Ue4Sq, Um4Sq=Umu4Sq
+        )
+
+    # Pure oscillation method
+    if experiment == "BooNEs":
+        func_scan = partial(param_scan.DecayReturnMicroBooNEChi2, **kwargs)
+    elif experiment == "SBN":
+        func_scan = partial(param_scan.SBNSensitivityChi2, **kwargs)
+    else:
+        raise ValueError(f"Experiment {experiment} not recognized")
+
+    with Pool() as pool:
+        # res = pool.map(func_scan, paramlist)
+        res = np.array(
+            list(tqdm(pool.imap(func_scan, paramlist), total=len(paramlist)))
+        )
+
+    param_scan.write_pickle(f"{path_results}/{filename}", res)
+    return res
+
+
+def run_scan_osc_3D(
+    kwargs,
+    filename,
+    gfixed=2.5,
+    Npoints=10,
+    dmSq_range=(1e-1, 1e5),
+    Ue4Sq_range=(1e-3, 0.25),
+    Umu4Sq_range=(2e-4, 0.25),
+    path_results="fit_data/",
+):
+
+    # Range of mixings scanned
+    if len(Npoints) == 1:
+        dm_Vec = np.geomspace(np.sqrt(dmSq_range[0]), np.sqrt(dmSq_range[1]), Npoints)
+        Ue4Sq = np.geomspace(Ue4Sq_range[0], Ue4Sq_range[1], Npoints)
+        Umu4Sq = np.geomspace(Umu4Sq_range[0], Umu4Sq_range[1], Npoints)
+    else:
+        dm_Vec = np.geomspace(
+            np.sqrt(dmSq_range[0]), np.sqrt(dmSq_range[1]), Npoints[0]
+        )
+        Ue4Sq = np.geomspace(Ue4Sq_range[0], Ue4Sq_range[1], Npoints[1])
+        Umu4Sq = np.geomspace(Umu4Sq_range[0], Umu4Sq_range[1], Npoints[2])
+    g_Vec = gfixed
+
+    # Cartesian product of grid -- already imposes unitarity and pertubatirbity of g
+    paramlist = param_scan.create_grid_of_params(
+        g=g_Vec, m4=dm_Vec, Ue4Sq=Ue4Sq, Um4Sq=Umu4Sq
+    )
+
+    # Pure oscillation method
+    func_scan = partial(param_scan.DecayReturnMicroBooNEChi2, **kwargs)
+
+    with Pool() as pool:
+        # res = np.array(list(pool.map(func_scan, paramlist)))
+        res = np.array(
+            list(tqdm(pool.imap(func_scan, paramlist), total=len(paramlist)))
+        )
+    param_scan.write_pickle(f"{path_results}/{filename}", res)
+    return res
+
+
 def run_scan_4D(
     kwargs, filename, Npoints=10, path_results="fit_data/", sin2theta_scan=False
 ):

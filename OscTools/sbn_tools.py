@@ -12,9 +12,33 @@ except ImportError:
 import OscTools as osc
 from OscTools import apps
 from OscTools import const
+from OscTools import micro_tools as micro
 
-# from OscTools import micro_tools as micro
 # from OscTools.sterile_tools import Sterile
+
+other_bkg_FC = np.load(
+    files(micro.muB_inclusive_datarelease_path).joinpath("nueCC_FC_Bkg.npy").open("rb")
+)
+intrinsic_bkg_FC = np.load(
+    files(micro.muB_inclusive_datarelease_path).joinpath("nueCC_FC_Sig.npy").open("rb")
+)
+
+other_bkg_PC = np.load(
+    files(micro.muB_inclusive_datarelease_path).joinpath("nueCC_PC_Bkg.npy").open("rb")
+)
+intrinsic_bkg_PC = np.load(
+    files(micro.muB_inclusive_datarelease_path).joinpath("nueCC_PC_Sig.npy").open("rb")
+)
+
+other_bkg = other_bkg_FC + other_bkg_PC
+intrinsic_bkg = intrinsic_bkg_FC + intrinsic_bkg_PC
+
+other_bkg = gaussian_filter1d(other_bkg, sigma=1, mode="nearest")
+intrinsic_bkg = gaussian_filter1d(intrinsic_bkg, sigma=1, mode="nearest")
+other_bkg_ratio = interp1d(
+    micro.BEdges0[:-1], other_bkg / intrinsic_bkg, fill_value=0.0, bounds_error=False
+)
+
 
 ################################################################################################
 # Fluxes
@@ -137,9 +161,6 @@ Etrue_nueCC_PC, Ereco_nueCC_PC, M_nueCC_PC = np.load(
 
 ################################################################################################
 # Event rate estimator
-# POT
-
-
 class SBN:
     def __init__(
         self,
@@ -150,12 +171,14 @@ class SBN:
         flux_uncertainty=0.10,
         xsec_uncertainty=0.10,
         eff_uncertainty=0.03,
+        disappearance=True,
     ):
 
         self.exposure = exposure
         self.nbins = nbins
         self.Emin = Emin
         self.Emax = Emax
+        self.disappearance = disappearance
 
         self.flux_uncertainty = flux_uncertainty
         self.xsec_uncertainty = xsec_uncertainty
@@ -194,10 +217,18 @@ class SBN:
         self.unosc_numu_ICARUS = self.reco_unosc_numu_rate_ICARUS()
         self.unosc_nue_SBND = self.reco_unosc_nue_rate_SBND()
         self.unosc_nue_ICARUS = self.reco_unosc_nue_rate_ICARUS()
+
+        self.other_bkg_SBND = (
+            other_bkg_ratio(self.Ereco_bin_center) * self.unosc_nue_SBND
+        )
+        self.other_bkg_ICARUS = (
+            other_bkg_ratio(self.Ereco_bin_center) * self.unosc_nue_ICARUS
+        )
+
         self.unosc_rate_vector = np.concatenate(
             [
-                self.unosc_nue_SBND,
-                self.unosc_nue_ICARUS,
+                self.other_bkg_SBND + self.unosc_nue_SBND,
+                self.other_bkg_ICARUS + self.unosc_nue_ICARUS,
                 self.unosc_numu_SBND,
                 self.unosc_numu_ICARUS,
             ]
@@ -253,9 +284,12 @@ class SBN:
 
     # True oscillated rates
     def osc_numu_rate_SBND(self, sterile, binned=True):
-        diff_rate = sterile.Pmmosc(self.E, osc.L_SBND) * self.unosc_numu_rate_SBND(
-            self.E
-        ) + sterile.Pmeosc(self.E, osc.L_SBND) * self.unosc_nue_rate_SBND(self.E)
+        if self.disappearance:
+            diff_rate = sterile.Pmmosc(self.E, osc.L_SBND) * self.unosc_numu_rate_SBND(
+                self.E
+            ) + sterile.Pmeosc(self.E, osc.L_SBND) * self.unosc_nue_rate_SBND(self.E)
+        else:
+            diff_rate = self.unosc_numu_rate_SBND(self.E)
 
         if binned:
             h, be = np.histogram(
@@ -266,9 +300,16 @@ class SBN:
             return diff_rate
 
     def osc_numu_rate_ICARUS(self, sterile, binned=True):
-        diff_rate = sterile.Pmmosc(self.E, osc.L_ICARUS) * self.unosc_numu_rate_ICARUS(
-            self.E
-        ) + sterile.Pmeosc(self.E, osc.L_ICARUS) * self.unosc_nue_rate_ICARUS(self.E)
+        if self.disappearance:
+            diff_rate = sterile.Pmmosc(
+                self.E, osc.L_ICARUS
+            ) * self.unosc_numu_rate_ICARUS(self.E) + sterile.Pmeosc(
+                self.E, osc.L_ICARUS
+            ) * self.unosc_nue_rate_ICARUS(
+                self.E
+            )
+        else:
+            diff_rate = self.unosc_numu_rate_ICARUS(self.E)
 
         if binned:
             h, be = np.histogram(
@@ -279,9 +320,14 @@ class SBN:
             return diff_rate
 
     def osc_nue_rate_SBND(self, sterile, binned=True):
-        diff_rate = sterile.Pmeosc(self.E, osc.L_SBND) * self.unosc_numu_rate_SBND(
-            self.E
-        ) + sterile.Peeosc(self.E, osc.L_SBND) * self.unosc_nue_rate_SBND(self.E)
+        if self.disappearance:
+            diff_rate = sterile.Pmeosc(self.E, osc.L_SBND) * self.unosc_numu_rate_SBND(
+                self.E
+            ) + sterile.Peeosc(self.E, osc.L_SBND) * self.unosc_nue_rate_SBND(self.E)
+        else:
+            diff_rate = sterile.Pmeosc(self.E, osc.L_SBND) * self.unosc_numu_rate_SBND(
+                self.E
+            ) + self.unosc_nue_rate_SBND(self.E)
 
         if binned:
             h, be = np.histogram(
@@ -292,9 +338,18 @@ class SBN:
             return diff_rate
 
     def osc_nue_rate_ICARUS(self, sterile, binned=True):
-        diff_rate = sterile.Pmeosc(self.E, osc.L_ICARUS) * self.unosc_numu_rate_ICARUS(
-            self.E
-        ) + sterile.Peeosc(self.E, osc.L_ICARUS) * self.unosc_nue_rate_ICARUS(self.E)
+        if self.disappearance:
+            diff_rate = sterile.Pmeosc(
+                self.E, osc.L_ICARUS
+            ) * self.unosc_numu_rate_ICARUS(self.E) + sterile.Peeosc(
+                self.E, osc.L_ICARUS
+            ) * self.unosc_nue_rate_ICARUS(
+                self.E
+            )
+        else:
+            diff_rate = sterile.Pmeosc(
+                self.E, osc.L_ICARUS
+            ) * self.unosc_numu_rate_ICARUS(self.E) + self.unosc_nue_rate_ICARUS(self.E)
 
         if binned:
             h, be = np.histogram(
@@ -371,6 +426,36 @@ class SBN:
         # )
 
     def build_covariance_matrix(self):
+        """
+        Build the fractional covariance matrix with systematic uncertainties.
+
+        Systematics include flux, cross-section, and detector efficiency uncertainties.
+
+        The uncertainties are energy-dependent and bin-to-bin uncorrelated.
+
+        The covariance matrix is built for four rates:
+            - nu_e SBND
+            - nu_e ICARUS
+            - nu_mu SBND
+            - nu_mu ICARUS
+
+        The systematic uncertainties are added to the covariance matrix as follows:
+
+            - Flux uncertainty:
+                Correlated between SBND and ICARUS for the same energy bin,
+                but uncorrelated between nu_e and nu_mu.
+
+            - Cross-section uncertainty: Fully correlated between SBND, ICARUS, nu_e, and
+                nu_mu for the same energy bin.
+
+            - Detector efficiency uncertainty: Uncorrelated between detectors for the same
+                energy bin and uncorrelated between flavors as well.
+
+        Returns:
+            np.ndarray: The fractional covariance matrix of shape (num_rates, num_rates),
+                        where num_rates = 4 * nbins.
+        """
+
         # Define the systematic uncertainties as energy-dependent (one value per energy bin)
         delta_eta_flux = (
             np.ones(self.nbins) * self.flux_uncertainty
@@ -399,8 +484,10 @@ class SBN:
                         frac_cov_matrix[i, j] += (delta_eta[bin_i]) * (delta_eta[bin_j])
 
         # Add flux uncertainty (correlated between SBND and ICARUS for the same energy bin, but uncorrelated between nu_e and nu_mu)
+
+        # NOTE: Testing a stronger nue uncertainty
         add_systematic_uncertainty(
-            self.frac_cov_matrix, delta_eta_flux, range(2 * self.nbins)
+            self.frac_cov_matrix, 1.2 * delta_eta_flux, range(2 * self.nbins)
         )  # nu_e SBND + nu_e ICARUS
 
         add_systematic_uncertainty(
@@ -432,39 +519,65 @@ class SBN:
         return self.frac_cov_matrix
 
     def calculate_cov(self, rate_vector):
+        """
+        Calculate the covariance matrix for a given rate vector.
+
+            This function computes the covariance matrix by first building a fractional
+            covariance matrix and then scaling it by the event rates.
+
+            It also adds the statistical uncertainty to the covariance matrix.
+
+        Parameters:
+            rate_vector (numpy.ndarray): The rate vector for which the covariance matrix
+                                     is to be calculated.
+
+        Returns:
+            numpy.ndarray: The calculated covariance matrix.
+        """
+
         self.frac_cov_matrix = self.build_covariance_matrix()
         self.cov_matrix = np.outer(rate_vector, rate_vector) * self.frac_cov_matrix
         # Stat uncertainty
-        self.cov_matrix += np.sqrt(rate_vector)
+        self.cov_matrix += np.diag(rate_vector)  # Statistical error
         return self.cov_matrix
 
-    def calculate_inv_cov(self):
-        cov = self.calculate_cov(self.unosc_rate_vector)
-        self.inv_cov = inv(cov)
-        return self.inv_cov
-
-    def calculate_Asimov_chi2_from_rate_vector(self, test_rate_vector, inv_cov):
-        # Calculate the Asimov chi-squared
-
-        chi2 = np.dot(
-            np.dot((self.unosc_rate_vector - test_rate_vector), inv_cov),
-            (self.unosc_rate_vector - test_rate_vector),
-        )
-        return chi2
-
     def Asimov_chi2(self, sterile):
+        """
+        Calculate the Asimov chi-squared value for a given sterile neutrino model parameter
+
+        This will determine the sensitivity.
+
+        test_rate_vector : array-like
+            The rate vector to be tested against the unoscillated rate vector
+            Made of (nue SBND, nue ICARUS, numu SBND, numu ICARUS)
+
+        inv_cov : array-like
+            The inverse covariance matrix.
+
+        Returns:
+            chi2 : float
+                The calculated Asimov chi-squared value.
+        """
+
         test_rate_vector = np.concatenate(
             [
-                self.reco_osc_nue_rate_SBND(sterile),
-                self.reco_osc_nue_rate_ICARUS(sterile),
+                self.other_bkg_SBND + self.reco_osc_nue_rate_SBND(sterile),
+                self.other_bkg_ICARUS + self.reco_osc_nue_rate_ICARUS(sterile),
                 self.reco_osc_numu_rate_SBND(sterile),
                 self.reco_osc_numu_rate_ICARUS(sterile),
             ]
         )
 
-        return self.calculate_Asimov_chi2_from_rate_vector(
-            test_rate_vector, self.calculate_inv_cov()
+        # Inverse the covariance matrix
+        self.inv_cov = inv(self.calculate_cov(self.unosc_rate_vector))
+
+        # Asimov chi2
+        chi2 = np.dot(
+            np.dot((self.unosc_rate_vector - test_rate_vector), self.inv_cov),
+            (self.unosc_rate_vector - test_rate_vector),
         )
+
+        return chi2
 
 
 ############################################################################################

@@ -32,7 +32,6 @@ from OscTools.InclusiveTools.inclusive_osc_tools import (
     DecayMuBNuMuDis,
     DecayMuBNuEDis,
 )
-from OscTools.sbn_tools import SBN_OscChi2, DecaySBNNuEDis, DecaySBNNuMuDis
 
 
 ###########################

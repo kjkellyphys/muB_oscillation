@@ -9,10 +9,11 @@ from .InclusiveTools.inclusive_osc_tools import (
     DecayMuBNuMuDis,
     DecayMuBNuEDis,
 )
-from . import mini_tools as mini
-from . import apps
-from . import unfolder
-from . import L_micro, L_mini
+from OscTools import mini_tools as mini
+from OscTools import sbn_tools as sbn
+from OscTools import apps
+from OscTools import unfolder
+from OscTools import L_micro, L_mini
 from .mini_tools import bin_edges, bin_edges_reco, bin_edges_numu
 
 RHE = False
@@ -1115,220 +1116,27 @@ def DecayReturnMicroBooNEChi2(
     ]
 
 
-# --------------------------------------------------------------------------------
-def DecayReturnMicroBooNEplusSBNChi2(
+def SBNSensitivityChi2(
     theta,
-    oscillations=True,
-    decay=False,
-    decouple_decay=False,
     disappearance=False,
-    energy_degradation=False,
-    use_numu_MC=False,
-    undo_numu_normalization=False,
-    n_replications=10,
-    include_antineutrinos=False,
-    helicity="conserving",
+    flux_uncertainty=0.1,
+    xsec_uncertainty=0.1,
+    eff_uncertainty=0.03,
 ):
 
-    rates_dic = get_nue_rates(
-        theta,
-        oscillations=oscillations,
-        decay=decay,
-        decouple_decay=decouple_decay,
+    rate_estimator = sbn.SBN(
         disappearance=disappearance,
-        energy_degradation=energy_degradation,
-        use_numu_MC=use_numu_MC,
-        undo_numu_normalization=undo_numu_normalization,
-        n_replications=n_replications,
-        include_antineutrinos=include_antineutrinos,
-        helicity=helicity,
+        flux_uncertainty=flux_uncertainty,
+        xsec_uncertainty=xsec_uncertainty,
+        eff_uncertainty=eff_uncertainty,
     )
 
-    if disappearance:
-        if include_antineutrinos:
-            # Calculate MiniBooNE chi2 -- nu + nubar
-            MB_chi2 = mini.fit.chi2_MiniBooNE_combined(
-                MC_nue_app=rates_dic["MC_nue_app"],
-                MC_nuebar_app=rates_dic["MC_nuebar_app"],
-                MC_nue_dis=rates_dic["MC_nue_bkg_total_w_dis"],
-                MC_numu_dis=rates_dic["MC_numu_bkg_total_w_dis"],
-                MC_nuebar_dis=rates_dic["MC_nuebar_bkg_total_w_dis"],
-                MC_numubar_dis=rates_dic["MC_numubar_bkg_total_w_dis"],
-                year="2020",
-            )
-        else:
-            MB_chi2 = mini.fit.chi2_MiniBooNE(
-                MC_nue_app=rates_dic["MC_nue_app"],
-                MC_nue_dis=rates_dic["MC_nue_bkg_total_w_dis"],
-                MC_numu_dis=rates_dic["MC_numu_bkg_total_w_dis"],
-                year="2020",
-            )
-
-    else:
-        if include_antineutrinos:
-            MB_chi2 = mini.fit.chi2_MiniBooNE_combined(
-                rates_dic["MC_nue_app"], rates_dic["MC_nuebar_app"], year="2020"
-            )
-        else:
-            MB_chi2 = mini.fit.chi2_MiniBooNE(rates_dic["MC_nue_app"], year="2020")
-
-    # NOTE: SKIPPING ENERGY DEGRATION FOR NOW
-    # if energy_degradation:
-    #     # MiniBooNE energy degradation
-    #     # Questionable, MC file is meant for Pme channel. Not sure if it can be used for numu and nue disappearance.
-    #     Ree_true = sterile.EnergyDegradation(
-    #         fast_histogram(Etrue, bins=e_prod_e_int_bins, weights=Weight)[0],
-    #         e_prod_e_int_bins,
-    #         "Pee",
-    #     )
-    #     Rmm_true = sterile.EnergyDegradation(
-    #         fast_histogram(Etrue, bins=e_prod_e_int_bins, weights=Weight)[0],
-    #         e_prod_e_int_bins,
-    #         "Pmm",
-    #     )
-    #     migration_matrix_pee = create_reco_migration_matrix(nue_bin_edges)
-    #     migration_matrix_pmm = create_reco_migration_matrix(numu_bin_edges)
-    #     Ree_reco = np.dot(Ree_true, migration_matrix_pee)
-    #     Rmm_reco = np.dot(Rmm_true, migration_matrix_pmm)
-    #     MB_chi2 = mini.fit.chi2_MiniBooNE_2020(
-    #         MBSig_for_MBfit, Rmumu=Rmm_reco, Ree=Ree_reco
-    #     )
-
-    # Calculate the MicroBooNE chi2 by unfolding
-    # MBSig_for_unfolding = np.dot(
-    #     (fast_histogram(Etrue_parent, bins=e_prod_e_int_bins, weights=Weight_decay)[0]),
-    #     migration_matrix_unfolding_bins,
-    # )
-
-    ############################################################################################################
-    # Now onto MicroBooNE  -- here only neutrinos are used (CP = +1)
-    ############################################################################################################
-
-    # MicroBooNE fully inclusive signal by unfolding MiniBooNE Signal
-    uBFC = GBFC.unfold(rates_dic["MC_nue_app_for_unfolding"])
-    uBFC = np.insert(uBFC, 0, [0.0])
-    uBFC = np.append(uBFC, 0.0)
-
-    # NOTE: copying is probably not needed, but who knows...
-    MC_nue_app_for_unfolding2 = copy.deepcopy(rates_dic["MC_nue_app_for_unfolding"])
-    # MicroBooNE partially inclusive signal by unfolding MiniBooNE Signal
-    uBPC = GBPC.unfold(MC_nue_app_for_unfolding2)
-    uBPC = np.insert(uBPC, 0, [0.0])
-    uBPC = np.append(uBPC, 0.0)
-
-    uBtemp = np.concatenate([uBFC, uBPC, np.zeros(85)])
-
-    # \nu_mu disappearance signal replacement
-    NuMuReps = DecayMuBNuMuDis(
+    # Our new physics class -- for deGouvea's model, we fix m4 = 1 eV, and identify g = gm4.
+    sterile = Sterile(
         theta,
-        oscillations=oscillations,
-        decay=decay,
-        decouple_decay=decouple_decay,
-        disappearance=disappearance,
-        energy_degradation=energy_degradation,
-        helicity=helicity,
-    )
-    # \nu_e disappearance signal replacement
-    NuEReps = DecayMuBNuEDis(
-        theta,
-        oscillations=oscillations,
-        decay=decay,
-        decouple_decay=decouple_decay,
-        disappearance=disappearance,
-        energy_degradation=energy_degradation,
-        helicity=helicity,
-    )
-    # MicroBooNE
-    MuB_chi2 = Decay_muB_OscChi2(
-        theta,
-        uBtemp,
-        constrained=False,
-        sigReps=[NuEReps[0], NuEReps[1], NuMuReps[0], NuMuReps[1], None, None, None],
-        RemoveOverflow=True,
-        oscillations=oscillations,
-        decay=decay,
-        decouple_decay=decouple_decay,
-        disappearance=disappearance,
-        energy_degradation=energy_degradation,
-    )
-
-    MuB_chi2_Asimov = Decay_muB_OscChi2(
-        theta,
-        uBtemp,
-        constrained=False,
-        sigReps=[NuEReps[0], NuEReps[1], NuMuReps[0], NuMuReps[1], None, None, None],
-        RemoveOverflow=True,
-        Asimov=True,
-        oscillations=oscillations,
-        decay=decay,
-        decouple_decay=decouple_decay,
-        disappearance=disappearance,
-        energy_degradation=energy_degradation,
-    )
-
-    ############################################################################################################
-    # SBN
-
-    # SBN fully inclusive signal by unfolding MiniBooNE Signal
-    uBFC = GBFC.unfold(rates_dic["MC_nue_app_for_unfolding"])
-    uBFC = np.insert(uBFC, 0, [0.0])
-    uBFC = np.append(uBFC, 0.0)
-
-    # NOTE: copying is probably not needed, but who knows...
-    MC_nue_app_for_unfolding2 = copy.deepcopy(rates_dic["MC_nue_app_for_unfolding"])
-    # MicroBooNE partially inclusive signal by unfolding MiniBooNE Signal
-    uBPC = GBPC.unfold(MC_nue_app_for_unfolding2)
-    uBPC = np.insert(uBPC, 0, [0.0])
-    uBPC = np.append(uBPC, 0.0)
-
-    uBtemp = np.concatenate([uBFC, uBPC, np.zeros(85)])
-
-    # \nu_mu disappearance signal replacement
-    NuMuReps = DecayMuBNuMuDis(
-        theta,
-        oscillations=oscillations,
-        decay=decay,
-        decouple_decay=decouple_decay,
-        disappearance=disappearance,
-        energy_degradation=energy_degradation,
-        helicity=helicity,
-    )
-    # \nu_e disappearance signal replacement
-    NuEReps = DecayMuBNuEDis(
-        theta,
-        oscillations=oscillations,
-        decay=decay,
-        decouple_decay=decouple_decay,
-        disappearance=disappearance,
-        energy_degradation=energy_degradation,
-        helicity=helicity,
-    )
-    # MicroBooNE
-    MuB_chi2 = Decay_muB_OscChi2(
-        theta,
-        uBtemp,
-        constrained=False,
-        sigReps=[NuEReps[0], NuEReps[1], NuMuReps[0], NuMuReps[1], None, None, None],
-        RemoveOverflow=True,
-        oscillations=oscillations,
-        decay=decay,
-        decouple_decay=decouple_decay,
-        disappearance=disappearance,
-        energy_degradation=energy_degradation,
-    )
-
-    MuB_chi2_Asimov = Decay_muB_OscChi2(
-        theta,
-        uBtemp,
-        constrained=False,
-        sigReps=[NuEReps[0], NuEReps[1], NuMuReps[0], NuMuReps[1], None, None, None],
-        RemoveOverflow=True,
-        Asimov=True,
-        oscillations=oscillations,
-        decay=decay,
-        decouple_decay=decouple_decay,
-        disappearance=disappearance,
-        energy_degradation=energy_degradation,
+        oscillations=True,
+        decay=False,
+        decouple_decay=False,
     )
 
     return [
@@ -1336,7 +1144,5 @@ def DecayReturnMicroBooNEplusSBNChi2(
         theta["m4"],
         theta["Ue4Sq"],
         theta["Um4Sq"],
-        MB_chi2,
-        MuB_chi2,
-        MuB_chi2_Asimov,
+        rate_estimator.Asimov_chi2(sterile=sterile),
     ]

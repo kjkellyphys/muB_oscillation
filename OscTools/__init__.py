@@ -22,6 +22,7 @@ MeVToGeV = 1.0e-3
 
 ##################################################################
 # Our oscillation results and other oscillation limits
+path_plots = f"plots/"
 path_osc_data = f"{local_dir}/osc_data/"
 path_osc_app = f"{path_osc_data}/numu_to_nue/"
 path_osc_numudis = f"{path_osc_data}/numu_dis/"
