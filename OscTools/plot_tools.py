@@ -517,12 +517,12 @@ def make_rate_plot(rates, params, name="3+1_osc"):
         ax1.set_ylabel(r"Events/MeV")
 
     nue_data = np.genfromtxt(
-        files("MiniTools.include.MB_data_release_2020.combined")
+        files("OscTools.include.MB_data_release_2020.combined")
         .joinpath("miniboone_nuedata_lowe.txt")
         .open()
     )
     nue_tot_bkg = np.genfromtxt(
-        files("MiniTools.include.MB_data_release_2020.combined")
+        files("OscTools.include.MB_data_release_2020.combined")
         .joinpath("miniboone_nuebgr_lowe.txt")
         .open()
     )
@@ -664,13 +664,13 @@ def make_numu_rate_plot(rates, params, name="3+1_osc"):
 
     numu_data = np.genfromtxt(
         open_text(
-            f"MiniTools.include.MB_data_release_2020.combined",
+            f"OscTools.include.MB_data_release_2020.combined",
             f"miniboone_numudata.txt",
         )
     )
     numu_tot_bkg = np.genfromtxt(
         open_text(
-            f"MiniTools.include.MB_data_release_2020.combined",
+            f"OscTools.include.MB_data_release_2020.combined",
             f"miniboone_numu.txt",
         )
     )

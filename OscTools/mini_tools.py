@@ -209,25 +209,25 @@ def chi2_MiniBooNE(
     bar = "bar" if mode == "rhc" else ""
 
     nue_data = np.genfromtxt(
-        files(f"MiniTools.include.MB_data_release_{year}.{mode}mode")
+        files(f"OscTools.include.MB_data_release_{year}.{mode}mode")
         .joinpath(f"miniboone_nue{bar}data_lowe.txt")
         .open()
     )
     numu_data = np.genfromtxt(
-        files(f"MiniTools.include.MB_data_release_{year}.{mode}mode")
+        files(f"OscTools.include.MB_data_release_{year}.{mode}mode")
         .joinpath(f"miniboone_numu{bar}data.txt")
         .open()
     )
 
     fract_covariance = np.genfromtxt(
-        files(f"MiniTools.include.MB_data_release_{year}.{mode}mode")
+        files(f"OscTools.include.MB_data_release_{year}.{mode}mode")
         .joinpath(f"miniboone_full_fractcovmatrix_nu{bar}_lowe.txt")
         .open()
     )
 
     # # energy bins -- same for nu and nubar
     # bin_e = np.genfromtxt(
-    #     files(#         f"MiniTools.include.MB_data_release_{year}.{mode}mode").joinpath(#         "miniboone_binboundaries_nue_lowe.txt").open()     )
+    #     files(#         f"OscTools.include.MB_data_release_{year}.{mode}mode").joinpath(#         "miniboone_binboundaries_nue_lowe.txt").open()     )
     # )
 
     # NOTE:new method from Tao.
@@ -235,7 +235,7 @@ def chi2_MiniBooNE(
         nue_bkg = MC_nue_dis
     else:
         nue_bkg = np.genfromtxt(
-            files(f"MiniTools.include.MB_data_release_{year}.{mode}mode")
+            files(f"OscTools.include.MB_data_release_{year}.{mode}mode")
             .joinpath(f"miniboone_nue{bar}bgr_lowe.txt")
             .open()
         )
@@ -244,7 +244,7 @@ def chi2_MiniBooNE(
         numu_MC = MC_numu_dis
     else:
         numu_MC = np.genfromtxt(
-            files(f"MiniTools.include.MB_data_release_{year}.{mode}mode")
+            files(f"OscTools.include.MB_data_release_{year}.{mode}mode")
             .joinpath(f"miniboone_numu{bar}.txt")
             .open()
         )
@@ -341,12 +341,12 @@ def chi2_MiniBooNE_combined(
     ##########################################
     # Load neutrino data
     nue_data = np.genfromtxt(
-        files(f"MiniTools.include.MB_data_release_{year}.combined")
+        files(f"OscTools.include.MB_data_release_{year}.combined")
         .joinpath(f"miniboone_nuedata_lowe.txt")
         .open()
     )
     numu_data = np.genfromtxt(
-        files(f"MiniTools.include.MB_data_release_{year}.combined")
+        files(f"OscTools.include.MB_data_release_{year}.combined")
         .joinpath(f"miniboone_numudata.txt")
         .open()
     )
@@ -354,12 +354,12 @@ def chi2_MiniBooNE_combined(
     ##########################################
     # Load antineutrino data
     nuebar_data = np.genfromtxt(
-        files(f"MiniTools.include.MB_data_release_{year}.combined")
+        files(f"OscTools.include.MB_data_release_{year}.combined")
         .joinpath(f"miniboone_nuebardata_lowe.txt")
         .open()
     )
     numubar_data = np.genfromtxt(
-        files(f"MiniTools.include.MB_data_release_{year}.combined")
+        files(f"OscTools.include.MB_data_release_{year}.combined")
         .joinpath(f"miniboone_numubardata.txt")
         .open()
     )
@@ -367,7 +367,7 @@ def chi2_MiniBooNE_combined(
     ##########################################
     # Load covariance matrix
     fract_covariance = np.genfromtxt(
-        files(f"MiniTools.include.MB_data_release_{year}.combined")
+        files(f"OscTools.include.MB_data_release_{year}.combined")
         .joinpath(f"miniboone_full_fractcovmatrix_combined_lowe.txt")
         .open()
     )
@@ -376,7 +376,7 @@ def chi2_MiniBooNE_combined(
         nue_bkg = MC_nue_dis
     else:
         nue_bkg = np.genfromtxt(
-            files(f"MiniTools.include.MB_data_release_{year}.combined")
+            files(f"OscTools.include.MB_data_release_{year}.combined")
             .joinpath(f"miniboone_nuebgr_lowe.txt")
             .open()
         )
@@ -385,7 +385,7 @@ def chi2_MiniBooNE_combined(
         numu_MC = MC_numu_dis
     else:
         numu_MC = np.genfromtxt(
-            files(f"MiniTools.include.MB_data_release_{year}.combined")
+            files(f"OscTools.include.MB_data_release_{year}.combined")
             .joinpath(f"miniboone_numu.txt")
             .open()
         )
@@ -394,7 +394,7 @@ def chi2_MiniBooNE_combined(
         nuebar_bkg = MC_nuebar_dis
     else:
         nuebar_bkg = np.genfromtxt(
-            files(f"MiniTools.include.MB_data_release_{year}.combined")
+            files(f"OscTools.include.MB_data_release_{year}.combined")
             .joinpath(f"miniboone_nuebarbgr_lowe.txt")
             .open()
         )
@@ -403,7 +403,7 @@ def chi2_MiniBooNE_combined(
         numubar_MC = MC_numubar_dis
     else:
         numubar_MC = np.genfromtxt(
-            files(f"MiniTools.include.MB_data_release_{year}.combined")
+            files(f"OscTools.include.MB_data_release_{year}.combined")
             .joinpath(f"miniboone_numubar.txt")
             .open()
         )
