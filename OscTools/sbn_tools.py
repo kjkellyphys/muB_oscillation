@@ -295,7 +295,7 @@ class SBN:
             h, be = np.histogram(
                 self.E, weights=diff_rate * np.diff(self.E)[0], bins=self.Etrue_bins
             )
-            return h / np.diff(be)
+            return h
         else:
             return diff_rate
 
@@ -315,7 +315,7 @@ class SBN:
             h, be = np.histogram(
                 self.E, weights=diff_rate * np.diff(self.E)[0], bins=self.Etrue_bins
             )
-            return h / np.diff(be)
+            return h
         else:
             return diff_rate
 
@@ -333,7 +333,7 @@ class SBN:
             h, be = np.histogram(
                 self.E, weights=diff_rate * np.diff(self.E)[0], bins=self.Etrue_bins
             )
-            return h / np.diff(be)
+            return h
         else:
             return diff_rate
 
@@ -355,7 +355,7 @@ class SBN:
             h, be = np.histogram(
                 self.E, weights=diff_rate * np.diff(self.E)[0], bins=self.Etrue_bins
             )
-            return h / np.diff(be)
+            return h
         else:
             return diff_rate
 
@@ -365,28 +365,28 @@ class SBN:
         h, be = np.histogram(
             self.E, weights=truth_rate * np.diff(self.E)[0], bins=self.Etrue_bins
         )
-        return self.M_numuCC.dot(h / np.diff(be))
+        return self.M_numuCC.dot(h)
 
     def reco_unosc_numu_rate_ICARUS(self):
         truth_rate = self.unosc_numu_rate_ICARUS(self.E)
         h, be = np.histogram(
             self.E, weights=truth_rate * np.diff(self.E)[0], bins=self.Etrue_bins
         )
-        return self.M_numuCC.dot(h / np.diff(be))
+        return self.M_numuCC.dot(h)
 
     def reco_unosc_nue_rate_SBND(self):
         truth_rate = self.unosc_nue_rate_SBND(self.E)
         h, be = np.histogram(
             self.E, weights=truth_rate * np.diff(self.E)[0], bins=self.Etrue_bins
         )
-        return self.M_nueCC.dot(h / np.diff(be))
+        return self.M_nueCC.dot(h)
 
     def reco_unosc_nue_rate_ICARUS(self):
         truth_rate = self.unosc_nue_rate_ICARUS(self.E)
         h, be = np.histogram(
             self.E, weights=truth_rate * np.diff(self.E)[0], bins=self.Etrue_bins
         )
-        return self.M_nueCC.dot(h / np.diff(be))
+        return self.M_nueCC.dot(h)
 
     # Reco oscillated rates
     def reco_osc_numu_rate_SBND(self, sterile):
@@ -425,7 +425,7 @@ class SBN:
         #     Etrue_nueCC_PC, Ereco_nueCC_PC, M_nueCC_PC, Etrue_bins, Ereco_bins
         # )
 
-    def build_covariance_matrix(self):
+    def build_frac_covariance_matrix(self):
         """
         Build the fractional covariance matrix with systematic uncertainties.
 
@@ -487,7 +487,7 @@ class SBN:
 
         # NOTE: Testing a stronger nue uncertainty
         add_systematic_uncertainty(
-            self.frac_cov_matrix, 1.2 * delta_eta_flux, range(2 * self.nbins)
+            self.frac_cov_matrix, delta_eta_flux, range(2 * self.nbins)
         )  # nu_e SBND + nu_e ICARUS
 
         add_systematic_uncertainty(
@@ -535,7 +535,7 @@ class SBN:
             numpy.ndarray: The calculated covariance matrix.
         """
 
-        self.frac_cov_matrix = self.build_covariance_matrix()
+        self.frac_cov_matrix = self.build_frac_covariance_matrix()
         self.cov_matrix = np.outer(rate_vector, rate_vector) * self.frac_cov_matrix
         # Stat uncertainty
         self.cov_matrix += np.diag(rate_vector)  # Statistical error
