@@ -1,7 +1,10 @@
 import numpy as np
 import numba
+from numba import njit
+
 import pickle
 import copy
+
 from scipy.stats import chi2
 from .sterile_tools import Sterile
 from .InclusiveTools.inclusive_osc_tools import (
@@ -9,6 +12,7 @@ from .InclusiveTools.inclusive_osc_tools import (
     DecayMuBNuMuDis,
     DecayMuBNuEDis,
 )
+
 from OscTools import mini_tools as mini
 from OscTools import sbn_tools as sbn
 from OscTools import apps
@@ -186,41 +190,112 @@ def get_subgrid(dic, var, var_range):
     return dic
 
 
-def profile_in_plane(
+@njit
+def compute_profile_numpy(
+    x, y, chi2, profile_over_diff_chi2, inverse_indices, unique_count, within_mask
+):
+    profiled_chi2 = np.full(unique_count, np.nan)
+    if profile_over_diff_chi2 is not None:
+        min_pdiff = np.full(unique_count, np.inf)
+        for i in range(x.size):
+            group = inverse_indices[i]
+            if within_mask[group]:
+                if profile_over_diff_chi2[i] < min_pdiff[group]:
+                    min_pdiff[group] = profile_over_diff_chi2[i]
+                    profiled_chi2[group] = chi2[i]
+    else:
+        min_chi2 = np.full(unique_count, np.inf)
+        for i in range(x.size):
+            group = inverse_indices[i]
+            if within_mask[group]:
+                if chi2[i] < min_chi2[group]:
+                    min_chi2[group] = chi2[i]
+                    profiled_chi2[group] = chi2[i]
+    return profiled_chi2
+
+
+def profile_in_plane_numba(
     x, y, chi2, profile_over_diff_chi2=None, x_max=np.inf, y_max=np.inf
 ):
-    # Create a list of tuples for the unique pairs of Ue4SQR and Umu4SQR
-    unique_pairs = np.array(list(set(zip(x, y))))
+    dtype = np.dtype([("x", x.dtype), ("y", y.dtype)])
+    xy = np.empty(x.size, dtype=dtype)
+    xy["x"] = x
+    xy["y"] = y
 
-    # Find the minimum chi2 for each unique pair of Ue4SQR and Umu4SQR
+    unique_xy, inverse_indices = np.unique(xy, return_inverse=True)
+    unique_count = unique_xy.shape[0]
+
+    within_mask = (unique_xy["x"] < x_max) & (unique_xy["y"] < y_max)
+
     if profile_over_diff_chi2 is not None:
-        profiled_chi2 = np.array(
-            [
-                (
-                    chi2[(x == pair[0]) & (y == pair[1])][
-                        np.argmin(
-                            profile_over_diff_chi2[(x == pair[0]) & (y == pair[1])]
-                        )
-                    ]
-                    if pair[0] < x_max and pair[1] < y_max
-                    else np.nan
-                )
-                for pair in unique_pairs
-            ]
+        profiled_chi2 = compute_profile_numpy(
+            x,
+            y,
+            chi2,
+            profile_over_diff_chi2,
+            inverse_indices,
+            unique_count,
+            within_mask,
         )
     else:
-        profiled_chi2 = np.array(
-            [
-                (
-                    np.min(chi2[(x == pair[0]) & (y == pair[1])])
-                    if pair[0] < x_max and pair[1] < y_max
-                    else np.nan
-                )
-                for pair in unique_pairs
-            ]
+        profiled_chi2 = compute_profile_numpy(
+            x, y, chi2, None, inverse_indices, unique_count, within_mask
         )
 
-    return unique_pairs[:, 0], unique_pairs[:, 1], profiled_chi2
+    return unique_xy["x"], unique_xy["y"], profiled_chi2
+
+
+# def profile_in_plane(
+#     x, y, chi2, profile_over_diff_chi2=None, x_max=np.inf, y_max=np.inf
+# ):
+#     """
+#     Profiles chi-squared values in a 2D plane defined by x and y coordinates.
+#     Parameters:
+#     x (array-like): Array of x-coordinates.
+#     y (array-like): Array of y-coordinates.
+#     chi2 (array-like): Array of chi-squared values corresponding to the (x, y) coordinates.
+#     profile_over_diff_chi2 (array-like, optional): Array of chi-squared values to profile over. Default is None.
+#     x_max (float, optional): Maximum value for x-coordinates to consider. Default is np.inf.
+#     y_max (float, optional): Maximum value for y-coordinates to consider. Default is np.inf.
+#     Returns:
+#     tuple: Three numpy arrays containing:
+#         - Unique x-coordinates.
+#         - Unique y-coordinates.
+#         - Profiled chi-squared values for each unique (x, y) pair.
+#     """
+
+#     # Create a list of tuples for the unique pairs of Ue4SQR and Umu4SQR
+#     unique_pairs = np.array(list(set(zip(x, y))))
+
+#     # Find the minimum chi2 for each unique pair of Ue4SQR and Umu4SQR
+#     if profile_over_diff_chi2 is not None:
+#         profiled_chi2 = np.array(
+#             [
+#                 (
+#                     chi2[(x == pair[0]) & (y == pair[1])][
+#                         np.argmin(
+#                             profile_over_diff_chi2[(x == pair[0]) & (y == pair[1])]
+#                         )
+#                     ]
+#                     if pair[0] < x_max and pair[1] < y_max
+#                     else np.nan
+#                 )
+#                 for pair in unique_pairs
+#             ]
+#         )
+#     else:
+#         profiled_chi2 = np.array(
+#             [
+#                 (
+#                     np.min(chi2[(x == pair[0]) & (y == pair[1])])
+#                     if pair[0] < x_max and pair[1] < y_max
+#                     else np.nan
+#                 )
+#                 for pair in unique_pairs
+#             ]
+#         )
+
+#     return unique_pairs[:, 0], unique_pairs[:, 1], profiled_chi2
 
 
 def profile_for_sin2theta(data_dic):
@@ -503,7 +578,7 @@ def MiniBooNEChi2_deGouvea(
     # P_avg = sterile.Pdecay_binned_avg(MB_Ereco_official_bins_numu, fixed_Length=L_micro)
     # P_mumu_avg = (1 - Um4Sq) ** 2 + Um4Sq**2 * P_avg
 
-    # MB_chi2 = mini.fit.chi2_MiniBooNE_2020(MBSig_for_MBfit, Pmumu=P_mumu_avg, Pee=1)
+    # MB_chi2 = mini.chi2_MiniBooNE_2020(MBSig_for_MBfit, Pmumu=P_mumu_avg, Pee=1)
 
     ################################################
     # NOTE: Are you sure about L_micro here? Shouldnt it be L_mini?
@@ -522,7 +597,7 @@ def MiniBooNEChi2_deGouvea(
         )
 
         # Calculate MiniBooNE chi2
-        MB_chi2 = mini.fit.chi2_MiniBooNE_combined(
+        MB_chi2 = mini.chi2_MiniBooNE_combined(
             MC_nue_app=MBSig_for_MBfit,
             MC_nue_dis=None,
             MC_numu_dis=MC_numu_bkg_total_w_dis_deGouvea,
@@ -535,7 +610,7 @@ def MiniBooNEChi2_deGouvea(
     else:
 
         # Calculate MiniBooNE chi2
-        MB_chi2 = mini.fit.chi2_MiniBooNE_combined(
+        MB_chi2 = mini.chi2_MiniBooNE_combined(
             MC_nue_app=MBSig_for_MBfit,
             MC_nue_dis=None,
             MC_numu_dis=None,
@@ -986,7 +1061,7 @@ def DecayReturnMicroBooNEChi2(
     if disappearance:
         if include_antineutrinos:
             # Calculate MiniBooNE chi2 -- nu + nubar
-            MB_chi2 = mini.fit.chi2_MiniBooNE_combined(
+            MB_chi2 = mini.chi2_MiniBooNE_combined(
                 MC_nue_app=rates_dic["MC_nue_app"],
                 MC_nuebar_app=rates_dic["MC_nuebar_app"],
                 MC_nue_dis=rates_dic["MC_nue_bkg_total_w_dis"],
@@ -996,7 +1071,7 @@ def DecayReturnMicroBooNEChi2(
                 year="2020",
             )
         else:
-            MB_chi2 = mini.fit.chi2_MiniBooNE(
+            MB_chi2 = mini.chi2_MiniBooNE(
                 MC_nue_app=rates_dic["MC_nue_app"],
                 MC_nue_dis=rates_dic["MC_nue_bkg_total_w_dis"],
                 MC_numu_dis=rates_dic["MC_numu_bkg_total_w_dis"],
@@ -1005,11 +1080,11 @@ def DecayReturnMicroBooNEChi2(
 
     else:
         if include_antineutrinos:
-            MB_chi2 = mini.fit.chi2_MiniBooNE_combined(
+            MB_chi2 = mini.chi2_MiniBooNE_combined(
                 rates_dic["MC_nue_app"], rates_dic["MC_nuebar_app"], year="2020"
             )
         else:
-            MB_chi2 = mini.fit.chi2_MiniBooNE(rates_dic["MC_nue_app"], year="2020")
+            MB_chi2 = mini.chi2_MiniBooNE(rates_dic["MC_nue_app"], year="2020")
 
     # NOTE: SKIPPING ENERGY DEGRATION FOR NOW
     # if energy_degradation:
@@ -1029,7 +1104,7 @@ def DecayReturnMicroBooNEChi2(
     #     migration_matrix_pmm = create_reco_migration_matrix(numu_bin_edges)
     #     Ree_reco = np.dot(Ree_true, migration_matrix_pee)
     #     Rmm_reco = np.dot(Rmm_true, migration_matrix_pmm)
-    #     MB_chi2 = mini.fit.chi2_MiniBooNE_2020(
+    #     MB_chi2 = mini.chi2_MiniBooNE_2020(
     #         MBSig_for_MBfit, Rmumu=Rmm_reco, Ree=Ree_reco
     #     )
 

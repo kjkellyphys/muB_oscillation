@@ -11,7 +11,8 @@ import matplotlib.tri as tri
 from scipy.spatial.distance import pdist, squareform
 from matplotlib import colors as mpl_colors
 from matplotlib.collections import PatchCollection
-
+import matplotlib.colors as mc
+import colorsys
 import scipy
 
 try:
