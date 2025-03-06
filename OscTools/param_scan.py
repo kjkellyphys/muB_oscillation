@@ -960,12 +960,13 @@ def get_nue_rates(
                 Weight_numu_dis_dec = Weight_numu_ext * sterile.Pmmdecay(
                     Etrue_numu_parent, Etrue_numu_daughter, Length_numu_ext
                 )
-                Weight_numubar_dis_osc = Weight_numubar_ext * antisterile.Pmmosc(
-                    Etrue_numubar_parent, Length_numubar_ext
-                )
-                Weight_numubar_dis_dec = Weight_numubar_ext * antisterile.Pmmdecay(
-                    Etrue_numubar_parent, Etrue_numubar_daughter, Length_numubar_ext
-                )
+                if include_antineutrinos:
+                    Weight_numubar_dis_osc = Weight_numubar_ext * antisterile.Pmmosc(
+                        Etrue_numubar_parent, Length_numubar_ext
+                    )
+                    Weight_numubar_dis_dec = Weight_numubar_ext * antisterile.Pmmdecay(
+                        Etrue_numubar_parent, Etrue_numubar_daughter, Length_numubar_ext
+                    )
 
             dic["MC_numu_bkg_total_w_dis"] = np.dot(
                 (
